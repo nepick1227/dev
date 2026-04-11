@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
@@ -108,7 +108,7 @@ function KakaoButton({
 }
 
 // ── 메인: 로그인 페이지 ─────────────────────────────
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
 
@@ -130,7 +130,7 @@ export default function LoginPage() {
 
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const handleKakaoLogin = useCallback(async () => {
+  const handleOAuthLogin = useCallback(async (provider: "kakao" | "google") => {
     setIsLoading(true);
     setLoginError(null);
 
@@ -138,15 +138,14 @@ export default function LoginPage() {
     const redirectTo = `${window.location.origin}/auth/callback`;
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "kakao",
+      provider,
       options: { redirectTo },
     });
 
     if (error) {
-      setLoginError("카카오 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+      setLoginError("로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.");
       setIsLoading(false);
     }
-    // 성공 시 카카오 OAuth 페이지로 리다이렉트되므로 setIsLoading(false) 불필요
   }, []);
 
   return (
@@ -189,20 +188,34 @@ export default function LoginPage() {
           <p className="mb-1 text-center text-[13px] text-primary">{errorMessage ?? loginError}</p>
         )}
 
-        <KakaoButton isLoading={isLoading} isRecent={true} onClick={handleKakaoLogin} />
+        <KakaoButton isLoading={isLoading} isRecent={true} onClick={() => handleOAuthLogin("kakao")} />
 
-        {/* 추후 추가 예정 (비활성화) */}
         <button
-          disabled
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-bg py-4 text-[15px] font-semibold tracking-tight text-text-secondary opacity-40 cursor-not-allowed"
+          onClick={() => { window.location.href = "/api/auth/naver"; }}
+          disabled={isLoading}
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#03C75A] py-4 text-[15px] font-semibold tracking-tight text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+          aria-label="네이버로 시작하기"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path
-              d="M13.57 10.69L6.14 2H2v16h4.43V9.31L13.86 18H18V2h-4.43v8.69z"
-              fill="#6B7280"
-            />
+            <path d="M13.57 10.69L6.14 2H2v16h4.43V9.31L13.86 18H18V2h-4.43v8.69z" fill="white" />
           </svg>
           네이버로 시작하기
+        </button>
+
+        <button
+          onClick={() => handleOAuthLogin("google")}
+          disabled={isLoading}
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-white py-4 text-[15px] font-semibold tracking-tight text-text-primary transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+          aria-label="구글로 시작하기"
+        >
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            <path fill="none" d="M0 0h48v48H0z"/>
+          </svg>
+          구글로 시작하기
         </button>
 
         <p className="mt-1 text-center text-[12px] tracking-tight text-text-secondary">
@@ -214,5 +227,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

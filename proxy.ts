@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -30,8 +30,8 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // /auth/* 경로는 항상 허용
-  if (pathname.startsWith("/auth")) {
+  // /auth/* 및 /api/auth/* 경로는 항상 허용 (소셜 로그인 콜백 포함)
+  if (pathname.startsWith("/auth") || pathname.startsWith("/api/auth")) {
     // 이미 로그인된 유저가 /auth/login 접근 시 홈으로
     if (pathname === "/auth/login" && user) {
       return NextResponse.redirect(new URL("/home", request.url));
