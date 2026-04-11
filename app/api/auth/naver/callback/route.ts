@@ -45,14 +45,19 @@ export async function GET(request: Request) {
     });
 
     const userData = await userRes.json();
+    console.log("[Naver Auth] 유저 데이터:", JSON.stringify(userData, null, 2));
+
     const naverUser = userData.response as {
       id: string;
-      email: string;
-      nickname: string;
-      profile_image: string;
+      email?: string;
+      nickname?: string;
+      profile_image?: string;
     };
 
-    if (!naverUser?.email) throw new Error("이메일 정보 없음");
+    if (!naverUser?.id) throw new Error("유저 정보 없음");
+
+    // 이메일이 없을 경우 네이버 ID 기반으로 생성 (Supabase 계정 식별용)
+    const email = naverUser.email ?? `naver.${naverUser.id}@auth.nepick.kr`;
 
     // ── 3. Supabase admin으로 유저 생성/확인 ─────────
     const adminClient = createClient(
@@ -62,7 +67,7 @@ export async function GET(request: Request) {
 
     // 신규 유저 생성 시도 (이미 있으면 오류 무시)
     await adminClient.auth.admin.createUser({
-      email: naverUser.email,
+      email,
       email_confirm: true,
       user_metadata: {
         provider: "naver",
@@ -76,7 +81,7 @@ export async function GET(request: Request) {
     const { data: linkData, error: linkError } =
       await adminClient.auth.admin.generateLink({
         type: "magiclink",
-        email: naverUser.email,
+        email,
         options: { redirectTo: `${origin}/auth/callback` },
       });
 
