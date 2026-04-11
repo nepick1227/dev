@@ -191,15 +191,16 @@ export default function LoginPage() {
 
         <KakaoButton isLoading={isLoading} isRecent={true} onClick={handleKakaoLogin} />
 
-        {/* 추후 추가 예정 (비활성화) */}
         <button
-          disabled
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-bg py-4 text-[15px] font-semibold tracking-tight text-text-secondary opacity-40 cursor-not-allowed"
+          onClick={() => { window.location.href = "/api/auth/naver"; }}
+          disabled={isLoading}
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#03C75A] py-4 text-[15px] font-semibold tracking-tight text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+          aria-label="네이버로 시작하기"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path
               d="M13.57 10.69L6.14 2H2v16h4.43V9.31L13.86 18H18V2h-4.43v8.69z"
-              fill="#6B7280"
+              fill="white"
             />
           </svg>
           네이버로 시작하기
