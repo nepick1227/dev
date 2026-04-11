@@ -14,6 +14,8 @@ export interface Profile {
   intro: string | null;
   profile_image: string | null; // Supabase Storage public URL
   is_public: boolean;
+  deleted_at: string | null;     // 탈퇴 요청 시각 (null = 정상 계정)
+  withdrawal_reason: string | null; // 탈퇴 사유
   created_at: string; // ISO timestamp
   updated_at: string;
 }

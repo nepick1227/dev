@@ -29,9 +29,19 @@ function NaverVerifyContent() {
         // 프로필 여부 확인 → 신규 유저면 약관으로, 기존 유저면 홈으로
         const { data: profile } = await supabase
           .from("profiles")
-          .select("nickname")
+          .select("nickname, deleted_at")
           .eq("id", data.user.id)
           .maybeSingle();
+
+        // 탈퇴한 계정 확인 — 30일 이내면 재가입 차단
+        if (profile?.deleted_at) {
+          const daysSince = (Date.now() - new Date(profile.deleted_at).getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince < 30) {
+            await supabase.auth.signOut();
+            router.replace("/auth/login?error=account_deleted");
+            return;
+          }
+        }
 
         if (!profile?.nickname) {
           router.replace("/auth/terms");

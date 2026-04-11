@@ -121,7 +121,9 @@ function LoginContent() {
       ? "로그인에 실패했습니다. 다시 시도해 주세요."
       : errorParam === "missing_code"
         ? "인증 코드가 없습니다. 다시 시도해 주세요."
-        : null;
+        : errorParam === "account_deleted"
+          ? "탈퇴 후 30일 이내에는 동일 계정으로 재가입이 불가합니다."
+          : null;
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimateIn(true), 80);
