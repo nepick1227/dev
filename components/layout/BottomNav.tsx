@@ -35,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/mypick",
-    label: "마이픽",
+    label: "내 픽",
     icon: (active) => (
       <BookmarkIcon
         size={24}

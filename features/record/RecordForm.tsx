@@ -31,6 +31,12 @@ export default function RecordForm() {
 
   // 기록 폼 상태
   const [visitedAt, setVisitedAt] = useState(() => new Date().toISOString().split("T")[0]);
+  const [visitedTime, setVisitedTime] = useState(() => {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, "0");
+    return `${h}:${m}`;
+  });
   const [recommendation, setRecommendation] = useState<RecommendationType | null>(null);
   const [comment, setComment] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -102,7 +108,7 @@ export default function RecordForm() {
       const recordData: RecordInsert = {
         user_id: user.id,
         store_id: storeResult.id,
-        visited_at: new Date(visitedAt).toISOString(),
+        visited_at: new Date(`${visitedAt}T${visitedTime}`).toISOString(),
         recommendation,
         comment,
         image_url: imageUrl,
@@ -123,6 +129,7 @@ export default function RecordForm() {
     recommendation,
     comment,
     visitedAt,
+    visitedTime,
     imageFile,
     isSubmitting,
     router,
@@ -167,19 +174,27 @@ export default function RecordForm() {
           )}
         </section>
 
-        {/* 방문일 */}
+        {/* 방문 일시 */}
         <section className="mb-6">
           <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
-            방문일
+            방문 일시
             <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
           </label>
-          <input
-            type="date"
-            value={visitedAt}
-            onChange={(e) => setVisitedAt(e.target.value)}
-            max={new Date().toISOString().split("T")[0]}
-            className="w-full rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-          />
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={visitedAt}
+              onChange={(e) => setVisitedAt(e.target.value)}
+              max={new Date().toISOString().split("T")[0]}
+              className="flex-3 min-w-0 rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+            />
+            <input
+              type="time"
+              value={visitedTime}
+              onChange={(e) => setVisitedTime(e.target.value)}
+              className="flex-2 min-w-0 rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+            />
+          </div>
         </section>
 
         {/* 추천도 */}
@@ -229,7 +244,7 @@ export default function RecordForm() {
             onChange={(e) => {
               if (e.target.value.length <= 500) setComment(e.target.value);
             }}
-            placeholder="방문 소감을 자유롭게 적어주세요"
+            placeholder="이 맛집에 대한 솔직한 이야기를 남겨 주세요"
             rows={4}
             className="w-full resize-none rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
           />
@@ -257,7 +272,7 @@ export default function RecordForm() {
       </div>
 
       {/* 저장 버튼 */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 border-t border-border bg-white px-5 pb-9 pt-3">
+      <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-white px-5 pb-9 pt-3">
         <Button
           fullWidth
           isLoading={isSubmitting}
