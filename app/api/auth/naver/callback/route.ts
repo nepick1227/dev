@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 
 /**
  * 네이버 OAuth 콜백 처리
@@ -14,9 +15,8 @@ export async function GET(request: Request) {
   const state = searchParams.get("state");
 
   // CSRF 검증
-  const savedState = request.headers
-    .get("cookie")
-    ?.match(/naver_oauth_state=([^;]+)/)?.[1];
+  const cookieStore = await cookies();
+  const savedState = cookieStore.get("naver_oauth_state")?.value;
 
   if (!code || !state || state !== savedState) {
     return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`);
