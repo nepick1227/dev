@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-/**
- * 네이버 로그인 세션 처리 페이지
- * token_hash를 받아 세션을 확립한 뒤 적절한 페이지로 이동
- */
-export default function NaverVerifyPage() {
+function NaverVerifyContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -49,5 +45,13 @@ export default function NaverVerifyPage() {
     <div className="page-container items-center justify-center">
       <p className="text-sm text-text-secondary">로그인 처리 중...</p>
     </div>
+  );
+}
+
+export default function NaverVerifyPage() {
+  return (
+    <Suspense>
+      <NaverVerifyContent />
+    </Suspense>
   );
 }
