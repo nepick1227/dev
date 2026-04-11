@@ -77,22 +77,22 @@ export async function GET(request: Request) {
       },
     });
 
-    // ── 4. 매직링크로 세션 생성 ──────────────────────
+    // ── 4. 매직링크 토큰 발급 후 클라이언트에서 세션 처리 ──
     const { data: linkData, error: linkError } =
       await adminClient.auth.admin.generateLink({
         type: "magiclink",
         email,
-        options: { redirectTo: `${origin}/auth/callback` },
       });
 
     if (linkError || !linkData) throw linkError;
 
-    // 매직링크로 리다이렉트 → Supabase가 세션 처리 → /auth/callback으로 이동
-    const response = NextResponse.redirect(linkData.properties.action_link);
+    // token_hash를 네이버 전용 verify 페이지로 전달
+    const tokenHash = linkData.properties.hashed_token;
+    const response = NextResponse.redirect(
+      `${origin}/auth/naver/verify?token_hash=${tokenHash}`
+    );
 
-    // state 쿠키 삭제
     response.cookies.delete("naver_oauth_state");
-
     return response;
   } catch (error) {
     console.error("[Naver Auth]", error);
