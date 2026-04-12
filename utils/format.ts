@@ -58,6 +58,30 @@ export function parseKakaoCategory(categoryGroupCode: string): "restaurant" | "c
 }
 
 /**
+ * Date → "오후 2:30" 형식 (내 픽 카드 시간 표시용)
+ */
+export function formatTime(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, "0");
+  const period = h < 12 ? "오전" : "오후";
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${period} ${hour}:${m}`;
+}
+
+/**
+ * Date → "2026.03.21 (토)" 형식 (내 픽 날짜 그룹 헤더용)
+ */
+export function formatDateGroupLabel(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${y}.${m}.${day} (${weekdays[d.getDay()]})`;
+}
+
+/**
  * 숫자 → "1.2km", "300m" 형식
  */
 export function formatDistance(meters: number): string {
