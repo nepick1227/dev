@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recordCount, setRecordCount] = useState(0);
+  const [providers, setProviders] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -33,8 +34,17 @@ export default function ProfilePage() {
           .eq("user_id", user.id),
       ]);
 
+      // 가입된 소셜 채널 목록 추출
+      // 네이버는 커스텀 이메일 플로우라 identities.provider가 "email"로 잡힘 → user_metadata.provider로 보완
+      const identityProviders = (user.identities ?? []).map((id) => id.provider);
+      const metaProvider = user.user_metadata?.provider as string | undefined;
+      const providers = metaProvider && !identityProviders.includes(metaProvider)
+        ? [...identityProviders, metaProvider]
+        : identityProviders;
+
       setProfile(profileRes.data as Profile | null);
       setRecordCount(countRes.count ?? 0);
+      setProviders(providers);
       setIsLoading(false);
     });
   }, [router]);
@@ -49,7 +59,7 @@ export default function ProfilePage() {
           </div>
         ) : profile ? (
           <div className="hide-scrollbar flex-1 overflow-y-auto">
-            <ProfileView profile={profile} recordCount={recordCount} />
+            <ProfileView profile={profile} recordCount={recordCount} providers={providers} />
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center text-text-secondary">

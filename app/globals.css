@@ -33,11 +33,12 @@ body {
 .page-container {
   max-width: 430px;
   margin: 0 auto;
-  min-height: 100dvh;
+  height: 100dvh;
   background: #ffffff;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 
 input, textarea, select { font-family: inherit; }

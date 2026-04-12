@@ -105,6 +105,50 @@ export function StarIcon({ size = 24, color = "currentColor", className }: IconP
   );
 }
 
+// ── 소셜 로그인 아이콘 ────────────────────────────────
+
+export function KakaoIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-label="카카오">
+      <rect width="20" height="20" rx="6" fill="#FEE500" />
+      <path
+        d="M10 4.5C7.0 4.5 4.5 6.4 4.5 8.7C4.5 10.2 5.5 11.5 7.0 12.3L6.4 14.5C6.4 14.6 6.5 14.7 6.6 14.6L9.1 13.0C9.4 13.0 9.7 13.1 10 13.1C13.0 13.1 15.5 11.1 15.5 8.7C15.5 6.4 13.0 4.5 10 4.5Z"
+        fill="#191919"
+      />
+    </svg>
+  );
+}
+
+export function NaverIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-label="네이버">
+      <rect width="20" height="20" rx="10" fill="#03C75A" />
+      <path d="M11.2 10.4L8.6 6H6V14H8.8V9.6L11.4 14H14V6H11.2V10.4Z" fill="white" />
+    </svg>
+  );
+}
+
+export function GoogleIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-label="구글">
+      <rect width="20" height="20" rx="6" fill="white" stroke="#E5E7EB" strokeWidth="1" />
+      <path d="M16.5 10.2C16.5 9.7 16.5 9.2 16.4 8.7H10V11.5H13.6C13.5 12.3 13.0 13.0 12.3 13.5V15.2H14.5C15.8 14.0 16.5 12.3 16.5 10.2Z" fill="#4285F4" />
+      <path d="M10 16.8C11.8 16.8 13.3 16.2 14.5 15.2L12.3 13.5C11.7 13.9 10.9 14.2 10 14.2C8.3 14.2 6.8 13.0 6.3 11.5H4.0V13.2C5.2 15.6 7.4 16.8 10 16.8Z" fill="#34A853" />
+      <path d="M6.3 11.5C6.1 10.9 6.0 10.3 6.0 9.7C6.0 9.1 6.1 8.5 6.3 7.9V6.2H4.0C3.4 7.4 3.0 8.5 3.0 9.7C3.0 10.9 3.4 12.0 4.0 13.2L6.3 11.5Z" fill="#FBBC04" />
+      <path d="M10 5.2C11.0 5.2 11.9 5.5 12.7 6.2L14.5 4.4C13.3 3.3 11.8 2.6 10 2.6C7.4 2.6 5.2 3.9 4.0 6.2L6.3 7.9C6.8 6.4 8.3 5.2 10 5.2Z" fill="#EA4335" />
+    </svg>
+  );
+}
+
+export function BellIcon({ size = 24, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M18 8C18 6.4 17.4 4.9 16.2 3.8C15 2.6 13.6 2 12 2C10.4 2 8.9 2.6 7.8 3.8C6.6 4.9 6 6.4 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13.7 21C13.5 21.3 13.3 21.6 13 21.8C12.7 22 12.4 22 12 22C11.7 22 11.3 22 11 21.8C10.7 21.6 10.5 21.3 10.3 21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon({ size = 24, color = "currentColor", className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">

@@ -14,6 +14,12 @@ declare namespace kakao.maps {
     setLevel(level: number): void;
     getLevel(): number;
     panTo(latlng: LatLng): void;
+    getBounds(): LatLngBounds;
+  }
+
+  class LatLngBounds {
+    getSouthWest(): LatLng;
+    getNorthEast(): LatLng;
   }
 
   class LatLng {
@@ -82,6 +88,19 @@ declare namespace kakao.maps {
     ROADMAP = 1,
     SKYVIEW = 2,
     HYBRID = 3,
+  }
+
+  namespace event {
+    function addListener(
+      target: Map | Marker | CustomOverlay,
+      type: string,
+      handler: (...args: unknown[]) => void
+    ): void;
+    function removeListener(
+      target: Map | Marker | CustomOverlay,
+      type: string,
+      handler: (...args: unknown[]) => void
+    ): void;
   }
 
   namespace services {

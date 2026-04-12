@@ -1,0 +1,53 @@
+"use client";
+
+import { useEffect } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+
+export default function WithdrawalDonePage() {
+  useEffect(() => {
+    // 탈퇴 완료 페이지 진입 시 로그아웃 처리
+    createClient().auth.signOut();
+  }, []);
+
+  return (
+    <div
+      className="flex h-screen flex-col items-center justify-center gap-4 px-6 text-center"
+      style={{ maxWidth: 430, margin: "0 auto", background: "white" }}
+    >
+      {/* 완료 아이콘 */}
+      <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-bg">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M5 12L10 17L19 8"
+            stroke="#16A34A"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
+      <h1 className="text-[20px] font-bold tracking-tight text-text-primary">
+        탈퇴가 완료되었어요
+      </h1>
+      <p className="text-[14px] leading-relaxed tracking-tight text-text-secondary">
+        그동안 네픽을 이용해 주셔서 감사합니다.
+      </p>
+
+      {/* 30일 재가입 안내 */}
+      <div className="rounded-xl bg-bg px-5 py-4">
+        <p className="text-[13px] leading-relaxed tracking-tight text-text-secondary">
+          동일 계정으로 <span className="font-semibold text-text-primary">30일 이내 재가입이 불가</span>합니다.
+        </p>
+      </div>
+
+      <Link
+        href="/auth/login"
+        className="mt-2 rounded-xl bg-primary px-10 py-3.5 text-[15px] font-bold text-white"
+      >
+        메인화면으로
+      </Link>
+    </div>
+  );
+}

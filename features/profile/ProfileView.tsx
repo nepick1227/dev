@@ -1,25 +1,37 @@
 "use client";
 
-import { useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
-import { EditIcon, UserIcon } from "@/components/ui/icons";
+import Modal from "@/components/ui/Modal";
+import { UserIcon, ChevronRightIcon, KakaoIcon, NaverIcon, GoogleIcon } from "@/components/ui/icons";
 import type { Profile } from "@/types/database";
 
 interface ProfileViewProps {
   profile: Profile;
   recordCount: number;
+  providers: string[];
 }
 
-/**
- * 프로필 조회 컴포넌트
- */
-export default function ProfileView({ profile, recordCount }: ProfileViewProps) {
+// 소셜 아이콘 매핑
+function SocialIcons({ providers }: { providers: string[] }) {
+  if (!providers.length) return null;
+  return (
+    <div className="flex items-center gap-1">
+      {providers.includes("kakao") && <KakaoIcon size={18} />}
+      {providers.includes("naver") && <NaverIcon size={18} />}
+      {providers.includes("google") && <GoogleIcon size={18} />}
+    </div>
+  );
+}
+
+export default function ProfileView({ profile, recordCount, providers }: ProfileViewProps) {
   const router = useRouter();
-  const { toast, showToast } = useToast();
+  const { toast } = useToast();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = useCallback(async () => {
     const supabase = createClient();
@@ -27,83 +39,136 @@ export default function ProfileView({ profile, recordCount }: ProfileViewProps) 
     router.replace("/auth/login");
   }, [router]);
 
-  const genderLabel: Record<string, string> = {
-    male: "남성",
-    female: "여성",
-    unknown: "미설정",
-  };
+  // 메뉴 섹션 구조
+  const menuSections = [
+    {
+      title: "설정",
+      items: [
+        { label: "권한 및 알림 설정", href: "/profile/permissions" },
+      ],
+    },
+    {
+      title: "고객센터",
+      items: [
+        { label: "사용설명서", externalUrl: "#" },
+        { label: "의견 보내기", externalUrl: "#" },
+        { label: "별점 남기기", externalUrl: "#" },
+      ],
+    },
+    {
+      title: "약관",
+      items: [
+        { label: "이용약관", externalUrl: "#" },
+        { label: "위치기반 서비스 이용약관", externalUrl: "#" },
+        { label: "개인정보 처리방침", externalUrl: "#" },
+      ],
+    },
+    {
+      title: "계정",
+      items: [
+        { label: "앱 버전", right: <span className="text-[13px] text-text-secondary">v0.1.0</span> },
+        { label: "로그아웃", onPress: () => setShowLogoutModal(true) },
+        { label: "회원탈퇴", href: "/profile/withdrawal", isDestructive: true },
+      ],
+    },
+  ];
 
   return (
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
+      {/* 로그아웃 확인 모달 */}
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        variant="dialog"
+        title="로그아웃"
+        footer={
+          <div className="flex gap-2.5">
+            <button
+              onClick={() => setShowLogoutModal(false)}
+              className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex-1 rounded-xl bg-primary py-3.5 text-[15px] font-semibold text-white"
+            >
+              확인
+            </button>
+          </div>
+        }
+      >
+        <p className="text-[14px] leading-relaxed text-text-secondary">
+          정말 로그아웃 하시겠어요?
+        </p>
+      </Modal>
+
       <div className="flex flex-1 flex-col">
         {/* 프로필 헤더 */}
-        <div className="relative px-5 pb-6 pt-8">
-          {/* 프로필 이미지 */}
+        <div className="px-6 pb-6 pt-8 text-center">
+          {/* 아바타 */}
           <div className="mb-4 flex justify-center">
             {profile.profile_image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profile.profile_image}
                 alt={profile.nickname ?? "프로필"}
-                className="h-20 w-20 rounded-full object-cover ring-2 ring-border"
+                className="h-19 w-19 rounded-full object-cover ring-2 ring-border"
               />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-bg ring-2 ring-border">
-                <UserIcon size={36} color="#9CA3AF" />
+              <div className="flex h-19 w-19 items-center justify-center rounded-full bg-bg ring-2 ring-border">
+                <UserIcon size={34} color="#9CA3AF" />
               </div>
             )}
           </div>
 
-          {/* 닉네임 + 편집 버튼 */}
-          <div className="flex items-center justify-center gap-2">
+          {/* 닉네임 + 소셜 아이콘 */}
+          <div className="mb-1.5 flex items-center justify-center gap-2">
             <h2 className="text-[20px] font-extrabold tracking-tight text-text-primary">
               {profile.nickname ?? "닉네임 없음"}
             </h2>
-            <Link
-              href="/profile/edit"
-              className="flex h-7 w-7 items-center justify-center rounded-full transition-colors active:bg-bg"
-              aria-label="프로필 편집"
-            >
-              <EditIcon size={18} color="#6B7280" />
-            </Link>
+            <SocialIcons providers={providers} />
           </div>
 
           {/* 한줄소개 */}
-          {profile.intro && (
-            <p className="mt-1 text-center text-[14px] tracking-tight text-text-secondary">
-              {profile.intro}
-            </p>
-          )}
+          <p className="mb-4 line-clamp-2 text-[14px] leading-relaxed tracking-tight text-text-secondary">
+            {profile.intro ?? "소개를 작성해보세요!"}
+          </p>
 
-          {/* 통계 */}
-          <div className="mt-5 flex justify-center">
-            <div className="flex flex-col items-center px-8">
-              <span className="text-[22px] font-extrabold text-primary">{recordCount}</span>
-              <span className="text-[12px] tracking-tight text-text-secondary">나의 픽</span>
+          {/* 기록 수 배지 */}
+          <div className="mb-4 flex justify-center">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-bg px-4 py-2">
+              <span className="text-[13px] tracking-tight text-text-secondary">나의 기록</span>
+              <span className="text-[15px] font-bold text-primary">{recordCount}</span>
             </div>
           </div>
+
+          {/* 프로필 수정 버튼 */}
+          <Link
+            href="/profile/edit"
+            className="inline-block rounded-xl border border-border px-6 py-2.5 text-[13px] font-semibold tracking-tight text-text-primary transition-colors active:bg-bg"
+          >
+            프로필 수정
+          </Link>
         </div>
 
         {/* 구분선 */}
         <div className="h-2 bg-bg" />
 
-        {/* 메뉴 */}
-        <div className="flex flex-col divide-y divide-border">
-          <MenuRow
-            label="프로필 편집"
-            href="/profile/edit"
-          />
-          <MenuRow
-            label="앱 버전"
-            right={<span className="text-[13px] text-text-secondary">v0.1.0</span>}
-          />
-          <MenuRow
-            label="로그아웃"
-            isDestructive
-            onClick={handleLogout}
-          />
+        {/* 메뉴 섹션 */}
+        <div className="px-5 pb-8">
+          {menuSections.map((section) => (
+            <div key={section.title}>
+              <p className="pb-1 pt-5 text-[12px] font-semibold tracking-tight text-text-secondary">
+                {section.title}
+              </p>
+              {section.items.map((item) => (
+                <MenuRow key={item.label} item={item} />
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </>
@@ -111,36 +176,56 @@ export default function ProfileView({ profile, recordCount }: ProfileViewProps) 
 }
 
 // ── 메뉴 행 ──────────────────────────────────────────────
-interface MenuRowProps {
+
+interface MenuItem {
   label: string;
   href?: string;
+  externalUrl?: string;
   right?: React.ReactNode;
   isDestructive?: boolean;
-  onClick?: () => void;
+  onPress?: () => void;
 }
 
-function MenuRow({ label, href, right, isDestructive, onClick }: MenuRowProps) {
+function MenuRow({ item }: { item: MenuItem }) {
   const content = (
-    <div className="flex items-center justify-between px-5 py-4">
-      <span
-        className="text-[15px] tracking-tight"
-        style={{ color: isDestructive ? "#D32F2F" : "#111827" }}
-      >
-        {label}
+    <div className="flex items-center justify-between py-4">
+      <span className={`text-[15px] tracking-tight ${item.isDestructive ? "text-primary" : "text-text-primary"}`}>
+        {item.label}
       </span>
-      {right ?? (
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-          <path d="M7 4L12 9L7 14" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
+      {item.right ?? <ChevronRightIcon size={16} color="#9CA3AF" />}
     </div>
   );
 
-  if (href) {
-    return <Link href={href} className="transition-colors active:bg-bg">{content}</Link>;
+  // 외부 링크
+  if (item.externalUrl) {
+    return (
+      <a
+        href={item.externalUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block border-b border-border transition-colors active:bg-bg"
+      >
+        {content}
+      </a>
+    );
   }
+
+  // 내부 링크
+  if (item.href) {
+    return (
+      <Link href={item.href} className="block border-b border-border transition-colors active:bg-bg">
+        {content}
+      </Link>
+    );
+  }
+
+  // 버튼 (onPress) 또는 텍스트만 (앱 버전 등)
   return (
-    <button onClick={onClick} className="w-full text-left transition-colors active:bg-bg">
+    <button
+      onClick={item.onPress}
+      className="w-full border-b border-border text-left transition-colors active:bg-bg disabled:cursor-default"
+      disabled={!item.onPress}
+    >
       {content}
     </button>
   );

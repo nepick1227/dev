@@ -73,9 +73,9 @@ export function getMarkerImageUrl(
   recommendation: "recommend" | "neutral" | "not_recommend"
 ): string {
   const map = {
-    recommend: "/markers/marker-recommend.png",
-    neutral: "/markers/marker-neutral.png",
-    not_recommend: "/markers/marker-not-recommend.png",
+    recommend: "/markers/marker-recommend.svg",
+    neutral: "/markers/marker-neutral.svg",
+    not_recommend: "/markers/marker-not-recommend.svg",
   };
   return map[recommendation];
 }
