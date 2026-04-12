@@ -1,45 +1,65 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import Toast from "@/components/ui/Toast";
 import MonthFilter from "./MonthFilter";
 import RecordCard from "./RecordCard";
 import Spinner from "@/components/ui/Spinner";
-import { formatYearMonth } from "@/utils/format";
+import { formatYearMonth, formatDateGroupLabel } from "@/utils/format";
 import type { RecordWithStore } from "@/types/database";
 
+type ViewMode = "timeline" | "monthly";
+
+// 날짜 문자열(YYYY-MM-DD) 기준으로 기록 그룹핑, 최신순 정렬
+function groupByDate(records: RecordWithStore[]): [string, RecordWithStore[]][] {
+  const map: Record<string, RecordWithStore[]> = {};
+  for (const r of records) {
+    const key = r.visited_at.split("T")[0];
+    if (!map[key]) map[key] = [];
+    map[key].push(r);
+  }
+  return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
+}
+
 /**
- * 마이픽 타임라인 컴포넌트
- * 월별 기록을 최신순으로 보여줍니다.
+ * 내 픽 타임라인 컴포넌트
+ * 타임라인(전체) / 월별 뷰 토글, 날짜별 그룹핑
  */
 export default function Timeline() {
+  const router = useRouter();
+  const { toast, showToast } = useToast();
+
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [records, setRecords] = useState<RecordWithStore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRecords = useCallback(async (month: Date) => {
+  const fetchRecords = useCallback(async (mode: ViewMode, month: Date) => {
     setIsLoading(true);
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      const yearMonth = formatYearMonth(month);
-      const startDate = `${yearMonth}-01`;
-      const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0)
-        .toISOString()
-        .split("T")[0];
-
-      const { data, error } = await supabase
+      let query = supabase
         .from("records")
         .select("*, stores(*)")
         .eq("user_id", user.id)
-        .gte("visited_at", startDate)
-        .lte("visited_at", endDate)
         .order("visited_at", { ascending: false });
 
+      if (mode === "monthly") {
+        const yearMonth = formatYearMonth(month);
+        const startDate = `${yearMonth}-01`;
+        const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0)
+          .toISOString()
+          .split("T")[0];
+        query = query.gte("visited_at", startDate).lte("visited_at", endDate);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       setRecords((data as RecordWithStore[]) ?? []);
     } catch {
@@ -50,35 +70,115 @@ export default function Timeline() {
   }, []);
 
   useEffect(() => {
-    fetchRecords(currentMonth);
-  }, [currentMonth, fetchRecords]);
+    fetchRecords(viewMode, currentMonth);
+  }, [viewMode, currentMonth, fetchRecords]);
+
+  const grouped = groupByDate(records);
 
   return (
-    <div className="flex flex-1 flex-col">
-      {/* 월 필터 */}
-      <div className="border-b border-border px-5 py-3">
-        <MonthFilter value={currentMonth} onChange={setCurrentMonth} />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <Toast message={toast.message} visible={toast.visible} />
+
+      {/* 상단 컨트롤 바 */}
+      <div className="shrink-0 border-b border-border bg-white px-5 py-3">
+        <div className="flex items-center justify-between">
+          {/* 타임라인 / 월별 토글 */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode("timeline")}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
+                viewMode === "timeline"
+                  ? "bg-primary text-white"
+                  : "bg-bg text-text-secondary"
+              }`}
+            >
+              타임라인
+            </button>
+            <button
+              onClick={() => setViewMode("monthly")}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
+                viewMode === "monthly"
+                  ? "bg-primary text-white"
+                  : "bg-bg text-text-secondary"
+              }`}
+            >
+              월별
+            </button>
+          </div>
+
+          {/* 내 픽 추가 버튼 */}
+          <button
+            onClick={() => router.push("/record")}
+            className="flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-[13px] font-semibold text-white"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M6 1.5V10.5M1.5 6H10.5" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            내 픽 추가
+          </button>
+        </div>
+
+        {/* 월별 모드일 때 월 필터 */}
+        {viewMode === "monthly" && (
+          <div className="mt-3">
+            <MonthFilter value={currentMonth} onChange={setCurrentMonth} />
+          </div>
+        )}
       </div>
 
       {/* 기록 목록 */}
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-16">
+        <div className="flex flex-1 items-center justify-center">
           <Spinner size={28} />
         </div>
       ) : records.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center py-16 text-text-secondary">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5">
           <p className="text-[40px]">🗺️</p>
-          <p className="mt-3 text-[15px] font-semibold">이 달의 기록이 없어요</p>
-          <p className="mt-1 text-[13px]">새로운 맛집을 기록해 보세요!</p>
+          <div className="text-center">
+            <p className="text-[15px] font-semibold tracking-tight text-text-primary">
+              {viewMode === "monthly" ? "이 달의 기록이 없어요" : "아직 기록이 없어요"}
+            </p>
+            <p className="mt-1 text-[13px] tracking-tight text-text-secondary">
+              {viewMode === "monthly" ? "다른 달을 선택하거나 새로 기록해 보세요!" : "새로운 맛집을 기록해 보세요!"}
+            </p>
+          </div>
+          {viewMode === "timeline" && (
+            <button
+              onClick={() => router.push("/record")}
+              className="mt-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-bold tracking-tight text-white"
+            >
+              첫 맛집 픽하기
+            </button>
+          )}
         </div>
       ) : (
-        <ul className="divide-y divide-border">
-          {records.map((record) => (
-            <li key={record.id}>
-              <RecordCard record={record} />
-            </li>
+        <div className="hide-scrollbar flex-1 overflow-y-auto">
+          {grouped.map(([date, dayRecords]) => (
+            <div key={date} className="px-5 pt-5">
+              {/* 날짜 그룹 헤더 */}
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-[13px] font-bold tracking-tight text-text-secondary">
+                  {formatDateGroupLabel(date)}
+                </span>
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-[12px] tracking-tight text-border">
+                  {dayRecords.length}건
+                </span>
+              </div>
+
+              {/* 해당 날짜 기록 */}
+              {dayRecords.map((record, idx) => (
+                <RecordCard
+                  key={record.id}
+                  record={record}
+                  isLast={idx === dayRecords.length - 1}
+                  onShowToast={showToast}
+                />
+              ))}
+            </div>
           ))}
-        </ul>
+          <div className="h-6" />
+        </div>
       )}
     </div>
   );
