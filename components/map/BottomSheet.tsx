@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 
 type SnapPoint = "collapsed" | "half" | "full";
 
@@ -14,36 +14,57 @@ interface BottomSheetProps {
   children: React.ReactNode;
   /** 핸들 바 아래 고정 헤더 영역 */
   header?: React.ReactNode;
+  /** 스냅 포인트 변경 시 콜백 */
+  onSnapChange?: (snap: SnapPoint) => void;
 }
 
 const SNAP_HEIGHTS: Record<SnapPoint, string> = {
   collapsed: "88px",
   half: "50vh",
-  full: "calc(100dvh - 56px)",
+  full: "calc(100dvh - 88px)",
 };
+
+export interface BottomSheetHandle {
+  collapse: () => void;
+  open: () => void;
+}
 
 /**
  * 드래그 가능한 바텀 시트 컴포넌트
  * 3단계 스냅 포인트(접힘 / 절반 / 전체)를 지원합니다.
  */
-export default function BottomSheet({
+const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function BottomSheet({
   defaultSnap = "half",
   children,
   header,
-}: BottomSheetProps) {
+  onSnapChange,
+}, ref) {
   const [snap, setSnap] = useState<SnapPoint>(defaultSnap);
+
+  const updateSnap = useCallback((next: SnapPoint) => {
+    setSnap(next);
+    onSnapChange?.(next);
+  }, [onSnapChange]);
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
   const dragStartSnap = useRef<SnapPoint>(defaultSnap);
+
+  useImperativeHandle(ref, () => ({
+    collapse: () => updateSnap("collapsed"),
+    open: () => updateSnap("half"),
+  }));
 
   const cycleSnap = useCallback((direction: "up" | "down") => {
     const order: SnapPoint[] = ["collapsed", "half", "full"];
     setSnap((prev) => {
       const idx = order.indexOf(prev);
-      if (direction === "up") return order[Math.min(idx + 1, order.length - 1)];
-      return order[Math.max(idx - 1, 0)];
+      const next = direction === "up"
+        ? order[Math.min(idx + 1, order.length - 1)]
+        : order[Math.max(idx - 1, 0)];
+      onSnapChange?.(next);
+      return next;
     });
-  }, []);
+  }, [onSnapChange]);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
@@ -83,7 +104,7 @@ export default function BottomSheet({
   return (
     <div
       ref={sheetRef}
-      className="absolute bottom-0 left-0 right-0 z-10 rounded-t-2xl bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out"
+      className="absolute bottom-0 left-0 right-0 z-30 rounded-t-2xl bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out"
       style={{ height: SNAP_HEIGHTS[snap] }}
     >
       {/* 드래그 핸들 */}
@@ -110,4 +131,6 @@ export default function BottomSheet({
       </div>
     </div>
   );
-}
+});
+
+export default BottomSheet;
