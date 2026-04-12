@@ -14,6 +14,12 @@ declare namespace kakao.maps {
     setLevel(level: number): void;
     getLevel(): number;
     panTo(latlng: LatLng): void;
+    getBounds(): LatLngBounds;
+  }
+
+  class LatLngBounds {
+    getSouthWest(): LatLng;
+    getNorthEast(): LatLng;
   }
 
   class LatLng {
