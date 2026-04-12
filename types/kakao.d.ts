@@ -90,6 +90,19 @@ declare namespace kakao.maps {
     HYBRID = 3,
   }
 
+  namespace event {
+    function addListener(
+      target: Map | Marker | CustomOverlay,
+      type: string,
+      handler: (...args: unknown[]) => void
+    ): void;
+    function removeListener(
+      target: Map | Marker | CustomOverlay,
+      type: string,
+      handler: (...args: unknown[]) => void
+    ): void;
+  }
+
   namespace services {
     class Places {
       keywordSearch(
