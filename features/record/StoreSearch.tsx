@@ -43,7 +43,7 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
 
     try {
       const res = await fetch(
-        `/api/kakao-search?query=${encodeURIComponent(keyword)}&category_group_code=FD6,CE7`
+        `/api/kakao-search?query=${encodeURIComponent(keyword)}`
       );
       if (!res.ok) throw new Error("검색 실패");
       const data = await res.json();

@@ -136,7 +136,7 @@ function upsertStores(rows) {
     const body = JSON.stringify(rows);
     const options = {
       hostname: new URL(SUPABASE_URL).hostname,
-      path: "/rest/v1/stores",
+      path: "/rest/v1/stores?on_conflict=kakao_id",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
