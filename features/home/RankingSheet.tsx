@@ -16,6 +16,7 @@ interface RankingSheetProps {
   onStoreClick?: (storeId: number) => void;
   onSnapChange?: (snap: "collapsed" | "half" | "full") => void;
   defaultSnap?: "collapsed" | "half" | "full";
+  regionName?: string;
 }
 
 export interface RankingSheetHandle {
@@ -28,7 +29,7 @@ export interface RankingSheetHandle {
  * 데이터 패칭 없이 props로 받은 데이터를 표시합니다.
  */
 const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function RankingSheet(
-  { stores, isLoading, page, totalPages, onPageChange, onStoreClick, onSnapChange, defaultSnap = "half" },
+  { stores, isLoading, page, totalPages, onPageChange, onStoreClick, onSnapChange, defaultSnap = "half", regionName },
   ref
 ) {
   const sheetRef = useRef<BottomSheetHandle>(null);
@@ -38,8 +39,17 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
     open: () => sheetRef.current?.open(),
   }));
 
+  const header = regionName ? (
+    <div className="px-5 pb-3 pt-1">
+      <p className="text-[11px] font-medium tracking-tight text-text-secondary">맛집 랭킹</p>
+      <p className="mt-0.5 text-[18px] font-extrabold tracking-tight text-text-primary leading-snug">
+        {regionName}
+      </p>
+    </div>
+  ) : undefined;
+
   return (
-    <BottomSheet ref={sheetRef} defaultSnap={defaultSnap} onSnapChange={onSnapChange} showClose>
+    <BottomSheet ref={sheetRef} defaultSnap={defaultSnap} onSnapChange={onSnapChange} showClose header={header}>
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Spinner size={28} />

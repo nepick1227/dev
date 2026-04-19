@@ -118,6 +118,22 @@ declare namespace kakao.maps {
         lat: number,
         callback: (result: AddressResult[], status: Status) => void
       ): void;
+      coord2RegionCode(
+        lng: number,
+        lat: number,
+        callback: (result: RegionResult[], status: Status) => void
+      ): void;
+    }
+
+    interface RegionResult {
+      region_type: "B" | "H";
+      region_1depth_name: string;
+      region_2depth_name: string;
+      region_3depth_name: string;
+      region_4depth_name: string;
+      code: string;
+      x: number;
+      y: number;
     }
 
     interface PlaceResult {

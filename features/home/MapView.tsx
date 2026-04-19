@@ -143,6 +143,7 @@ export default function MapView() {
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedRank, setSelectedRank] = useState<number>(0);
+  const [regionName, setRegionName] = useState<string>("");
   // 가게 카드가 한 번이라도 열린 적 있으면 닫힌 후 바텀시트를 collapsed로 복원
   const cardOpenedRef = useRef(false);
   const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
@@ -188,14 +189,39 @@ export default function MapView() {
     const pos = await getCurrentPosition();
     locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
 
+    // 지도 중심 좌표 → 시·구·동 이름 조회
+    const geocoder = new kakao.maps.services.Geocoder();
+    const fetchRegion = () => {
+      const center = map.getCenter();
+      geocoder.coord2RegionCode(center.getLng(), center.getLat(), (result, status) => {
+        if (status !== kakao.maps.services.Status.OK) return;
+        // 법정동(B): 시·구가 안정적으로 채워짐 / 행정동(H): 동 이름
+        const b = result.find((r) => r.region_type === "B");
+        const h = result.find((r) => r.region_type === "H");
+        const base = b ?? h;
+        if (!base) return;
+        const dong = h?.region_3depth_name || base.region_3depth_name;
+        const parts = [
+          base.region_1depth_name,
+          base.region_2depth_name,
+          dong,
+        ].filter(Boolean);
+        setRegionName(parts.join(" "));
+      });
+    };
+
     // zoom/drag 시 재조회 + 선택 카드 닫기
-    const refetch = () => fetchStores(getBounds(map), categoryRef.current, 0);
+    const refetch = () => {
+      fetchStores(getBounds(map), categoryRef.current, 0);
+      fetchRegion();
+    };
     kakao.maps.event.addListener(map, "zoom_changed", refetch);
     kakao.maps.event.addListener(map, "dragend", refetch);
     kakao.maps.event.addListener(map, "dragstart", () => setSelectedStore(null));
 
     // 초기 조회
-    refetch();
+    fetchStores(getBounds(map), categoryRef.current, 0);
+    fetchRegion();
   }, [fetchStores, getBounds]);
 
   const handleCategoryChange = useCallback((cat: Category) => {
@@ -255,6 +281,7 @@ export default function MapView() {
             onStoreClick={handleStoreClick}
             onSnapChange={setSnap}
             defaultSnap={sheetDefaultSnap}
+            regionName={regionName}
           />
 
           <button
