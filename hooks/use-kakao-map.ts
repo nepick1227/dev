@@ -8,6 +8,7 @@ interface UseKakaoMapOptions {
   lat?: number;
   lng?: number;
   level?: number;
+  onReady?: (map: kakao.maps.Map) => void;
 }
 
 interface UseKakaoMapReturn {
@@ -21,24 +22,30 @@ interface UseKakaoMapReturn {
  * map 인스턴스는 mapRef.current로 접근하세요 (이벤트 핸들러나 useEffect 내부에서만).
  *
  * @example
- * const { containerRef, mapRef, isReady } = useKakaoMap({ lat: 37.5, lng: 127.0 });
+ * const { containerRef, isReady } = useKakaoMap({ lat: 37.5, lng: 127.0, onReady: (map) => ... });
  * return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
  */
 export function useKakaoMap({
   lat = DEFAULT_LAT,
   lng = DEFAULT_LNG,
   level = DEFAULT_ZOOM,
+  onReady,
 }: UseKakaoMapOptions = {}): UseKakaoMapReturn {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
+    // Strict Mode 이중 실행 방지: 이미 지도가 생성된 경우 스킵
+    if (mapRef.current) return;
+
     let mounted = true;
 
     loadKakaoMapSDK()
       .then(() => {
-        if (!mounted || !containerRef.current) return;
+        if (!mounted || !containerRef.current || mapRef.current) return;
 
         const map = new kakao.maps.Map(containerRef.current, {
           center: new kakao.maps.LatLng(lat, lng),
@@ -47,6 +54,7 @@ export function useKakaoMap({
 
         mapRef.current = map;
         setIsReady(true);
+        onReadyRef.current?.(map);
       })
       .catch((err) => {
         console.error("[useKakaoMap] SDK 로드 실패:", err);

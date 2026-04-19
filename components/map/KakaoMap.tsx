@@ -26,12 +26,7 @@ export default function KakaoMap({
   overlay,
   onReady,
 }: KakaoMapProps) {
-  const { containerRef, mapRef, isReady } = useKakaoMap({ lat, lng, level });
-
-  // 지도 준비 완료 시 콜백 호출
-  if (isReady && mapRef.current && onReady) {
-    onReady(mapRef.current);
-  }
+  const { containerRef, isReady } = useKakaoMap({ lat, lng, level, onReady });
 
   return (
     <div className={`relative ${className}`}>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, PlusIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
+import { HomeIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
 
 interface NavItem {
   href: string;
@@ -15,37 +15,21 @@ const NAV_ITEMS: NavItem[] = [
     href: "/home",
     label: "홈",
     icon: (active) => (
-      <HomeIcon
-        size={24}
-        color={active ? "#D32F2F" : "#9CA3AF"}
-      />
-    ),
-  },
-  {
-    href: "/record",
-    label: "기록",
-    icon: (active) => (
-      <PlusIcon size={24} color={active ? "#D32F2F" : "#9CA3AF"} />
+      <HomeIcon size={24} color={active ? "#D32F2F" : "#9CA3AF"} />
     ),
   },
   {
     href: "/mypick",
     label: "내 픽",
     icon: (active) => (
-      <BookmarkIcon
-        size={24}
-        color={active ? "#D32F2F" : "#9CA3AF"}
-      />
+      <BookmarkIcon size={24} color={active ? "#D32F2F" : "#9CA3AF"} />
     ),
   },
   {
     href: "/profile",
     label: "프로필",
     icon: (active) => (
-      <UserIcon
-        size={24}
-        color={active ? "#D32F2F" : "#9CA3AF"}
-      />
+      <UserIcon size={24} color={active ? "#D32F2F" : "#9CA3AF"} />
     ),
   },
 ];
