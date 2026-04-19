@@ -113,32 +113,38 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
       style={{ height: SNAP_HEIGHTS[snap] }}
     >
       {/* 드래그 핸들 */}
-      <div className="relative">
-        <div
-          className="flex cursor-grab touch-none justify-center pb-2 pt-3 active:cursor-grabbing"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          role="button"
-          aria-label="시트 크기 조절"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowUp") cycleSnap("up");
-            if (e.key === "ArrowDown") cycleSnap("down");
-          }}
-        >
+      <div
+        className="flex cursor-grab touch-none items-center px-3 pb-2 pt-3 active:cursor-grabbing"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        role="button"
+        aria-label="시트 크기 조절"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowUp") cycleSnap("up");
+          if (e.key === "ArrowDown") cycleSnap("down");
+        }}
+      >
+        {/* 좌측 여백 (닫기 버튼 너비와 동일하게 균형 맞춤) */}
+        <div className="w-7 shrink-0" />
+        {/* 핸들바 (정중앙) */}
+        <div className="flex flex-1 justify-center">
           <div className="h-1 w-10 rounded-full bg-border" />
         </div>
-        {showClose && snap !== "collapsed" && (
+        {/* 닫기 버튼 */}
+        {showClose && snap !== "collapsed" ? (
           <button
-            onClick={() => updateSnap("collapsed")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-bg"
+            onClick={(e) => { e.stopPropagation(); updateSnap("collapsed"); }}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg"
             aria-label="닫기"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 2L12 12M12 2L2 12" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
+        ) : (
+          <div className="w-7 shrink-0" />
         )}
       </div>
 
