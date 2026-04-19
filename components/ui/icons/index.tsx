@@ -140,6 +140,15 @@ export function GoogleIcon({ size = 20 }: { size?: number }) {
   );
 }
 
+export function TrashIcon({ size = 24, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M3 6H5H21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19 6V20C19 20.5 18.8 21 18.4 21.4C18 21.8 17.5 22 17 22H7C6.5 22 6 21.8 5.6 21.4C5.2 21 5 20.5 5 20V6M8 6V4C8 3.5 8.2 3 8.6 2.6C9 2.2 9.5 2 10 2H14C14.5 2 15 2.2 15.4 2.6C15.8 3 16 3.5 16 4V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function BellIcon({ size = 24, color = "currentColor", className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">

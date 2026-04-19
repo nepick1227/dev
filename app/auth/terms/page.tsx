@@ -128,7 +128,7 @@ export default function TermsPage() {
 
   const handleStart = useCallback(() => {
     if (!allRequired) return;
-    router.push("/auth/signup");
+    router.replace("/auth/signup");
   }, [allRequired, router]);
 
   if (detailKey) {

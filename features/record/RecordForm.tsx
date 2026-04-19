@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
-import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import StoreSearch, { type KakaoPlace } from "./StoreSearch";
 import ImageUpload from "./ImageUpload";
@@ -13,7 +12,6 @@ import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
 import { parseKakaoCategory } from "@/utils/format";
 import { validateComment } from "@/utils/validation";
 import {
-  recommendationColors,
   recommendationLabels,
   recommendationEmojis,
   type RecommendationType,
@@ -156,7 +154,7 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
         {/* 가게 선택 */}
         <section className="mb-6">
           <p className="mb-2 text-[14px] font-semibold tracking-tight text-text-primary">
-            가게 선택
+            맛집 이름
             <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
           </p>
 
@@ -202,15 +200,16 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
               type="time"
               value={visitedTime}
               onChange={(e) => setVisitedTime(e.target.value)}
+              step="600"
               className="flex-2 min-w-0 rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
             />
           </div>
         </section>
 
-        {/* 추천도 */}
+        {/* 추천 여부 */}
         <section className="mb-6">
           <p className="mb-2.5 text-[14px] font-semibold tracking-tight text-text-primary">
-            추천도
+            추천 여부
             <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
           </p>
           <div className="flex gap-3">
@@ -222,17 +221,15 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
                   onClick={() => setRecommendation(opt)}
                   className="flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200"
                   style={{
-                    borderColor: isSelected ? recommendationColors[opt] : "#E5E7EB",
-                    background: isSelected
-                      ? `${recommendationColors[opt]}22`
-                      : "#F9FAFB",
+                    borderColor: isSelected ? "#D32F2F" : "#E5E7EB",
+                    background: isSelected ? "#D32F2F22" : "#F9FAFB",
                   }}
                 >
                   <span className="text-[22px]">{recommendationEmojis[opt]}</span>
                   <span
                     className="text-[12px] font-semibold tracking-tight"
                     style={{
-                      color: isSelected ? recommendationColors[opt] : "#9CA3AF",
+                      color: isSelected ? "#D32F2F" : "#9CA3AF",
                     }}
                   >
                     {recommendationLabels[opt]}

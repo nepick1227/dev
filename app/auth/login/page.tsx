@@ -91,7 +91,7 @@ function KakaoButton({
   return (
     <div className="relative">
       {isRecent && !isLoading && (
-        <div className="absolute -top-2.5 left-4 z-10 rounded-full bg-primary px-3 py-0.5 text-[11px] font-bold tracking-tight text-white">
+        <div className="absolute -top-2.5 left-4 z-10 rounded-full bg-text-primary px-3 py-0.5 text-[11px] font-bold tracking-tight text-white">
           최근 로그인
         </div>
       )}
@@ -212,7 +212,7 @@ function LoginContent() {
 
         <div className="relative">
           {lastProvider === "naver" && !isLoading && (
-            <div className="absolute -top-2.5 left-4 z-10 rounded-full bg-[#03C75A] px-3 py-0.5 text-[11px] font-bold tracking-tight text-white">
+            <div className="absolute -top-2.5 left-4 z-10 rounded-full bg-text-primary px-3 py-0.5 text-[11px] font-bold tracking-tight text-white">
               최근 로그인
             </div>
           )}
@@ -252,9 +252,6 @@ function LoginContent() {
           </button>
         </div>
 
-        <p className="mt-1 text-center text-[12px] tracking-tight text-text-secondary">
-          로그인 시 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주됩니다.
-        </p>
       </div>
     </div>
   );

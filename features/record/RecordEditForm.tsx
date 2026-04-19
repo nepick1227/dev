@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
+import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import { MapPinIcon, CameraIcon, CloseIcon } from "@/components/ui/icons";
+import { MapPinIcon, CameraIcon, CloseIcon, TrashIcon } from "@/components/ui/icons";
 import { validateImageFile, validateComment } from "@/utils/validation";
-import { recommendationColors, recommendationLabels, recommendationEmojis, type RecommendationType } from "@/styles/tokens";
+import { recommendationLabels, recommendationEmojis, type RecommendationType } from "@/styles/tokens";
 import type { RecordWithStore } from "@/types/database";
 
 interface RecordEditFormProps {
@@ -37,6 +38,8 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지 미리보기 URL
@@ -53,7 +56,7 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
   }, [previewUrl]);
 
   const commentError = comment.length > 0 ? validateComment(comment).message : "";
-  const canSubmit = validateComment(comment).isValid && !isSubmitting;
+  const canSubmit = validateComment(comment).isValid && !isSubmitting && !isDeleting;
 
   const handleImageChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,11 +140,66 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
     showToast,
   ]);
 
+  const handleDelete = useCallback(async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error();
+
+      const { error } = await supabase
+        .from("records")
+        .delete()
+        .eq("id", record.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      showToast("기록이 삭제되었습니다");
+      setTimeout(() => router.push("/mypick"), 800);
+    } catch {
+      showToast("삭제에 실패했습니다. 다시 시도해 주세요.");
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  }, [isDeleting, record.id, router, showToast]);
+
   const recommendationOptions: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
 
   return (
     <>
       <Toast message={toast.message} visible={toast.visible} />
+
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => !isDeleting && setShowDeleteModal(false)}
+        variant="dialog"
+        title="기록을 삭제하시겠어요?"
+        footer={
+          <div className="flex gap-2.5">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+              className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary disabled:opacity-50"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="flex-1 rounded-xl bg-primary py-3.5 text-[15px] font-semibold text-white disabled:opacity-50"
+            >
+              {isDeleting ? "삭제 중..." : "삭제"}
+            </button>
+          </div>
+        }
+      >
+        <p className="text-[14px] leading-relaxed text-text-secondary">
+          삭제된 기록은 복구할 수 없습니다.
+        </p>
+      </Modal>
 
       <div className="hide-scrollbar flex-1 overflow-y-auto px-5 pb-32 pt-6">
         {/* 가게 정보 (read-only) */}
@@ -174,15 +232,16 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
               type="time"
               value={visitedTime}
               onChange={(e) => setVisitedTime(e.target.value)}
+              step="600"
               className="flex-2 min-w-0 rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
             />
           </div>
         </section>
 
-        {/* 추천도 */}
+        {/* 추천 여부 */}
         <section className="mb-6">
           <p className="mb-2.5 text-[14px] font-semibold tracking-tight text-text-primary">
-            추천도
+            추천 여부
           </p>
           <div className="flex gap-3">
             {recommendationOptions.map((opt) => {
@@ -193,14 +252,14 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
                   onClick={() => setRecommendation(opt)}
                   className="flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200"
                   style={{
-                    borderColor: isSelected ? recommendationColors[opt] : "#E5E7EB",
-                    background: isSelected ? `${recommendationColors[opt]}22` : "#F9FAFB",
+                    borderColor: isSelected ? "#D32F2F" : "#E5E7EB",
+                    background: isSelected ? "#D32F2F22" : "#F9FAFB",
                   }}
                 >
                   <span className="text-[22px]">{recommendationEmojis[opt]}</span>
                   <span
                     className="text-[12px] font-semibold tracking-tight"
-                    style={{ color: isSelected ? recommendationColors[opt] : "#9CA3AF" }}
+                    style={{ color: isSelected ? "#D32F2F" : "#9CA3AF" }}
                   >
                     {recommendationLabels[opt]}
                   </span>
@@ -280,11 +339,23 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
         </section>
       </div>
 
-      {/* 저장 버튼 */}
+      {/* 저장/삭제 버튼 */}
       <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-white px-5 pb-9 pt-3">
-        <Button fullWidth isLoading={isSubmitting} disabled={!canSubmit} onClick={handleSubmit}>
-          수정 완료
-        </Button>
+        <div className="flex gap-2.5">
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            disabled={isSubmitting || isDeleting}
+            className="flex h-13 w-13 shrink-0 items-center justify-center rounded-xl border border-border bg-bg transition-colors active:bg-border disabled:opacity-50"
+            aria-label="기록 삭제"
+          >
+            <TrashIcon size={20} color="#9CA3AF" />
+          </button>
+          <div className="flex-1">
+            <Button fullWidth isLoading={isSubmitting} disabled={!canSubmit} onClick={handleSubmit}>
+              수정 완료
+            </Button>
+          </div>
+        </div>
       </div>
     </>
   );

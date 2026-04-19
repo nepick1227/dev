@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
 import Header from "@/components/layout/Header";
-import BottomNav from "@/components/layout/BottomNav";
 import Modal from "@/components/ui/Modal";
 import RecordForm from "@/features/record/RecordForm";
 
@@ -59,10 +58,9 @@ export default function RecordPage() {
         showBack
         onBack={handleBack}
       />
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <RecordForm onContentChange={handleContentChange} />
       </div>
-      <BottomNav />
     </PageContainer>
   );
 }
