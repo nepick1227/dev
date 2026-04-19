@@ -128,6 +128,9 @@ export default function MapView() {
   const [category, setCategory] = useState<Category>("all");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  // 가게 카드가 한 번이라도 열린 적 있으면 닫힌 후 바텀시트를 collapsed로 복원
+  const cardOpenedRef = useRef(false);
+  const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
 
   const isMapFull = snap === "collapsed";
   const buttonBottom = isMapFull ? "96px" : "calc(50vh + 8px)";
@@ -151,9 +154,9 @@ export default function MapView() {
     markersRef.current = stores.map((store, idx) => {
       const marker = createRankMarker(mapRef.current!, store, page * 20 + idx + 1);
       kakao.maps.event.addListener(marker, "click", () => {
+        cardOpenedRef.current = true;
         setSelectedStore(store);
         mapRef.current?.panTo(new kakao.maps.LatLng(store.lat, store.lng));
-        rankingRef.current?.collapse();
       });
       return marker;
     });
@@ -197,8 +200,8 @@ export default function MapView() {
     const store = stores.find((s) => s.id === storeId);
     if (store && mapRef.current) {
       mapRef.current.panTo(new kakao.maps.LatLng(store.lat, store.lng));
+      cardOpenedRef.current = true;
       setSelectedStore(store);
-      rankingRef.current?.collapse();
     }
   }, [stores]);
 
@@ -220,34 +223,39 @@ export default function MapView() {
         onPlaceSelect={handlePlaceSelect}
       />
 
-      <RankingSheet
-        ref={rankingRef}
-        stores={stores}
-        isLoading={isLoading}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={goToPage}
-        onStoreClick={handleStoreClick}
-        onSnapChange={setSnap}
-      />
+      {/* 가게 카드가 없을 때만 바텀시트·토글 버튼 표시 */}
+      {!selectedStore && (
+        <>
+          <RankingSheet
+            ref={rankingRef}
+            stores={stores}
+            isLoading={isLoading}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            onStoreClick={handleStoreClick}
+            onSnapChange={setSnap}
+            defaultSnap={sheetDefaultSnap}
+          />
+
+          <button
+            onClick={handleRankingToggle}
+            className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+            style={{ bottom: buttonBottom, transition: "bottom 0.3s ease-out" }}
+          >
+            <span>{isMapFull ? "🏆" : "🗺️"}</span>
+            <span>{buttonLabel}</span>
+          </button>
+        </>
+      )}
 
       {/* 선택된 가게 카드 */}
-      {selectedStore && snap === "collapsed" && (
+      {selectedStore && (
         <SelectedStoreCard
           store={selectedStore}
           onClose={() => setSelectedStore(null)}
         />
       )}
-
-      {/* 랭킹보기 / 지도보기 버튼 */}
-      <button
-        onClick={handleRankingToggle}
-        className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
-        style={{ bottom: buttonBottom, transition: "bottom 0.3s ease-out" }}
-      >
-        <span>{isMapFull ? "🏆" : "🗺️"}</span>
-        <span>{buttonLabel}</span>
-      </button>
     </div>
   );
 }
