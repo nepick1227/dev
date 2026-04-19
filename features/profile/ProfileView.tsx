@@ -66,7 +66,6 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
     {
       title: "계정",
       items: [
-        { label: "앱 버전", right: <span className="text-[13px] text-text-secondary">v0.1.0</span> },
         { label: "로그아웃", onPress: () => setShowLogoutModal(true) },
         { label: "회원탈퇴", href: "/profile/withdrawal", isDestructive: true },
       ],
@@ -158,7 +157,7 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
         <div className="h-2 bg-bg" />
 
         {/* 메뉴 섹션 */}
-        <div className="px-5 pb-8">
+        <div className="px-5 pb-4">
           {menuSections.map((section) => (
             <div key={section.title}>
               <p className="pb-1 pt-5 text-[12px] font-semibold tracking-tight text-text-secondary">
@@ -169,6 +168,11 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
               ))}
             </div>
           ))}
+        </div>
+
+        {/* 앱 버전 */}
+        <div className="px-5 pb-8 pt-2 text-center">
+          <span className="text-[12px] tracking-tight text-text-secondary">v0.1.0</span>
         </div>
       </div>
     </>

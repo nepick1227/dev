@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 
 type SnapPoint = "collapsed" | "half" | "full";
 
@@ -16,6 +16,8 @@ interface BottomSheetProps {
   header?: React.ReactNode;
   /** 스냅 포인트 변경 시 콜백 */
   onSnapChange?: (snap: SnapPoint) => void;
+  /** 닫기 버튼 표시 여부 */
+  showClose?: boolean;
 }
 
 const SNAP_HEIGHTS: Record<SnapPoint, string> = {
@@ -38,13 +40,17 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
   children,
   header,
   onSnapChange,
+  showClose = false,
 }, ref) {
   const [snap, setSnap] = useState<SnapPoint>(defaultSnap);
 
   const updateSnap = useCallback((next: SnapPoint) => {
     setSnap(next);
-    onSnapChange?.(next);
-  }, [onSnapChange]);
+  }, []);
+
+  useEffect(() => {
+    onSnapChange?.(snap);
+  }, [snap]); // eslint-disable-line react-hooks/exhaustive-deps
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
   const dragStartSnap = useRef<SnapPoint>(defaultSnap);
@@ -61,10 +67,9 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
       const next = direction === "up"
         ? order[Math.min(idx + 1, order.length - 1)]
         : order[Math.max(idx - 1, 0)];
-      onSnapChange?.(next);
       return next;
     });
-  }, [onSnapChange]);
+  }, []);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
@@ -108,20 +113,33 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
       style={{ height: SNAP_HEIGHTS[snap] }}
     >
       {/* 드래그 핸들 */}
-      <div
-        className="flex cursor-grab touch-none justify-center pb-2 pt-3 active:cursor-grabbing"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-        role="button"
-        aria-label="시트 크기 조절"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowUp") cycleSnap("up");
-          if (e.key === "ArrowDown") cycleSnap("down");
-        }}
-      >
-        <div className="h-1 w-10 rounded-full bg-border" />
+      <div className="relative">
+        <div
+          className="flex cursor-grab touch-none justify-center pb-2 pt-3 active:cursor-grabbing"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          role="button"
+          aria-label="시트 크기 조절"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowUp") cycleSnap("up");
+            if (e.key === "ArrowDown") cycleSnap("down");
+          }}
+        >
+          <div className="h-1 w-10 rounded-full bg-border" />
+        </div>
+        {showClose && snap !== "collapsed" && (
+          <button
+            onClick={() => updateSnap("collapsed")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-bg"
+            aria-label="닫기"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2L12 12M12 2L2 12" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {header && <div className="px-4 pb-2">{header}</div>}

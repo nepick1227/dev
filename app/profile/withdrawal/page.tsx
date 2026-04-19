@@ -10,7 +10,7 @@ export default function WithdrawalPage() {
 
   return (
     <PageContainer>
-      <Header title="탈퇴하기" showBack onBack={() => router.back()} />
+      <Header title="회원탈퇴" showBack onBack={() => router.back()} />
       <div className="flex flex-1 flex-col overflow-y-auto">
         <WithdrawalView />
       </div>

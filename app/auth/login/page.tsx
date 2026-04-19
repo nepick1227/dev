@@ -66,6 +66,18 @@ function Spinner({ color = "#fff", size = 20 }: { color?: string; size?: number 
   );
 }
 
+const LAST_PROVIDER_KEY = "nepick_last_provider";
+
+function getLastProvider(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(LAST_PROVIDER_KEY);
+}
+
+function setLastProvider(provider: string) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LAST_PROVIDER_KEY, provider);
+}
+
 // ── 카카오 로그인 버튼 ──────────────────────────────
 function KakaoButton({
   isLoading,
@@ -114,6 +126,11 @@ function LoginContent() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
+  const [lastProvider, setLastProviderState] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLastProviderState(getLastProvider());
+  }, []);
 
   // URL 에러 파라미터를 직접 메시지로 변환 (effect 불필요)
   const errorMessage =
@@ -135,6 +152,7 @@ function LoginContent() {
   const handleOAuthLogin = useCallback(async (provider: "kakao" | "google") => {
     setIsLoading(true);
     setLoginError(null);
+    setLastProvider(provider);
 
     const supabase = createClient();
     const redirectTo = `${window.location.origin}/auth/callback`;
@@ -190,42 +208,52 @@ function LoginContent() {
           <p className="mb-1 text-center text-[13px] text-primary">{errorMessage ?? loginError}</p>
         )}
 
-        <KakaoButton isLoading={isLoading} isRecent={true} onClick={() => handleOAuthLogin("kakao")} />
+        <KakaoButton isLoading={isLoading} isRecent={lastProvider === "kakao"} onClick={() => handleOAuthLogin("kakao")} />
 
-        <button
-          onClick={() => { window.location.href = "/api/auth/naver"; }}
-          disabled={isLoading}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#03C75A] py-4 text-[15px] font-semibold tracking-tight text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
-          aria-label="네이버로 시작하기"
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M13.57 10.69L6.14 2H2v16h4.43V9.31L13.86 18H18V2h-4.43v8.69z" fill="white" />
-          </svg>
-          네이버로 시작하기
-        </button>
+        <div className="relative">
+          {lastProvider === "naver" && !isLoading && (
+            <div className="absolute -top-2.5 left-4 z-10 rounded-full bg-[#03C75A] px-3 py-0.5 text-[11px] font-bold tracking-tight text-white">
+              최근 로그인
+            </div>
+          )}
+          <button
+            onClick={() => { setLastProvider("naver"); window.location.href = "/api/auth/naver"; }}
+            disabled={isLoading}
+            className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#03C75A] py-4 text-[15px] font-semibold tracking-tight text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="네이버로 시작하기"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M13.57 10.69L6.14 2H2v16h4.43V9.31L13.86 18H18V2h-4.43v8.69z" fill="white" />
+            </svg>
+            네이버로 시작하기
+          </button>
+        </div>
 
-        <button
-          onClick={() => handleOAuthLogin("google")}
-          disabled={isLoading}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-white py-4 text-[15px] font-semibold tracking-tight text-text-primary transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
-          aria-label="구글로 시작하기"
-        >
-          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-            <path fill="none" d="M0 0h48v48H0z"/>
-          </svg>
-          구글로 시작하기
-        </button>
+        <div className="relative">
+          {lastProvider === "google" && !isLoading && (
+            <div className="absolute -top-2.5 left-4 z-10 rounded-full bg-text-primary px-3 py-0.5 text-[11px] font-bold tracking-tight text-white">
+              최근 로그인
+            </div>
+          )}
+          <button
+            onClick={() => handleOAuthLogin("google")}
+            disabled={isLoading}
+            className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-white py-4 text-[15px] font-semibold tracking-tight text-text-primary transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="구글로 시작하기"
+          >
+            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            구글로 시작하기
+          </button>
+        </div>
 
         <p className="mt-1 text-center text-[12px] tracking-tight text-text-secondary">
-          로그인 시{" "}
-          <span className="underline underline-offset-2 cursor-pointer">이용약관</span>
-          {" "}및{" "}
-          <span className="underline underline-offset-2 cursor-pointer">개인정보 처리방침</span>에
-          동의하는 것으로 간주됩니다.
+          로그인 시 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주됩니다.
         </p>
       </div>
     </div>

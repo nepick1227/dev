@@ -39,6 +39,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/auth/terms`);
   }
 
-  // 기존 유저 → 홈으로
-  return NextResponse.redirect(`${origin}${next}`);
+  // 기존 유저 → 홈으로 (welcome 파라미터로 토스트 트리거)
+  const homeUrl = next === "/home" ? `${origin}/home?welcome=1` : `${origin}${next}`;
+  return NextResponse.redirect(homeUrl);
 }

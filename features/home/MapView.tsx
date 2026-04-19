@@ -1,11 +1,19 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import KakaoMap from "@/components/map/KakaoMap";
 import RankingSheet, { type RankingSheetHandle } from "./RankingSheet";
 import MapOverlay from "./MapOverlay";
 import { useMapStores, type MapBounds } from "@/hooks/use-map-stores";
 import { getCurrentPosition } from "@/lib/kakao/map";
+import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
+import {
+  recommendationColors,
+  recommendationLabels,
+  recommendationEmojis,
+  type RecommendationType,
+} from "@/styles/tokens";
 import type { Category } from "./types";
 import type { Store } from "@/types/database";
 
@@ -54,6 +62,59 @@ function createLocationDot(map: kakao.maps.Map, lat: number, lng: number): kakao
   });
 }
 
+// ── 선택된 가게 카드 오버레이 ────────────────────────────
+
+function SelectedStoreCard({ store, onClose }: { store: Store; onClose: () => void }) {
+  const router = useRouter();
+  const recommendation: RecommendationType =
+    store.pick_count === 0
+      ? "neutral"
+      : store.score / store.pick_count >= 1.5
+        ? "recommend"
+        : store.score / store.pick_count >= 0.8
+          ? "neutral"
+          : "not_recommend";
+
+  return (
+    <div className="absolute left-4 right-4 z-40 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.16)] p-4" style={{ bottom: "144px" }}>
+      <div className="flex items-start gap-3">
+        <div className="flex-1 overflow-hidden">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="truncate text-[15px] font-bold tracking-tight text-text-primary">
+              {store.name}
+            </span>
+            <span
+              className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-tight text-white"
+              style={{ background: recommendationColors[recommendation] }}
+            >
+              {recommendationEmojis[recommendation]} {recommendationLabels[recommendation]}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 mb-2">
+            <MapPinIcon size={12} color="#9CA3AF" />
+            <span className="truncate text-[12px] tracking-tight text-text-secondary">
+              {store.road_address ?? store.address}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-bold text-text-primary">{store.pick_count}</span>
+            <span className="text-[11px] text-text-secondary">픽</span>
+            <button
+              onClick={() => router.push(`/record?store_kakao_id=${store.kakao_id}&store_name=${encodeURIComponent(store.name)}`)}
+              className="ml-auto rounded-full bg-primary px-3 py-1.5 text-[12px] font-bold text-white"
+            >
+              기록+
+            </button>
+          </div>
+        </div>
+        <button onClick={onClose} className="shrink-0 p-0.5" aria-label="닫기">
+          <CloseIcon size={18} color="#9CA3AF" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── MapView ──────────────────────────────────────────────
 
 export default function MapView() {
@@ -66,6 +127,7 @@ export default function MapView() {
 
   const [category, setCategory] = useState<Category>("all");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   const isMapFull = snap === "collapsed";
   const buttonBottom = isMapFull ? "96px" : "calc(50vh + 8px)";
@@ -86,9 +148,15 @@ export default function MapView() {
   useEffect(() => {
     if (!mapRef.current) return;
     markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = stores.map((store, idx) =>
-      createRankMarker(mapRef.current!, store, page * 20 + idx + 1)
-    );
+    markersRef.current = stores.map((store, idx) => {
+      const marker = createRankMarker(mapRef.current!, store, page * 20 + idx + 1);
+      kakao.maps.event.addListener(marker, "click", () => {
+        setSelectedStore(store);
+        mapRef.current?.panTo(new kakao.maps.LatLng(store.lat, store.lng));
+        rankingRef.current?.collapse();
+      });
+      return marker;
+    });
   }, [stores, page]);
 
   const handleMapReady = useCallback(async (map: kakao.maps.Map) => {
@@ -100,10 +168,11 @@ export default function MapView() {
     const pos = await getCurrentPosition();
     locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
 
-    // zoom/drag 시 재조회
+    // zoom/drag 시 재조회 + 선택 카드 닫기
     const refetch = () => fetchStores(getBounds(map), categoryRef.current, 0);
     kakao.maps.event.addListener(map, "zoom_changed", refetch);
     kakao.maps.event.addListener(map, "dragend", refetch);
+    kakao.maps.event.addListener(map, "dragstart", () => setSelectedStore(null));
 
     // 초기 조회
     refetch();
@@ -128,6 +197,8 @@ export default function MapView() {
     const store = stores.find((s) => s.id === storeId);
     if (store && mapRef.current) {
       mapRef.current.panTo(new kakao.maps.LatLng(store.lat, store.lng));
+      setSelectedStore(store);
+      rankingRef.current?.collapse();
     }
   }, [stores]);
 
@@ -159,6 +230,14 @@ export default function MapView() {
         onStoreClick={handleStoreClick}
         onSnapChange={setSnap}
       />
+
+      {/* 선택된 가게 카드 */}
+      {selectedStore && snap === "collapsed" && (
+        <SelectedStoreCard
+          store={selectedStore}
+          onClose={() => setSelectedStore(null)}
+        />
+      )}
 
       {/* 랭킹보기 / 지도보기 버튼 */}
       <button

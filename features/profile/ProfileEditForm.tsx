@@ -98,7 +98,16 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     nicknameStatus !== "taken" &&
     nicknameStatus !== "checking";
 
-  const canSubmit = isNicknameOk && introValidation.isValid && !isSubmitting;
+  const hasChanges =
+    nickname.trim() !== (profile.nickname ?? "").trim() ||
+    intro !== (profile.intro ?? "") ||
+    birthDate !== (profile.birth_date ?? "") ||
+    gender !== (profile.gender ?? "unknown") ||
+    isPublic !== (profile.is_public ?? true) ||
+    imageFile !== null ||
+    removeImage;
+
+  const canSubmit = isNicknameOk && introValidation.isValid && !isSubmitting && hasChanges;
 
   // ── 이미지 핸들러 ──────────────────────────────────────
   const handleImageChange = useCallback(
@@ -266,7 +275,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
               if (e.target.value.length <= 100) setIntro(e.target.value);
             }}
             placeholder="자신을 소개해 보세요"
-            rows={3}
+            rows={2}
             className="w-full resize-none rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
           />
           <div className="mt-1.5 flex justify-end px-1">

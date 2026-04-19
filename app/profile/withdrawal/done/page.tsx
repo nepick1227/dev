@@ -35,13 +35,6 @@ export default function WithdrawalDonePage() {
         그동안 네픽을 이용해 주셔서 감사합니다.
       </p>
 
-      {/* 30일 재가입 안내 */}
-      <div className="rounded-xl bg-bg px-5 py-4">
-        <p className="text-[13px] leading-relaxed tracking-tight text-text-secondary">
-          동일 계정으로 <span className="font-semibold text-text-primary">30일 이내 재가입이 불가</span>합니다.
-        </p>
-      </div>
-
       <Link
         href="/auth/login"
         className="mt-2 rounded-xl bg-primary px-10 py-3.5 text-[15px] font-bold text-white"

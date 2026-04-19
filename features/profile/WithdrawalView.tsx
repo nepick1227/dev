@@ -128,7 +128,7 @@ export default function WithdrawalView() {
           탈퇴 사유를 알려주세요
         </h2>
         <p className="mb-6 text-[13px] tracking-tight text-text-secondary">
-          서비스 개선에 참고하겠습니다.
+          소중한 의견을 서비스 개선에 반영하겠습니다
         </p>
 
         <div className="flex flex-col gap-2.5">
@@ -143,20 +143,27 @@ export default function WithdrawalView() {
         </div>
 
         {reason === "기타" && (
-          <textarea
-            value={customText}
-            onChange={(e) => setCustomText(e.target.value)}
-            placeholder="탈퇴 사유를 입력해 주세요"
-            rows={3}
-            className="mt-3 w-full resize-none rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[14px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-          />
+          <div className="mt-3">
+            <textarea
+              value={customText}
+              onChange={(e) => { if (e.target.value.length <= 500) setCustomText(e.target.value); }}
+              placeholder="탈퇴 사유를 입력해 주세요"
+              rows={3}
+              className="w-full resize-none rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[14px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+            />
+            <div className="mt-1.5 flex justify-end px-1">
+              <span className="text-[12px]" style={{ color: customText.length >= 500 ? "#D32F2F" : "#6B7280" }}>
+                {customText.length}/500
+              </span>
+            </div>
+          </div>
         )}
       </div>
 
       {/* 하단 버튼 */}
       <div className="fixed bottom-0 left-1/2 flex w-full max-w-107.5 -translate-x-1/2 gap-2.5 border-t border-border bg-white px-5 pb-9 pt-3">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/home")}
           className="flex-1 rounded-xl border border-border py-4 text-[15px] font-semibold text-text-secondary"
         >
           이전

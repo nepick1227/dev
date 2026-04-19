@@ -82,7 +82,7 @@ export default function SignupPage() {
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>(null);
   const [nicknameMessage, setNicknameMessage] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState<Gender | null>(null);
+  const [gender, setGender] = useState<Gender | null>("unknown");
   const [intro, setIntro] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
@@ -114,10 +114,10 @@ export default function SignupPage() {
 
     if ((count ?? 0) > 0) {
       setNicknameStatus("taken");
-      setNicknameMessage("이미 사용 중인 닉네임이에요.");
+      setNicknameMessage("이미 사용 중인 닉네임이에요");
     } else {
       setNicknameStatus("ok");
-      setNicknameMessage("사용 가능한 닉네임이에요!");
+      setNicknameMessage("사용 가능한 닉네임이에요");
     }
   }, []);
 
@@ -177,8 +177,10 @@ export default function SignupPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error();
 
-      // 소셜 계정 display_name을 닉네임 기본값으로 사용
-      const defaultNickname = user.user_metadata?.full_name?.slice(0, 12) ?? `유저${user.id.slice(0, 4)}`;
+      // 소셜 계정 display_name을 닉네임 기본값으로 사용 (영숫자+한글만, 최대 12자)
+      const rawName = (user.user_metadata?.full_name as string | undefined) ?? "";
+      const cleanName = rawName.replace(/[^가-힣a-zA-Z0-9]/g, "").slice(0, 12);
+      const defaultNickname = cleanName.length >= 2 ? cleanName : `유저${user.id.slice(-4)}`;
       await supabase.from("profiles").upsert({ id: user.id, nickname: defaultNickname });
 
       showToast("환영합니다 🎉");

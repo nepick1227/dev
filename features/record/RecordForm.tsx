@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
+import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import StoreSearch, { type KakaoPlace } from "./StoreSearch";
 import ImageUpload from "./ImageUpload";
@@ -19,10 +20,14 @@ import {
 } from "@/styles/tokens";
 import type { StoreInsert, RecordInsert } from "@/types/database";
 
+interface RecordFormProps {
+  onContentChange?: (hasContent: boolean) => void;
+}
+
 /**
  * 맛집 기록 폼 컴포넌트
  */
-export default function RecordForm() {
+export default function RecordForm({ onContentChange }: RecordFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -34,19 +39,24 @@ export default function RecordForm() {
   const [visitedTime, setVisitedTime] = useState(() => {
     const now = new Date();
     const h = String(now.getHours()).padStart(2, "0");
-    const m = String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, "0");
+    const m = String(Math.floor(now.getMinutes() / 10) * 10).padStart(2, "0");
     return `${h}:${m}`;
   });
-  const [recommendation, setRecommendation] = useState<RecommendationType | null>(null);
+  const [recommendation, setRecommendation] = useState<RecommendationType>("recommend");
   const [comment, setComment] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const hasContent = selectedPlace !== null || comment.trim().length > 0 || imageFile !== null;
+
+  useEffect(() => {
+    onContentChange?.(hasContent);
+  }, [hasContent, onContentChange]);
 
   const commentError =
     comment.length > 0 ? validateComment(comment).message : "";
   const canSubmit =
     selectedPlace !== null &&
-    recommendation !== null &&
     validateComment(comment).isValid &&
     !isSubmitting;
 
@@ -177,7 +187,7 @@ export default function RecordForm() {
         {/* 방문 일시 */}
         <section className="mb-6">
           <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
-            방문 일시
+            방문일시
             <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
           </label>
           <div className="flex gap-2">

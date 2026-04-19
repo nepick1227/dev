@@ -1,4 +1,5 @@
 import { validation } from "@/styles/tokens";
+import { containsBannedWord } from "@/banned-words";
 
 /**
  * 입력값 검증 유틸리티
@@ -12,7 +13,7 @@ export interface ValidationResult {
 }
 
 /**
- * 닉네임 검증 (2~12자, 특수문자 금지)
+ * 닉네임 검증 (2~12자, _ 만 특수문자 허용, 금칙어 포함 금지)
  */
 export function validateNickname(nickname: string): ValidationResult {
   const trimmed = nickname.trim();
@@ -26,8 +27,17 @@ export function validateNickname(nickname: string): ValidationResult {
   if (trimmed.length > validation.nickname.max) {
     return { isValid: false, message: `닉네임은 ${validation.nickname.max}자 이하여야 합니다` };
   }
-  if (/[^가-힣a-zA-Z0-9_.]/.test(trimmed)) {
-    return { isValid: false, message: "닉네임에 사용할 수 없는 문자가 포함되어 있습니다" };
+  if (/[^가-힣a-zA-Z0-9_]/.test(trimmed)) {
+    return { isValid: false, message: "특수문자는 _만 사용할 수 있습니다" };
+  }
+  if (trimmed.startsWith("_") || trimmed.endsWith("_")) {
+    return { isValid: false, message: "닉네임은 _로 시작하거나 끝날 수 없습니다" };
+  }
+  if (/__/.test(trimmed)) {
+    return { isValid: false, message: "밑줄(_)은 연속해서 사용할 수 없습니다" };
+  }
+  if (containsBannedWord(trimmed)) {
+    return { isValid: false, message: "사용할 수 없는 단어가 포함되어 있습니다" };
   }
 
   return { isValid: true, message: "사용 가능한 닉네임입니다" };

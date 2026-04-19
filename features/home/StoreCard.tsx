@@ -1,4 +1,7 @@
+"use client";
+
 import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { MapPinIcon } from "@/components/ui/icons";
 import {
   recommendationColors,
@@ -18,9 +21,16 @@ interface StoreCardProps {
  * 가게 카드 컴포넌트 (랭킹 목록용)
  */
 export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
+  const router = useRouter();
+
   const handleClick = useCallback(() => {
     onClick?.(store.id);
   }, [store.id, onClick]);
+
+  const handleRecord = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/record?store_kakao_id=${store.kakao_id}&store_name=${encodeURIComponent(store.name)}`);
+  }, [store.kakao_id, store.name, router]);
 
   // score → 추천도 계산
   const recommendation: RecommendationType =
@@ -37,9 +47,12 @@ export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
   const badgeEmoji = recommendationEmojis[recommendation];
 
   return (
-    <button
+    <div
+      className="flex w-full items-center gap-3 px-5 py-4 transition-colors active:bg-bg"
       onClick={handleClick}
-      className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors active:bg-bg"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && handleClick()}
     >
       {/* 순위 */}
       {rank !== undefined && (
@@ -57,7 +70,6 @@ export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
           <span className="truncate text-[15px] font-semibold tracking-tight text-text-primary">
             {store.name}
           </span>
-          {/* 추천도 뱃지 */}
           <span
             className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-tight text-white"
             style={{ background: badgeColor }}
@@ -73,11 +85,19 @@ export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
         </div>
       </div>
 
-      {/* 기록 수 */}
-      <div className="shrink-0 text-right">
-        <span className="text-[13px] font-bold text-text-primary">{store.pick_count}</span>
-        <span className="text-[11px] text-text-secondary">픽</span>
+      {/* 우측: 픽 수 + 기록 버튼 */}
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <div className="text-right">
+          <span className="text-[13px] font-bold text-text-primary">{store.pick_count}</span>
+          <span className="text-[11px] text-text-secondary">픽</span>
+        </div>
+        <button
+          onClick={handleRecord}
+          className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-white"
+        >
+          기록+
+        </button>
       </div>
-    </button>
+    </div>
   );
 }
