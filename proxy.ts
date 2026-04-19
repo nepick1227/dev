@@ -30,8 +30,12 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // /auth/* 및 /api/auth/* 경로는 항상 허용 (소셜 로그인 콜백 포함)
-  if (pathname.startsWith("/auth") || pathname.startsWith("/api/auth")) {
+  // /auth/*, /api/auth/*, /api/kakao-search 경로는 항상 허용
+  if (
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/kakao-search")
+  ) {
     // 이미 로그인된 유저가 /auth/login 접근 시 홈으로
     if (pathname === "/auth/login" && user) {
       return NextResponse.redirect(new URL("/home", request.url));

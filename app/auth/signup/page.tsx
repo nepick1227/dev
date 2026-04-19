@@ -104,7 +104,7 @@ export default function SignupPage() {
     }
 
     setNicknameStatus("checking");
-    setNicknameMessage("확인 중...");
+    setNicknameMessage("중복 확인 중");
 
     const supabase = createClient();
     const { count } = await supabase

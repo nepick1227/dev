@@ -13,7 +13,7 @@ export interface ValidationResult {
 }
 
 /**
- * 닉네임 검증 (2~12자, _ 만 특수문자 허용, 금칙어 포함 금지)
+ * 닉네임 검증 (2~12자, _ . 만 특수문자 허용, 금칙어 포함 금지)
  */
 export function validateNickname(nickname: string): ValidationResult {
   const trimmed = nickname.trim();
@@ -22,25 +22,25 @@ export function validateNickname(nickname: string): ValidationResult {
     return { isValid: false, message: "닉네임을 입력해주세요" };
   }
   if (trimmed.length < validation.nickname.min) {
-    return { isValid: false, message: `닉네임은 ${validation.nickname.min}자 이상이어야 합니다` };
+    return { isValid: false, message: `닉네임 ${validation.nickname.min}자 이상 입력해 주세요` };
   }
   if (trimmed.length > validation.nickname.max) {
-    return { isValid: false, message: `닉네임은 ${validation.nickname.max}자 이하여야 합니다` };
+    return { isValid: false, message: `닉네임 ${validation.nickname.max}자 이하로 입력해 주세요` };
   }
-  if (/[^가-힣a-zA-Z0-9_]/.test(trimmed)) {
-    return { isValid: false, message: "특수문자는 _만 사용할 수 있습니다" };
+  if (/[^가-힣a-zA-Z0-9_.]/.test(trimmed)) {
+    return { isValid: false, message: "특수문자는 _ 와 . 만 사용할 수 있어요" };
   }
-  if (trimmed.startsWith("_") || trimmed.endsWith("_")) {
-    return { isValid: false, message: "닉네임은 _로 시작하거나 끝날 수 없습니다" };
+  if (trimmed.startsWith(".") || trimmed.endsWith(".")) {
+    return { isValid: false, message: ". 는 첫 글자와 마지막 글자에 사용할 수 없어요" };
   }
-  if (/__/.test(trimmed)) {
-    return { isValid: false, message: "밑줄(_)은 연속해서 사용할 수 없습니다" };
+  if (/\.\./.test(trimmed)) {
+    return { isValid: false, message: ". 는 연속해서 사용할 수 없어요" };
   }
   if (containsBannedWord(trimmed)) {
-    return { isValid: false, message: "사용할 수 없는 단어가 포함되어 있습니다" };
+    return { isValid: false, message: "사용할 수 없는 단어가 포함되어 있어요" };
   }
 
-  return { isValid: true, message: "사용 가능한 닉네임입니다" };
+  return { isValid: true, message: "사용 가능한 닉네임이에요" };
 }
 
 /**

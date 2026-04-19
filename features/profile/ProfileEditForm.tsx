@@ -394,21 +394,21 @@ function NicknameHint({ nickname, formatResult, status, isOriginal }: NicknameHi
   if (status === "checking") {
     return (
       <p className="mt-1.5 text-[12px] tracking-tight text-text-secondary">
-        중복 확인 중...
+        중복 확인 중
       </p>
     );
   }
   if (status === "taken") {
     return (
       <p className="mt-1.5 text-[12px] tracking-tight text-primary">
-        이미 사용 중인 닉네임입니다
+        이미 사용 중인 닉네임이에요
       </p>
     );
   }
   if (status === "available") {
     return (
       <p className="mt-1.5 text-[12px] tracking-tight text-green-700">
-        사용 가능한 닉네임입니다
+        사용 가능한 닉네임이에요
       </p>
     );
   }
