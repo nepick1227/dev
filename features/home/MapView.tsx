@@ -7,13 +7,7 @@ import RankingSheet, { type RankingSheetHandle } from "./RankingSheet";
 import MapOverlay from "./MapOverlay";
 import { useMapStores, type MapBounds } from "@/hooks/use-map-stores";
 import { getCurrentPosition } from "@/lib/kakao/map";
-import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
-import {
-  recommendationColors,
-  recommendationLabels,
-  recommendationEmojis,
-  type RecommendationType,
-} from "@/styles/tokens";
+import { CloseIcon } from "@/components/ui/icons";
 import type { Category } from "./types";
 import type { Store } from "@/types/database";
 
@@ -64,51 +58,71 @@ function createLocationDot(map: kakao.maps.Map, lat: number, lng: number): kakao
 
 // ── 선택된 가게 카드 오버레이 ────────────────────────────
 
-function SelectedStoreCard({ store, onClose }: { store: Store; onClose: () => void }) {
+function SelectedStoreCard({ store, rank, onClose }: { store: Store; rank: number; onClose: () => void }) {
   const router = useRouter();
-  const recommendation: RecommendationType =
-    store.pick_count === 0
-      ? "neutral"
-      : store.score / store.pick_count >= 1.5
-        ? "recommend"
-        : store.score / store.pick_count >= 0.8
-          ? "neutral"
-          : "not_recommend";
+  const [copied, setCopied] = useState(false);
+  const address = store.road_address ?? store.address;
+  const categoryLabel = store.category === "cafe" ? "카페" : "음식점";
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // silent
+    }
+  }, [address]);
 
   return (
-    <div className="absolute left-4 right-4 z-40 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.16)] p-4" style={{ bottom: "144px" }}>
-      <div className="flex items-start gap-3">
-        <div className="flex-1 overflow-hidden">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="truncate text-[15px] font-bold tracking-tight text-text-primary">
-              {store.name}
-            </span>
-            <span
-              className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-tight text-white"
-              style={{ background: recommendationColors[recommendation] }}
-            >
-              {recommendationEmojis[recommendation]} {recommendationLabels[recommendation]}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 mb-2">
-            <MapPinIcon size={12} color="#9CA3AF" />
-            <span className="truncate text-[12px] tracking-tight text-text-secondary">
-              {store.road_address ?? store.address}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] font-bold text-text-primary">{store.pick_count}</span>
-            <span className="text-[11px] text-text-secondary">픽</span>
-            <button
-              onClick={() => router.push(`/record?store_kakao_id=${store.kakao_id}&store_name=${encodeURIComponent(store.name)}`)}
-              className="ml-auto rounded-full bg-primary px-3 py-1.5 text-[12px] font-bold text-white"
-            >
-              기록+
-            </button>
-          </div>
-        </div>
-        <button onClick={onClose} className="shrink-0 p-0.5" aria-label="닫기">
+    <div
+      className="absolute left-3 right-3 z-40 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.16)] p-4"
+      style={{ bottom: "28px" }}
+    >
+      {/* 1행: 순위 배지 + 카테고리 배지 + 닫기 */}
+      <div className="mb-2 flex items-center gap-1.5">
+        <span className="rounded-full bg-[#FEE2E2] px-2 py-0.5 text-[11px] font-extrabold tracking-tight text-primary">
+          {rank}위
+        </span>
+        <span className="rounded-full bg-bg px-2 py-0.5 text-[11px] font-semibold tracking-tight text-text-secondary">
+          {categoryLabel}
+        </span>
+        <button onClick={onClose} className="ml-auto p-0.5" aria-label="닫기">
           <CloseIcon size={18} color="#9CA3AF" />
+        </button>
+      </div>
+
+      {/* 2행: 가게명 + 픽 수 */}
+      <div className="mb-2 flex items-center gap-2">
+        <span className="flex-1 truncate text-[15px] font-bold tracking-tight text-text-primary">
+          {store.name}
+        </span>
+        <span className="shrink-0 text-[13px] font-bold text-primary">{store.pick_count}</span>
+        <span className="shrink-0 text-[11px] text-text-secondary">픽</span>
+      </div>
+
+      {/* 3행: 주소 + 복사 버튼 + 기록 버튼 */}
+      <div className="flex items-center gap-2">
+        <span className="flex-1 truncate text-[12px] tracking-tight text-text-secondary">
+          {address}
+        </span>
+        <button onClick={handleCopy} className="shrink-0 rounded-full bg-bg p-1.5" aria-label="주소 복사">
+          {copied ? (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12L10 17L19 8" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <rect x="9" y="9" width="13" height="13" rx="2" stroke="#9CA3AF" strokeWidth="2"/>
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="#9CA3AF" strokeWidth="2"/>
+            </svg>
+          )}
+        </button>
+        <button
+          onClick={() => router.push(`/record?store_kakao_id=${store.kakao_id}&store_name=${encodeURIComponent(store.name)}`)}
+          className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-[12px] font-bold text-white"
+        >
+          기록+
         </button>
       </div>
     </div>
@@ -128,6 +142,7 @@ export default function MapView() {
   const [category, setCategory] = useState<Category>("all");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [selectedRank, setSelectedRank] = useState<number>(0);
   // 가게 카드가 한 번이라도 열린 적 있으면 닫힌 후 바텀시트를 collapsed로 복원
   const cardOpenedRef = useRef(false);
   const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
@@ -152,10 +167,12 @@ export default function MapView() {
     if (!mapRef.current) return;
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = stores.map((store, idx) => {
-      const marker = createRankMarker(mapRef.current!, store, page * 20 + idx + 1);
+      const rank = page * 20 + idx + 1;
+      const marker = createRankMarker(mapRef.current!, store, rank);
       kakao.maps.event.addListener(marker, "click", () => {
         cardOpenedRef.current = true;
         setSelectedStore(store);
+        setSelectedRank(rank);
         mapRef.current?.panTo(new kakao.maps.LatLng(store.lat, store.lng));
       });
       return marker;
@@ -197,13 +214,15 @@ export default function MapView() {
   }, []);
 
   const handleStoreClick = useCallback((storeId: number) => {
-    const store = stores.find((s) => s.id === storeId);
+    const idx = stores.findIndex((s) => s.id === storeId);
+    const store = stores[idx];
     if (store && mapRef.current) {
       mapRef.current.panTo(new kakao.maps.LatLng(store.lat, store.lng));
       cardOpenedRef.current = true;
       setSelectedStore(store);
+      setSelectedRank(page * 20 + idx + 1);
     }
-  }, [stores]);
+  }, [stores, page]);
 
   const handleRankingToggle = useCallback(() => {
     if (isMapFull) {
@@ -253,6 +272,7 @@ export default function MapView() {
       {selectedStore && (
         <SelectedStoreCard
           store={selectedStore}
+          rank={selectedRank}
           onClose={() => setSelectedStore(null)}
         />
       )}

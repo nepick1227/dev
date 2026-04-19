@@ -2,13 +2,6 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { MapPinIcon } from "@/components/ui/icons";
-import {
-  recommendationColors,
-  recommendationLabels,
-  recommendationEmojis,
-  type RecommendationType,
-} from "@/styles/tokens";
 import type { Store } from "@/types/database";
 
 interface StoreCardProps {
@@ -32,23 +25,11 @@ export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
     router.push(`/record?store_kakao_id=${store.kakao_id}&store_name=${encodeURIComponent(store.name)}`);
   }, [store.kakao_id, store.name, router]);
 
-  // score → 추천도 계산
-  const recommendation: RecommendationType =
-    store.pick_count === 0
-      ? "neutral"
-      : store.score / store.pick_count >= 1.5
-        ? "recommend"
-        : store.score / store.pick_count >= 0.8
-          ? "neutral"
-          : "not_recommend";
-
-  const badgeColor = recommendationColors[recommendation];
-  const badgeLabel = recommendationLabels[recommendation];
-  const badgeEmoji = recommendationEmojis[recommendation];
+  const categoryLabel = store.category === "cafe" ? "카페" : "음식점";
 
   return (
     <div
-      className="flex w-full items-center gap-3 px-5 py-4 transition-colors active:bg-bg"
+      className="flex w-full items-center gap-3 px-5 py-3.5 transition-colors active:bg-bg"
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -65,38 +46,26 @@ export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
       )}
 
       {/* 가게 정보 */}
-      <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-[15px] font-semibold tracking-tight text-text-primary">
+      <div className="flex flex-1 flex-col gap-1 overflow-hidden">
+        {/* 가게명 + 카테고리 배지 */}
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-[14px] font-semibold tracking-tight text-text-primary">
             {store.name}
           </span>
-          <span
-            className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-tight text-white"
-            style={{ background: badgeColor }}
-          >
-            {badgeEmoji} {badgeLabel}
+          <span className="shrink-0 rounded-full bg-bg px-1.5 py-0.5 text-[10px] font-medium tracking-tight text-text-secondary">
+            {categoryLabel}
           </span>
         </div>
-        <div className="flex items-center gap-1">
-          <MapPinIcon size={12} color="#9CA3AF" />
-          <span className="truncate text-[12px] tracking-tight text-text-secondary">
-            {store.road_address ?? store.address}
-          </span>
-        </div>
+        {/* 주소 */}
+        <span className="truncate text-[12px] tracking-tight text-text-secondary">
+          {store.road_address ?? store.address}
+        </span>
       </div>
 
-      {/* 우측: 픽 수 + 기록 버튼 */}
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
-        <div className="text-right">
-          <span className="text-[13px] font-bold text-text-primary">{store.pick_count}</span>
-          <span className="text-[11px] text-text-secondary">픽</span>
-        </div>
-        <button
-          onClick={handleRecord}
-          className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-white"
-        >
-          기록+
-        </button>
+      {/* 우측: 픽 수 */}
+      <div className="flex shrink-0 items-center gap-0.5">
+        <span className="text-[13px] font-bold text-primary">{store.pick_count}</span>
+        <span className="text-[11px] text-text-secondary">픽</span>
       </div>
     </div>
   );
