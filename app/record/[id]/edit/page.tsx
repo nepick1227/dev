@@ -23,9 +23,10 @@ export default function RecordEditPage() {
       return;
     }
 
-    const supabase = createClient();
+    const load = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
 
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/auth/login");
         return;
@@ -45,7 +46,9 @@ export default function RecordEditPage() {
 
       setRecord(data as RecordWithStore);
       setIsLoading(false);
-    });
+    };
+
+    load();
   }, [id, router]);
 
   return (

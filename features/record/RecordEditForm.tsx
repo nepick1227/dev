@@ -119,7 +119,7 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
 
       if (error) throw error;
 
-      showToast("수정이 완료되었습니다");
+      showToast("기록을 수정했어요!");
       setTimeout(() => router.push("/mypick"), 800);
     } catch {
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");

@@ -18,9 +18,10 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
+    const load = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
 
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/auth/login");
         return;
@@ -34,7 +35,6 @@ export default function ProfilePage() {
           .eq("user_id", user.id),
       ]);
 
-      // 가입된 소셜 채널 목록 추출
       // 네이버는 커스텀 이메일 플로우라 identities.provider가 "email"로 잡힘 → user_metadata.provider로 보완
       const identityProviders = (user.identities ?? []).map((id) => id.provider);
       const metaProvider = user.user_metadata?.provider as string | undefined;
@@ -46,7 +46,9 @@ export default function ProfilePage() {
       setRecordCount(countRes.count ?? 0);
       setProviders(providers);
       setIsLoading(false);
-    });
+    };
+
+    load();
   }, [router]);
 
   return (

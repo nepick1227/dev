@@ -10,7 +10,7 @@ export interface Profile {
   id: string; // UUID (Supabase Auth user.id)
   nickname: string | null;
   birth_date: string | null; // ISO date string (YYYY-MM-DD)
-  gender: "male" | "female" | "unknown" | null;
+  gender: "male" | "female" | "unknown";
   intro: string | null;
   profile_image: string | null; // Supabase Storage public URL
   is_public: boolean;

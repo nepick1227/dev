@@ -181,7 +181,7 @@ export default function SignupPage() {
       const rawName = (user.user_metadata?.full_name as string | undefined) ?? "";
       const cleanName = rawName.replace(/[^가-힣a-zA-Z0-9]/g, "").slice(0, 12);
       const defaultNickname = cleanName.length >= 2 ? cleanName : `유저${user.id.slice(-4)}`;
-      await supabase.from("profiles").upsert({ id: user.id, nickname: defaultNickname });
+      await supabase.from("profiles").upsert({ id: user.id, nickname: defaultNickname, gender: "unknown" });
 
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);

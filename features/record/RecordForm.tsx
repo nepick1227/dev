@@ -150,7 +150,7 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto px-5 pb-32">
+      <div className="hide-scrollbar flex-1 overflow-y-auto px-5 pt-6 pb-32">
         {/* 가게 선택 */}
         <section className="mb-6">
           <p className="mb-2 text-[14px] font-semibold tracking-tight text-text-primary">

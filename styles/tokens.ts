@@ -12,7 +12,7 @@ export const colors = {
   // 추천도 3단계
   recommend: "#DF6767",
   neutral: "#EA9C9C",
-  notRecommend: "#FFD6D6",
+  notRecommend: "#9CA3AF",
 
   // 텍스트
   textPrimary: "#111827",

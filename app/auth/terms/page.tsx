@@ -10,8 +10,8 @@ const TERMS_CONTENT = {
     content: `제1조 (목적)\n본 약관은 네픽(NePick) 서비스의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제2조 (정의)\n1. "서비스"란 회사가 제공하는 맛집 기록 및 추천 서비스를 의미합니다.\n2. "이용자"란 본 약관에 따라 서비스를 이용하는 자를 말합니다.\n\n제3조 (서비스의 제공)\n1. 회사는 다음과 같은 서비스를 제공합니다.\n  - 맛집 기록 및 관리 서비스\n  - 위치 기반 맛집 추천 서비스\n  - 맛집 랭킹 서비스\n2. 서비스는 연중무휴, 1일 24시간 제공을 원칙으로 합니다.`,
   },
   privacy: {
-    title: "개인정보 처리방침",
-    content: `네픽(NePick)은 개인정보보호법에 따라 이용자의 개인정보를 보호합니다.\n\n1. 개인정보의 처리 목적\n- 회원가입 및 관리: 회원제 서비스 이용에 따른 본인 확인\n- 서비스 제공: 맛집 기록, 추천, 위치 기반 서비스 제공\n\n2. 수집하는 개인정보 항목\n- 필수항목: 이메일 주소, 소셜 로그인 식별 정보\n- 선택항목: 닉네임, 생년월일, 성별, 프로필 사진, 한줄소개\n\n3. 개인정보의 보유 및 이용기간\n이용자의 개인정보는 원칙적으로 개인정보의 수집 및 이용목적이 달성되면 지체없이 파기합니다.`,
+    title: "개인정보 수집·이용 동의",
+    content: `제1조 (수집하는 개인정보 항목)\n회사는 서비스 제공을 위해 아래 항목을 수집합니다.\n\n· 필수: 이메일 주소, 소셜 로그인 식별 정보\n· 선택: 닉네임, 생년월일, 성별, 프로필 사진, 한줄소개\n\n제2조 (수집·이용 목적)\n· 회원 식별 및 서비스 제공\n· 맛집 기록, 추천, 위치 기반 서비스 운영\n\n제3조 (보유 및 이용 기간)\n· 회원 탈퇴 시까지 보유하며, 탈퇴 후 30일 이내 완전 삭제합니다.\n· 단, 관계 법령에 따라 보존이 필요한 경우 해당 기간까지 보관합니다.\n\n※ 개인정보 처리방침 전문은 설정 > 개인정보 처리방침에서 확인할 수 있습니다.`,
   },
   location: {
     title: "위치기반 서비스 이용약관",
@@ -104,7 +104,6 @@ export default function TermsPage() {
     service: false,
     privacy: false,
     location: false,
-    camera: false,
     marketing: false,
   });
 
@@ -119,7 +118,7 @@ export default function TermsPage() {
 
   const handleAllToggle = useCallback(() => {
     const next = !allChecked;
-    setAgreements({ service: next, privacy: next, location: next, camera: next, marketing: next });
+    setAgreements({ service: next, privacy: next, location: next, marketing: next });
   }, [allChecked]);
 
   const handleToggle = useCallback((key: keyof typeof agreements) => {
@@ -162,7 +161,7 @@ export default function TermsPage() {
             서비스 이용 동의
           </h1>
           <p className="text-[15px] leading-relaxed tracking-tight text-text-secondary">
-            네픽을 이용하기 위해 약관에 동의해 주세요.
+            네픽을 이용하기 위해 아래 약관에 동의해 주세요.
           </p>
         </div>
 
@@ -204,11 +203,10 @@ export default function TermsPage() {
 
           <div className="my-2 h-px bg-border" />
 
-          <CheckboxItem checked={agreements.service} required onChange={() => handleToggle("service")} label="이용약관 동의" desc="서비스 이용에 관한 기본 약관이에요." onDetailClick={() => setDetailKey("service")} />
-          <CheckboxItem checked={agreements.privacy} required onChange={() => handleToggle("privacy")} label="개인정보 처리방침 동의" desc="회원 정보 및 기록 데이터 처리에 대한 안내예요." onDetailClick={() => setDetailKey("privacy")} />
-          <CheckboxItem checked={agreements.location} required onChange={() => handleToggle("location")} label="위치기반 서비스 이용약관 동의" desc="주변 맛집 탐색을 위해 위치 정보를 활용해요." onDetailClick={() => setDetailKey("location")} />
-          <CheckboxItem checked={agreements.camera} required={false} onChange={() => handleToggle("camera")} label="카메라/사진 접근 권한 동의" desc="기록에 사진을 첨부할 때 카메라와 갤러리에 접근해요." />
-          <CheckboxItem checked={agreements.marketing} required={false} onChange={() => handleToggle("marketing")} label="마케팅 정보 수신 동의" desc="이벤트, 할인 혜택 등 유용한 정보를 보내드려요." />
+          <CheckboxItem checked={agreements.service} required onChange={() => handleToggle("service")} label="이용약관 동의" desc="네픽 서비스를 이용하기 위한 기본 약관이에요." onDetailClick={() => setDetailKey("service")} />
+          <CheckboxItem checked={agreements.privacy} required onChange={() => handleToggle("privacy")} label="개인정보 수집·이용 동의" desc="서비스 제공을 위해 꼭 필요한 정보만 수집해요." onDetailClick={() => setDetailKey("privacy")} />
+          <CheckboxItem checked={agreements.location} required onChange={() => handleToggle("location")} label="위치기반 서비스 이용약관 동의" desc="내 주변 맛집 탐색과 랭킹 확인에 필요해요." onDetailClick={() => setDetailKey("location")} />
+          <CheckboxItem checked={agreements.marketing} required={false} onChange={() => handleToggle("marketing")} label="마케팅 정보 수신 동의" desc="새로운 기능과 이벤트 소식을 가장 먼저 받아요." />
         </div>
       </div>
 

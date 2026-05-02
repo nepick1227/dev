@@ -7,14 +7,14 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/home";
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/auth/login?error=missing_code`);
+    return NextResponse.redirect(`${origin}/auth/error`);
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.user) {
-    return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`);
+    return NextResponse.redirect(`${origin}/auth/error`);
   }
 
   // 프로필 존재 여부 확인 → 신규 유저면 약관 동의로
