@@ -23,10 +23,11 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // 세션 갱신 (토큰 만료 방지)
+  // 쿠키 JWT를 로컬에서 읽음 — 네트워크 요청 없음
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   const { pathname } = request.nextUrl;
 
