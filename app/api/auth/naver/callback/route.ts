@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const savedState = cookieStore.get("naver_oauth_state")?.value;
 
   if (!code || !state || state !== savedState) {
-    return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`);
+    return NextResponse.redirect(`${origin}/auth/error`);
   }
 
   try {
@@ -45,8 +45,6 @@ export async function GET(request: Request) {
     });
 
     const userData = await userRes.json();
-    console.log("[Naver Auth] 유저 데이터:", JSON.stringify(userData, null, 2));
-
     const naverUser = userData.response as {
       id: string;
       email?: string;
@@ -96,6 +94,6 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error("[Naver Auth]", error);
-    return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`);
+    return NextResponse.redirect(`${origin}/auth/error`);
   }
 }

@@ -344,7 +344,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
             }`}
           >
             <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+              className={`absolute left-0 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
                 isPublic ? "translate-x-6" : "translate-x-1"
               }`}
             />

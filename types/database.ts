@@ -10,10 +10,11 @@ export interface Profile {
   id: string; // UUID (Supabase Auth user.id)
   nickname: string | null;
   birth_date: string | null; // ISO date string (YYYY-MM-DD)
-  gender: "male" | "female" | "unknown" | null;
+  gender: "male" | "female" | "unknown";
   intro: string | null;
   profile_image: string | null; // Supabase Storage public URL
   is_public: boolean;
+  marketing_agree: boolean;
   deleted_at: string | null;     // 탈퇴 요청 시각 (null = 정상 계정)
   withdrawal_reason: string | null; // 탈퇴 사유
   created_at: string; // ISO timestamp

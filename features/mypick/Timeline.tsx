@@ -21,7 +21,9 @@ function groupByDate(records: RecordWithStore[]): [string, RecordWithStore[]][] 
     if (!map[key]) map[key] = [];
     map[key].push(r);
   }
-  return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
+  return Object.entries(map)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, recs]) => [date, recs.sort((a, b) => a.visited_at.localeCompare(b.visited_at))]);
 }
 
 /**
@@ -120,7 +122,7 @@ export default function Timeline() {
 
         {/* 월별 모드일 때 월 필터 */}
         {viewMode === "monthly" && (
-          <div className="mt-3">
+          <div className="mt-3 flex justify-center">
             <MonthFilter value={currentMonth} onChange={setCurrentMonth} />
           </div>
         )}
@@ -136,10 +138,10 @@ export default function Timeline() {
           <p className="text-[40px]">🗺️</p>
           <div className="text-center">
             <p className="text-[15px] font-semibold tracking-tight text-text-primary">
-              {viewMode === "monthly" ? "이 달의 기록이 없어요" : "아직 픽한 맛집이 없어요"}
+              {viewMode === "monthly" ? "이 달의 기록이 없어요" : "아직 내가 픽한 맛집이 없어요!"}
             </p>
             <p className="mt-1 text-[13px] tracking-tight text-text-secondary">
-              {viewMode === "monthly" ? "다른 달을 선택하거나 새로 픽해 보세요" : "첫 번째 맛집을 픽해보세요"}
+              {viewMode === "monthly" ? "다른 달을 선택하거나 새로 픽해 보세요" : "나만의 맛집을 내 픽에 담아볼까요?"}
             </p>
           </div>
           {viewMode === "timeline" && (

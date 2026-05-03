@@ -46,21 +46,21 @@ const ITEMS = [
   {
     key: "location" as const,
     label: "위치",
-    description: "내 주변 가게 탐색에 사용됩니다",
+    description: "내 주변 맛집 탐색과 랭킹 확인에 필요해요.",
     icon: <MapPinIcon size={20} color="#D32F2F" />,
     iconBg: "#FEE2E2",
   },
   {
     key: "camera" as const,
     label: "카메라",
-    description: "방문 기록 사진 촬영에 사용됩니다",
+    description: "방문 기록에 사진을 남길 때 필요해요.",
     icon: <CameraIcon size={20} color="#2563EB" />,
     iconBg: "#DBEAFE",
   },
   {
     key: "notification" as const,
     label: "알림",
-    description: "새로운 소식과 업데이트를 받습니다",
+    description: "방문 기록 알림과 새로운 소식을 받아볼 수 있어요.",
     icon: <BellIcon size={20} color="#D97706" />,
     iconBg: "#FEF3C7",
   },
@@ -85,7 +85,7 @@ export default function PermissionsView() {
     const hasPrompt = location === "prompt" || camera === "prompt" || notification === "prompt";
 
     if (!hasPrompt) {
-      showToast("브라우저 주소창의 자물쇠 아이콘을 탭해 권한을 변경할 수 있습니다");
+      showToast("권한 변경은 기기 설정에서 직접 변경할 수 있어요.");
       return;
     }
 
@@ -120,7 +120,7 @@ export default function PermissionsView() {
 
       <div className="flex flex-1 flex-col px-5 pt-6">
         <p className="mb-6 text-[14px] leading-relaxed tracking-tight text-text-secondary">
-          앱 사용에 필요한 권한을 관리합니다. 거부된 권한은 브라우저 설정에서 직접 변경할 수 있습니다.
+          더 편한 네픽 사용을 위해 아래 권한을 허용해 주세요.
         </p>
 
         {/* 권한 목록 */}

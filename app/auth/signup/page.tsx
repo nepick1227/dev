@@ -1,48 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import Toast from "@/components/ui/Toast";
+import Spinner from "@/components/ui/Spinner";
 import { validateNickname } from "@/utils/validation";
 
 // ── 타입 ─────────────────────────────────────────────
 type Gender = "male" | "female" | "unknown";
 type NicknameStatus = null | "checking" | "ok" | "taken" | "error";
-
-// ── 서브 컴포넌트: 스피너 ────────────────────────────
-function Spinner({ color = "#D32F2F", size = 16 }: { color?: string; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      style={{ animation: "nepick-spin 0.8s linear infinite" }}
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="3" fill="none" strokeDasharray="30 70" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// ── 서브 컴포넌트: 토스트 ────────────────────────────
-function Toast({ message, visible }: { message: string; visible: boolean }) {
-  return (
-    <div
-      aria-live="polite"
-      className="pointer-events-none fixed bottom-24 left-1/2 z-50 rounded-full px-7 py-3 text-[14px] font-semibold tracking-tight text-white transition-all duration-300"
-      style={{
-        background: "#111827",
-        opacity: visible ? 1 : 0,
-        transform: `translateX(-50%) translateY(${visible ? 0 : 12}px)`,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {message}
-    </div>
-  );
-}
 
 // ── 서브 컴포넌트: 라디오 버튼 ───────────────────────
 function RadioOption({ selected, label, onClick }: { selected: boolean; label: string; onClick: () => void }) {
@@ -73,8 +42,10 @@ function RadioOption({ selected, label, onClick }: { selected: boolean; label: s
 }
 
 // ── 메인: 회원가입 프로필 입력 ───────────────────────
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const marketingAgree = searchParams.get("marketing") === "1";
   const { toast, showToast } = useToast();
 
   // 폼 상태
@@ -93,6 +64,14 @@ export default function SignupPage() {
     const timer = setTimeout(() => setAnimateIn(true), 80);
     return () => clearTimeout(timer);
   }, []);
+
+  // 뒤로가기 → 에러 페이지로 강제 이동 (회원가입 중단 방지)
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => router.replace("/auth/error");
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [router]);
 
   // ── 닉네임 실시간 검증 + 중복 확인 ─────────────────
   const checkNickname = useCallback(async (value: string) => {
@@ -154,6 +133,7 @@ export default function SignupPage() {
         birth_date: birthDate || null,
         gender: gender ?? "unknown",
         intro: intro || null,
+        marketing_agree: marketingAgree,
       });
 
       if (error) throw error;
@@ -181,7 +161,7 @@ export default function SignupPage() {
       const rawName = (user.user_metadata?.full_name as string | undefined) ?? "";
       const cleanName = rawName.replace(/[^가-힣a-zA-Z0-9]/g, "").slice(0, 12);
       const defaultNickname = cleanName.length >= 2 ? cleanName : `유저${user.id.slice(-4)}`;
-      await supabase.from("profiles").upsert({ id: user.id, nickname: defaultNickname });
+      await supabase.from("profiles").upsert({ id: user.id, nickname: defaultNickname, gender: "unknown", marketing_agree: marketingAgree });
 
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);
@@ -355,5 +335,13 @@ export default function SignupPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupContent />
+    </Suspense>
   );
 }

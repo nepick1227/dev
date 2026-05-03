@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { formatTime } from "@/utils/format";
-import { CopyIcon, KakaoMapShareIcon, EditIcon, ChevronDownIcon } from "@/components/ui/icons";
+import { CopyIcon, ShareIcon, EditIcon, ChevronDownIcon } from "@/components/ui/icons";
 import {
   recommendationColors,
   recommendationLabels,
@@ -32,7 +32,7 @@ export default function RecordCard({
   const recLabel = recommendationLabels[record.recommendation];
   const recEmoji = recommendationEmojis[record.recommendation];
   const address = record.stores.road_address || record.stores.address;
-  const commentOverflow = record.comment.length > 60;
+  const commentOverflow = record.comment.length > 60 || record.comment.split("\n").length > 2;
 
   const handleCopyAddress = useCallback(
     async (e: React.MouseEvent) => {
@@ -47,13 +47,23 @@ export default function RecordCard({
     [address, onShowToast]
   );
 
-  const handleKakaoMap = useCallback(
-    (e: React.MouseEvent) => {
+  const handleShare = useCallback(
+    async (e: React.MouseEvent) => {
       e.stopPropagation();
-      const query = encodeURIComponent(`${record.stores.name} ${address}`);
-      window.open(`https://map.kakao.com/link/search/${query}`, "_blank");
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: record.stores.name, text: `${record.stores.name}\n${address}` });
+        } catch {}
+      } else {
+        try {
+          await navigator.clipboard.writeText(address);
+          onShowToast?.("주소가 복사되었어요");
+        } catch {
+          onShowToast?.("복사에 실패했습니다");
+        }
+      }
     },
-    [record.stores.name, address]
+    [record.stores.name, address, onShowToast]
   );
 
   const handleEdit = useCallback(
@@ -66,14 +76,17 @@ export default function RecordCard({
 
   return (
     <div className="flex gap-0">
-      {/* 타임라인 세로선 + 카테고리 아이콘 */}
+      {/* 타임라인 세로선 + 카테고리 아이콘 + 시간 */}
       <div className="flex w-10 shrink-0 flex-col items-center">
         <div className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-border bg-white">
           <span className="text-[18px]">
             {record.stores.category === "cafe" ? "☕" : "🍽️"}
           </span>
         </div>
-        {!isLast && <div className="-mt-px w-px flex-1 bg-border" />}
+        <p className="mt-0.5 whitespace-pre text-center text-[9px] leading-tight tracking-tight text-text-secondary opacity-60">
+          {formatTime(record.visited_at).replace(" ", "\n")}
+        </p>
+        {!isLast && <div className="mt-0.5 w-px flex-1 bg-border" />}
       </div>
 
       {/* 카드 내용 */}
@@ -100,32 +113,26 @@ export default function RecordCard({
           </button>
         </div>
 
-        {/* 주소 + 복사 + 카카오맵 */}
+        {/* 주소 + 복사 + 공유 */}
         <div className="mb-2 flex items-center gap-1.5">
           <span className="truncate text-[12px] tracking-tight text-text-secondary">
             {address.length > 24 ? address.slice(0, 24) + "…" : address}
           </span>
-          <button
-            onClick={handleCopyAddress}
-            className="shrink-0 p-0.5"
-            aria-label="주소 복사"
-          >
-            <CopyIcon />
-          </button>
-          <button
-            onClick={handleKakaoMap}
-            className="shrink-0 p-0.5"
-            aria-label="카카오맵에서 보기"
-          >
-            <KakaoMapShareIcon />
-          </button>
+          <div className="flex shrink-0">
+            <button onClick={handleCopyAddress} className="p-0.5" aria-label="주소 복사">
+              <CopyIcon />
+            </button>
+            <button onClick={handleShare} className="p-0.5" aria-label="공유">
+              <ShareIcon />
+            </button>
+          </div>
         </div>
 
         {/* 코멘트 + 이미지 */}
         <div className="flex gap-2">
           <div className="min-w-0 flex-1">
             <div
-              className={`relative rounded-[10px] bg-bg px-3.5 py-2.5 text-[13px] leading-relaxed tracking-tight text-text-primary ${
+              className={`relative rounded-[10px] bg-bg px-3.5 py-2.5 text-[13px] leading-relaxed tracking-tight text-text-primary whitespace-pre-wrap ${
                 !expanded && commentOverflow ? "max-h-16 overflow-hidden" : ""
               } ${commentOverflow ? "pb-6" : ""}`}
             >
@@ -159,10 +166,6 @@ export default function RecordCard({
           )}
         </div>
 
-        {/* 방문일 */}
-        <p className="mt-2 text-[11px] tracking-tight text-text-secondary opacity-60">
-          {formatTime(record.visited_at)}
-        </p>
       </div>
     </div>
   );
