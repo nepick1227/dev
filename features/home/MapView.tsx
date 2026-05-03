@@ -194,7 +194,7 @@ export default function MapView() {
     const fetchRegion = () => {
       const center = map.getCenter();
       geocoder.coord2RegionCode(center.getLng(), center.getLat(), (result, status) => {
-        if (status !== kakao.maps.services.Status.OK) return;
+        if (status !== "OK") return;
         // 법정동(B): 시·구가 안정적으로 채워짐 / 행정동(H): 동 이름
         const b = result.find((r) => r.region_type === "B");
         const h = result.find((r) => r.region_type === "H");
