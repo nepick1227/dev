@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 function NepickLogo({ size = 80 }: { size?: number }) {
   return (
@@ -38,8 +40,62 @@ function NepickLogo({ size = 80 }: { size?: number }) {
   );
 }
 
+function Spinner() {
+  return (
+    <svg
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      style={{ animation: "nepick-spin 0.8s linear infinite" }}
+      aria-hidden="true"
+    >
+      <circle
+        cx="12" cy="12" r="10"
+        stroke="#D32F2F" strokeWidth="3" fill="none"
+        strokeDasharray="30 70" strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function AuthErrorPage() {
   const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // 뒤로가기 → 로그인 페이지로 강제 이동
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => router.replace("/auth/login");
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [router]);
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        router.replace("/home");
+      } else {
+        // 세션 없음 → 에러 페이지 리셋
+        window.location.replace("/auth/error");
+      }
+    } catch {
+      window.location.replace("/auth/error");
+    }
+  };
+
+  if (isRefreshing) {
+    return (
+      <div className="mx-auto flex h-screen max-w-107.5 flex-col items-center justify-center gap-5 bg-white font-sans">
+        <NepickLogo size={80} />
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex h-screen max-w-107.5 flex-col bg-white font-sans">
@@ -59,15 +115,17 @@ export default function AuthErrorPage() {
       <div className="flex flex-col gap-3 px-6 pb-11">
         <a
           href="#"
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex w-full items-center justify-center rounded-xl border border-border py-4 text-[15px] font-semibold tracking-tight text-text-primary transition-opacity active:opacity-60"
         >
           문의하기
         </a>
         <button
-          onClick={() => router.push("/auth/login")}
+          onClick={handleRefresh}
           className="flex w-full items-center justify-center rounded-xl bg-primary py-4 text-[15px] font-bold tracking-tight text-white transition-opacity active:opacity-80"
         >
-          다시 시도하기
+          새로고침 하기
         </button>
       </div>
     </div>

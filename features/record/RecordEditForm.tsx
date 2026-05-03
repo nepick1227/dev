@@ -12,15 +12,18 @@ import { validateImageFile, validateComment } from "@/utils/validation";
 import { recommendationLabels, recommendationEmojis, type RecommendationType } from "@/styles/tokens";
 import type { RecordWithStore } from "@/types/database";
 
+const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
+
 interface RecordEditFormProps {
   record: RecordWithStore;
+  onHasChanges?: (hasChanges: boolean) => void;
 }
 
 /**
  * 기록 수정 폼 컴포넌트
  * 가게 정보는 수정 불가, 방문일시/추천도/코멘트/이미지만 수정 가능
  */
-export default function RecordEditForm({ record }: RecordEditFormProps) {
+export default function RecordEditForm({ record, onHasChanges }: RecordEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -55,8 +58,25 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
     };
   }, [previewUrl]);
 
+  const [originalVisitedTime] = useState(() => {
+    const d = new Date(record.visited_at);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  });
+
+  const hasChanges =
+    visitedAt !== record.visited_at.split("T")[0] ||
+    visitedTime !== originalVisitedTime ||
+    recommendation !== record.recommendation ||
+    comment !== record.comment ||
+    newImageFile !== null ||
+    removeImage;
+
+  useEffect(() => {
+    onHasChanges?.(hasChanges);
+  }, [hasChanges, onHasChanges]);
+
   const commentError = comment.length > 0 ? validateComment(comment).message : "";
-  const canSubmit = validateComment(comment).isValid && !isSubmitting && !isDeleting;
+  const canSubmit = validateComment(comment).isValid && !isSubmitting && !isDeleting && hasChanges;
 
   const handleImageChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,7 +186,6 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
     }
   }, [isDeleting, record.id, router, showToast]);
 
-  const recommendationOptions: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
 
   return (
     <>
@@ -241,26 +260,21 @@ export default function RecordEditForm({ record }: RecordEditFormProps) {
         {/* 추천 여부 */}
         <section className="mb-6">
           <p className="mb-2.5 text-[14px] font-semibold tracking-tight text-text-primary">
-            추천 여부
+            내 입맛엔 어땠나요?
           </p>
           <div className="flex gap-3">
-            {recommendationOptions.map((opt) => {
+            {RECOMMENDATION_OPTIONS.map((opt) => {
               const isSelected = recommendation === opt;
               return (
                 <button
                   key={opt}
                   onClick={() => setRecommendation(opt)}
-                  className="flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200"
-                  style={{
-                    borderColor: isSelected ? "#D32F2F" : "#E5E7EB",
-                    background: isSelected ? "#D32F2F22" : "#F9FAFB",
-                  }}
+                  className={`flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200 ${
+                    isSelected ? "border-primary/30 bg-primary/13" : "border-border bg-bg"
+                  }`}
                 >
                   <span className="text-[22px]">{recommendationEmojis[opt]}</span>
-                  <span
-                    className="text-[12px] font-semibold tracking-tight"
-                    style={{ color: isSelected ? "#D32F2F" : "#9CA3AF" }}
-                  >
+                  <span className={`text-[12px] font-semibold tracking-tight ${isSelected ? "text-primary" : "text-text-secondary"}`}>
                     {recommendationLabels[opt]}
                   </span>
                 </button>

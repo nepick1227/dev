@@ -4,8 +4,6 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import { UserIcon, ChevronRightIcon, KakaoIcon, NaverIcon, GoogleIcon } from "@/components/ui/icons";
 import type { Profile } from "@/types/database";
@@ -30,7 +28,6 @@ function SocialIcons({ providers }: { providers: string[] }) {
 
 export default function ProfileView({ profile, recordCount, providers }: ProfileViewProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = useCallback(async () => {
@@ -59,8 +56,8 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
       title: "약관",
       items: [
         { label: "이용약관", externalUrl: "#" },
+        { label: "개인정보 수집·이용 동의", externalUrl: "#" },
         { label: "위치기반 서비스 이용약관", externalUrl: "#" },
-        { label: "개인정보 처리방침", externalUrl: "#" },
       ],
     },
     {
@@ -74,8 +71,6 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
 
   return (
     <>
-      <Toast message={toast.message} visible={toast.visible} />
-
       {/* 로그아웃 확인 모달 */}
       <Modal
         isOpen={showLogoutModal}

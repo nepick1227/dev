@@ -18,6 +18,8 @@ import {
 } from "@/styles/tokens";
 import type { StoreInsert, RecordInsert } from "@/types/database";
 
+const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
+
 interface RecordFormProps {
   onContentChange?: (hasContent: boolean) => void;
 }
@@ -144,7 +146,6 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
     showToast,
   ]);
 
-  const recommendationOptions: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
 
   return (
     <>
@@ -209,29 +210,22 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
         {/* 추천 여부 */}
         <section className="mb-6">
           <p className="mb-2.5 text-[14px] font-semibold tracking-tight text-text-primary">
-            추천 여부
+            내 입맛엔 어땠나요?
             <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
           </p>
           <div className="flex gap-3">
-            {recommendationOptions.map((opt) => {
+            {RECOMMENDATION_OPTIONS.map((opt) => {
               const isSelected = recommendation === opt;
               return (
                 <button
                   key={opt}
                   onClick={() => setRecommendation(opt)}
-                  className="flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200"
-                  style={{
-                    borderColor: isSelected ? "#D32F2F" : "#E5E7EB",
-                    background: isSelected ? "#D32F2F22" : "#F9FAFB",
-                  }}
+                  className={`flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200 ${
+                    isSelected ? "border-primary/30 bg-primary/13" : "border-border bg-bg"
+                  }`}
                 >
                   <span className="text-[22px]">{recommendationEmojis[opt]}</span>
-                  <span
-                    className="text-[12px] font-semibold tracking-tight"
-                    style={{
-                      color: isSelected ? "#D32F2F" : "#9CA3AF",
-                    }}
-                  >
+                  <span className={`text-[12px] font-semibold tracking-tight ${isSelected ? "text-primary" : "text-text-secondary"}`}>
                     {recommendationLabels[opt]}
                   </span>
                 </button>
@@ -259,10 +253,7 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
             <span className="text-[12px] text-primary">
               {commentError}
             </span>
-            <span
-              className="text-[12px]"
-              style={{ color: comment.length >= 500 ? "#D32F2F" : "#6B7280" }}
-            >
+            <span className={`text-[12px] ${comment.length >= 500 ? "text-primary" : "text-text-secondary"}`}>
               {comment.length}/500
             </span>
           </div>

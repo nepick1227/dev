@@ -32,7 +32,7 @@ export default function RecordCard({
   const recLabel = recommendationLabels[record.recommendation];
   const recEmoji = recommendationEmojis[record.recommendation];
   const address = record.stores.road_address || record.stores.address;
-  const commentOverflow = record.comment.length > 60;
+  const commentOverflow = record.comment.length > 60 || record.comment.split("\n").length > 2;
 
   const handleCopyAddress = useCallback(
     async (e: React.MouseEvent) => {

@@ -68,13 +68,13 @@ export default function WithdrawalView() {
       {/* 최종 확인 팝업 */}
       <Modal
         isOpen={showConfirm}
-        onClose={() => !isSubmitting && setShowConfirm(false)}
+        onClose={() => { if (!isSubmitting) { setShowConfirm(false); router.push("/home"); } }}
         variant="dialog"
         title="정말 탈퇴하시겠어요?"
         footer={
           <div className="flex gap-2.5">
             <button
-              onClick={() => setShowConfirm(false)}
+              onClick={() => { setShowConfirm(false); router.push("/home"); }}
               disabled={isSubmitting}
               className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary disabled:opacity-50"
             >
@@ -128,7 +128,7 @@ export default function WithdrawalView() {
           탈퇴 사유를 알려주세요
         </h2>
         <p className="mb-6 text-[13px] tracking-tight text-text-secondary">
-          소중한 의견을 서비스 개선에 반영하겠습니다
+          소중한 의견을 담아 더 나은 네픽을 만들겠습니다.
         </p>
 
         <div className="flex flex-col gap-2.5">

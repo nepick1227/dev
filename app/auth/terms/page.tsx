@@ -119,16 +119,25 @@ export default function TermsPage() {
   const handleAllToggle = useCallback(() => {
     const next = !allChecked;
     setAgreements({ service: next, privacy: next, location: next, marketing: next });
-  }, [allChecked]);
+    if (next && !agreements.marketing && typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, [allChecked, agreements.marketing]);
 
   const handleToggle = useCallback((key: keyof typeof agreements) => {
-    setAgreements((prev) => ({ ...prev, [key]: !prev[key] }));
+    setAgreements((prev) => {
+      const next = !prev[key];
+      if (key === "marketing" && next && typeof Notification !== "undefined" && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+      return { ...prev, [key]: next };
+    });
   }, []);
 
   const handleStart = useCallback(() => {
     if (!allRequired) return;
-    router.replace("/auth/signup");
-  }, [allRequired, router]);
+    router.replace(`/auth/signup${agreements.marketing ? "?marketing=1" : ""}`);
+  }, [allRequired, agreements.marketing, router]);
 
   if (detailKey) {
     return <TermsDetailView termsKey={detailKey} onBack={() => setDetailKey(null)} />;
