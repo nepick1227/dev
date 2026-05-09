@@ -15,6 +15,7 @@ const MAX_PAGES = 3;
 
 export function useMapStores() {
   const [stores, setStores] = useState<Store[]>([]);
+  const [accumulatedStores, setAccumulatedStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -49,12 +50,20 @@ export function useMapStores() {
       const { data, count, error } = await query;
       if (error) throw error;
 
-      setStores((data as Store[]) ?? []);
+      const newStores = (data as Store[]) ?? [];
+      setStores(newStores);
       setPage(pageNum);
+      // pageNum=0이면 초기화, 아니면 누적 (지도보기 더보기용)
+      if (pageNum === 0) {
+        setAccumulatedStores(newStores);
+      } else {
+        setAccumulatedStores((prev) => [...prev, ...newStores]);
+      }
       const total = Math.min(Math.ceil((count ?? 0) / PAGE_SIZE), MAX_PAGES);
       setTotalPages(Math.max(total, 1));
     } catch {
       setStores([]);
+      setAccumulatedStores([]);
       setTotalPages(1);
     } finally {
       setIsLoading(false);
@@ -66,5 +75,5 @@ export function useMapStores() {
     fetchStores(lastBounds.current, lastCategory.current, pageNum);
   }, [fetchStores]);
 
-  return { stores, isLoading, page, totalPages, fetchStores, goToPage };
+  return { stores, accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage };
 }

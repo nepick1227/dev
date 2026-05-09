@@ -22,17 +22,15 @@ const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "n
 
 interface RecordFormProps {
   onContentChange?: (hasContent: boolean) => void;
+  initialPlace?: KakaoPlace | null;
 }
 
-/**
- * 맛집 기록 폼 컴포넌트
- */
-export default function RecordForm({ onContentChange }: RecordFormProps) {
+export default function RecordForm({ onContentChange, initialPlace }: RecordFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
-  // 선택된 가게
-  const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
+  // 선택된 가게 (지도 기록+ 버튼으로 진입 시 initialPlace로 초기화)
+  const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(initialPlace ?? null);
 
   // 기록 폼 상태
   const [visitedAt, setVisitedAt] = useState(() => new Date().toISOString().split("T")[0]);

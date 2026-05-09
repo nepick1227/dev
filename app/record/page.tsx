@@ -1,16 +1,34 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
 import Header from "@/components/layout/Header";
 import Modal from "@/components/ui/Modal";
 import RecordForm from "@/features/record/RecordForm";
+import type { KakaoPlace } from "@/features/record/StoreSearch";
 
-export default function RecordPage() {
+function RecordPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const hasContentRef = useRef(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+
+  // 지도 가게카드 기록+ 버튼으로 진입 시 가게 자동 선택
+  const kakaoId = searchParams.get("kakao_id");
+  const initialPlace: KakaoPlace | null = kakaoId
+    ? {
+        id: kakaoId,
+        place_name: searchParams.get("place_name") ?? "",
+        category_name: "",
+        category_group_code: searchParams.get("category_group_code") ?? "",
+        address_name: searchParams.get("address_name") ?? "",
+        road_address_name: searchParams.get("road_address_name") ?? "",
+        phone: searchParams.get("phone") ?? "",
+        x: searchParams.get("x") ?? "",
+        y: searchParams.get("y") ?? "",
+      }
+    : null;
 
   const handleContentChange = useCallback((hasContent: boolean) => {
     hasContentRef.current = hasContent;
@@ -53,14 +71,18 @@ export default function RecordPage() {
         </p>
       </Modal>
 
-      <Header
-        title="기록 추가"
-        showBack
-        onBack={handleBack}
-      />
+      <Header title="기록 추가" showBack onBack={handleBack} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <RecordForm onContentChange={handleContentChange} />
+        <RecordForm onContentChange={handleContentChange} initialPlace={initialPlace} />
       </div>
     </PageContainer>
+  );
+}
+
+export default function RecordPage() {
+  return (
+    <Suspense>
+      <RecordPageContent />
+    </Suspense>
   );
 }
