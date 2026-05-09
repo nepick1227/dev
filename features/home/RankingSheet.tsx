@@ -43,13 +43,25 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
           {regionName ?? "불러오는 중..."}
         </p>
       </div>
-      {hasMore && onLoadMore && (
+      {totalPages > 1 && (
         <button
-          onClick={onLoadMore}
-          className="mt-1 flex shrink-0 items-center gap-1 rounded-full border border-border bg-bg px-3 py-1.5 text-[12px] font-semibold text-text-secondary active:bg-border"
+          onClick={hasMore ? onLoadMore : undefined}
+          disabled={!hasMore}
+          className={`mt-1 flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+            hasMore
+              ? "border-border bg-bg text-text-secondary active:bg-border"
+              : "cursor-default border-border bg-bg opacity-60"
+          }`}
         >
           <span>📍</span>
-          <span>더보기 {page + 1}/{totalPages}</span>
+          {hasMore ? (
+            <span className="text-text-secondary">더보기 {page + 1}/{totalPages}</span>
+          ) : (
+            <span>
+              <span className="text-primary">{page + 1}</span>
+              <span className="text-text-secondary">/{totalPages}</span>
+            </span>
+          )}
         </button>
       )}
     </div>
