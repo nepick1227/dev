@@ -199,7 +199,7 @@ export default function MapView() {
   }, [snap]);
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
-  // 상단 검색/필터 오버레이 높이(~20%)와 핀 SVG 크기를 고려해 안쪽으로 inset 적용
+  // 상단: 검색/필터 오버레이 ~20%, 하단: 바텀시트+버튼 높이를 모드별로 계산해 inset 적용
   const getBounds = useCallback((map: kakao.maps.Map): MapBounds => {
     const bounds = map.getBounds();
     const sw = bounds.getSouthWest();
@@ -207,20 +207,22 @@ export default function MapView() {
 
     const latRange = ne.getLat() - sw.getLat();
     const lngRange = ne.getLng() - sw.getLng();
-    const latPadTop = latRange * 0.20;    // 검색/필터 오버레이 영역 + 핀 balloon 보정
-    const latPadBottom = latRange * 0.05;
+    const latPadTop = latRange * 0.20;  // 검색바+필터(~17%) + 여유(3%)
     const lngPad = lngRange * 0.05;
 
     if (snapRef.current === "half") {
+      // half: 버튼(~40px) + 여유가 map DOM center 기준 약 12% 위
+      // map.getCenter() = 지도 DOM 중앙 lat, 버튼은 그보다 북쪽에 위치
       const centerLat = map.getCenter().getLat();
       return {
-        sw: { lat: centerLat + latPadBottom, lng: sw.getLng() + lngPad },
+        sw: { lat: centerLat + latRange * 0.12, lng: sw.getLng() + lngPad },
         ne: { lat: ne.getLat() - latPadTop, lng: ne.getLng() - lngPad },
       };
     }
 
+    // collapsed: 시트(88px) + gap(8px) + 버튼(40px) ≈ 136px → 지도 높이 대비 ~20%
     return {
-      sw: { lat: sw.getLat() + latPadBottom, lng: sw.getLng() + lngPad },
+      sw: { lat: sw.getLat() + latRange * 0.20, lng: sw.getLng() + lngPad },
       ne: { lat: ne.getLat() - latPadTop, lng: ne.getLng() - lngPad },
     };
   }, []);
