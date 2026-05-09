@@ -139,7 +139,6 @@ export default function MapView() {
   const isInitializedRef = useRef(false);
   const categoryRef = useRef<Category>("all");
   const snapRef = useRef<"collapsed" | "half" | "full">("half");
-  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const [category, setCategory] = useState<Category>("all");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
@@ -161,30 +160,24 @@ export default function MapView() {
   }, [snap]);
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
-  // 바텀시트가 하단을 가리므로 SW 위도를 시트 높이만큼 위로 조정
+  // snap="half"일 때 map.getCenter()는 지도 DOM 정중앙 = 바텀시트 상단 경계에 해당
+  // → 시트 아래 가려진 남쪽 절반을 제거하기 위해 center.lat을 SW 위도로 사용
   const getBounds = useCallback((map: kakao.maps.Map): MapBounds => {
     const bounds = map.getBounds();
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
-    const swLat = sw.getLat();
-    const neLat = ne.getLat();
 
-    const currentSnap = snapRef.current;
-    if (currentSnap === "half") {
-      const mapHeight = mapContainerRef.current?.offsetHeight ?? window.innerHeight;
-      const sheetHeight = window.innerHeight * 0.5;
-      const sheetFraction = Math.min(sheetHeight / mapHeight, 0.9);
-      // 남쪽 경계를 바텀시트 상단 위치에 해당하는 위도로 올림
-      const adjustedSwLat = swLat + (neLat - swLat) * sheetFraction;
+    if (snapRef.current === "half") {
+      const centerLat = map.getCenter().getLat();
       return {
-        sw: { lat: adjustedSwLat, lng: sw.getLng() },
-        ne: { lat: neLat, lng: ne.getLng() },
+        sw: { lat: centerLat, lng: sw.getLng() },
+        ne: { lat: ne.getLat(), lng: ne.getLng() },
       };
     }
 
     return {
-      sw: { lat: swLat, lng: sw.getLng() },
-      ne: { lat: neLat, lng: ne.getLng() },
+      sw: { lat: sw.getLat(), lng: sw.getLng() },
+      ne: { lat: ne.getLat(), lng: ne.getLng() },
     };
   }, []);
 
@@ -303,7 +296,7 @@ export default function MapView() {
   }, [isMapFull]);
 
   return (
-    <div ref={mapContainerRef} className="relative flex-1 overflow-hidden">
+    <div className="relative flex-1 overflow-hidden">
       <KakaoMap className="h-full w-full" onReady={handleMapReady} />
 
       <MapOverlay
