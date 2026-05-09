@@ -138,6 +138,8 @@ export default function MapView() {
   const locationDotRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const isInitializedRef = useRef(false);
   const categoryRef = useRef<Category>("all");
+  const snapRef = useRef<"collapsed" | "half" | "full">("half");
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const [category, setCategory] = useState<Category>("all");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
@@ -153,15 +155,45 @@ export default function MapView() {
   const buttonLabel = isMapFull ? "랭킹보기" : "지도보기";
   const { stores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
 
+  // snapRef를 현재 snap과 동기화 (이벤트 리스너 클로저에서 최신값 참조용)
+  useEffect(() => {
+    snapRef.current = snap;
+  }, [snap]);
+
+  // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
+  // 바텀시트가 하단을 가리므로 SW 위도를 시트 높이만큼 위로 조정
   const getBounds = useCallback((map: kakao.maps.Map): MapBounds => {
     const bounds = map.getBounds();
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
+    const swLat = sw.getLat();
+    const neLat = ne.getLat();
+
+    const currentSnap = snapRef.current;
+    if (currentSnap === "half") {
+      const mapHeight = mapContainerRef.current?.offsetHeight ?? window.innerHeight;
+      const sheetHeight = window.innerHeight * 0.5;
+      const sheetFraction = Math.min(sheetHeight / mapHeight, 0.9);
+      // 남쪽 경계를 바텀시트 상단 위치에 해당하는 위도로 올림
+      const adjustedSwLat = swLat + (neLat - swLat) * sheetFraction;
+      return {
+        sw: { lat: adjustedSwLat, lng: sw.getLng() },
+        ne: { lat: neLat, lng: ne.getLng() },
+      };
+    }
+
     return {
-      sw: { lat: sw.getLat(), lng: sw.getLng() },
-      ne: { lat: ne.getLat(), lng: ne.getLng() },
+      sw: { lat: swLat, lng: sw.getLng() },
+      ne: { lat: neLat, lng: ne.getLng() },
     };
   }, []);
+
+  // snap 변경 시 visible bounds가 달라지므로 재조회
+  useEffect(() => {
+    if (mapRef.current && isInitializedRef.current) {
+      fetchStores(getBounds(mapRef.current), categoryRef.current, 0);
+    }
+  }, [snap, fetchStores, getBounds]);
 
   // stores 변경 시 마커 갱신
   useEffect(() => {
@@ -271,7 +303,7 @@ export default function MapView() {
   }, [isMapFull]);
 
   return (
-    <div className="relative flex-1 overflow-hidden">
+    <div ref={mapContainerRef} className="relative flex-1 overflow-hidden">
       <KakaoMap className="h-full w-full" onReady={handleMapReady} />
 
       <MapOverlay
