@@ -10,6 +10,7 @@ interface BottomSheetProps {
   defaultSnap?: SnapPoint;
   children: React.ReactNode;
   header?: React.ReactNode;
+  footer?: React.ReactNode;
   onSnapChange?: (snap: SnapPoint) => void;
   showClose?: boolean;
 }
@@ -29,6 +30,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
   defaultSnap = "half",
   children,
   header,
+  footer,
   onSnapChange,
   showClose = false,
 }, ref) {
@@ -142,6 +144,9 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
       <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
         {children}
       </div>
+
+      {/* 고정 푸터 (지도보기 버튼 등) */}
+      {footer && <div className="shrink-0 px-5 pb-5 pt-3">{footer}</div>}
     </div>
   );
 });

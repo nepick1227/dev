@@ -19,7 +19,9 @@ function createRankMarker(
   map: kakao.maps.Map,
   store: Store,
   rank: number,
-  dimmed = false
+  dimmed: boolean,
+  lat: number,
+  lng: number
 ): kakao.maps.Marker {
   const fontSize = rank > 9 ? 9 : 11;
   const opacity = dimmed ? 0.5 : 1;
@@ -44,10 +46,61 @@ function createRankMarker(
   });
   return new kakao.maps.Marker({
     map,
-    position: new kakao.maps.LatLng(store.lat, store.lng),
+    position: new kakao.maps.LatLng(lat, lng),
     image,
     title: store.name,
   });
+}
+
+// ── 겹치는 마커 나선형 오프셋 ────────────────────────────
+// 동일 위치(~33m 이내) 가게들을 나선형으로 펼쳐 핀이 겹치지 않도록 함
+
+const CLUSTER_THRESHOLD = 0.0003; // ~33m
+const CLUSTER_OFFSET = 0.00015;   // ~17m 반경
+
+const CLUSTER_SPIRAL: [number, number][] = [
+  [0, 0],
+  [0, CLUSTER_OFFSET],
+  [CLUSTER_OFFSET * 0.87, -CLUSTER_OFFSET * 0.5],
+  [-CLUSTER_OFFSET * 0.87, -CLUSTER_OFFSET * 0.5],
+  [0, CLUSTER_OFFSET * 2],
+  [CLUSTER_OFFSET * 1.73, 0],
+  [0, -CLUSTER_OFFSET * 2],
+  [-CLUSTER_OFFSET * 1.73, 0],
+];
+
+function spreadOverlappingMarkers(
+  stores: Store[]
+): Array<{ store: Store; displayLat: number; displayLng: number }> {
+  const assigned = new Set<number>();
+  const result: Array<{ store: Store; displayLat: number; displayLng: number }> = new Array(stores.length);
+
+  stores.forEach((anchor, i) => {
+    if (assigned.has(i)) return;
+
+    const cluster: number[] = [i];
+    stores.forEach((other, j) => {
+      if (i === j || assigned.has(j)) return;
+      if (
+        Math.abs(anchor.lat - other.lat) < CLUSTER_THRESHOLD &&
+        Math.abs(anchor.lng - other.lng) < CLUSTER_THRESHOLD
+      ) {
+        cluster.push(j);
+      }
+    });
+
+    cluster.forEach((storeIdx, offsetIdx) => {
+      assigned.add(storeIdx);
+      const [dLat, dLng] = CLUSTER_SPIRAL[offsetIdx] ?? CLUSTER_SPIRAL[CLUSTER_SPIRAL.length - 1];
+      result[storeIdx] = {
+        store: stores[storeIdx],
+        displayLat: stores[storeIdx].lat + dLat,
+        displayLng: stores[storeIdx].lng + dLng,
+      };
+    });
+  });
+
+  return result;
 }
 
 // ── 현재 위치 파란 점 ────────────────────────────────────
@@ -180,15 +233,6 @@ export default function MapView() {
 
   const hasMore = totalPages > 1 && page < totalPages - 1;
 
-  // 랭킹보기/지도보기 토글 버튼 상태
-  const showRankingLabel = isMapFull || !!selectedStore;
-  const buttonLabel = showRankingLabel ? "랭킹보기" : "지도보기";
-  const buttonBottom = selectedStore
-    ? "168px"           // 가게카드(~130px) + 28px 여백 위
-    : isMapFull
-    ? "96px"            // collapsed 시트(88px) 위
-    : "calc(50vh + 8px)"; // half 시트 상단 바로 위
-
   // accumulatedStores 변경 시 ref 동기화 (이벤트 클로저에서 최신값 접근용)
   useEffect(() => {
     accumulatedStoresRef.current = accumulatedStores;
@@ -252,23 +296,24 @@ export default function MapView() {
     if (tapMode) {
       // 지도 탭으로 선택된 경우 단일 마커만 표시
       if (selectedStore) {
-        const marker = createRankMarker(map, selectedStore, selectedRank || 0, false);
+        const marker = createRankMarker(map, selectedStore, selectedRank || 0, false, selectedStore.lat, selectedStore.lng);
         markersRef.current.push(marker);
       }
       return;
     }
 
-    // 랭킹 마커: 선택된 가게 외 흐릿하게
-    accumulatedStores.forEach((store, idx) => {
+    // 겹치는 마커 나선형 오프셋 적용 후 랭킹 마커 렌더링
+    const displayStores = spreadOverlappingMarkers(accumulatedStores);
+    displayStores.forEach(({ store, displayLat, displayLng }, idx) => {
       const rank = idx + 1;
       const dimmed = selectedStore !== null && selectedStore.id !== store.id;
-      const marker = createRankMarker(map, store, rank, dimmed);
+      const marker = createRankMarker(map, store, rank, dimmed, displayLat, displayLng);
       kakao.maps.event.addListener(marker, "click", () => {
         setTapMode(false);
         cardOpenedRef.current = true;
         setSelectedStore(store);
         setSelectedRank(rank);
-        panToVisible(map, store.lat, store.lng);
+        panToVisible(map, displayLat, displayLng);
       });
       markersRef.current.push(marker);
     });
@@ -313,37 +358,30 @@ export default function MapView() {
       setTapMode(false);
     });
 
-    // 지도 배경 탭: 주변 가게 검색 후 단일 핀 + 카드 표시
-    kakao.maps.event.addListener(map, "click", async (...args: unknown[]) => {
-      const mouseEvent = args[0] as { latLng: kakao.maps.LatLng };
-      const lat = mouseEvent.latLng.getLat();
-      const lng = mouseEvent.latLng.getLng();
-      const radius = 0.0005; // ~55m
-
-      try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from("stores")
-          .select("*")
-          .gte("lat", lat - radius).lte("lat", lat + radius)
-          .gte("lng", lng - radius).lte("lng", lng + radius)
-          .order("score", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (data) {
-          const store = data as Store;
-          const idx = accumulatedStoresRef.current.findIndex((s) => s.id === store.id);
-          cardOpenedRef.current = true;
-          setTapMode(true);
-          setSelectedStore(store);
-          setSelectedRank(idx >= 0 ? idx + 1 : 0);
-          panToVisible(map, store.lat, store.lng);
-        }
-      } catch {
-        // 조회 실패 시 무시
-      }
-    });
+    // TODO: 지도 배경 탭으로 가게 카드 표시 (추후 개선 예정)
+    // kakao.maps.event.addListener(map, "click", async (...args: unknown[]) => {
+    //   const mouseEvent = args[0] as { latLng: kakao.maps.LatLng };
+    //   const lat = mouseEvent.latLng.getLat();
+    //   const lng = mouseEvent.latLng.getLng();
+    //   const radius = 0.0005; // ~55m
+    //   try {
+    //     const supabase = createClient();
+    //     const { data } = await supabase
+    //       .from("stores").select("*")
+    //       .gte("lat", lat - radius).lte("lat", lat + radius)
+    //       .gte("lng", lng - radius).lte("lng", lng + radius)
+    //       .order("score", { ascending: false }).limit(1).maybeSingle();
+    //     if (data) {
+    //       const store = data as Store;
+    //       const idx = accumulatedStoresRef.current.findIndex((s) => s.id === store.id);
+    //       cardOpenedRef.current = true;
+    //       setTapMode(true);
+    //       setSelectedStore(store);
+    //       setSelectedRank(idx >= 0 ? idx + 1 : 0);
+    //       panToVisible(map, store.lat, store.lng);
+    //     }
+    //   } catch { /* 조회 실패 시 무시 */ }
+    // });
 
     fetchStores(getBounds(map), categoryRef.current, 0);
     fetchRegion();
@@ -407,18 +445,25 @@ export default function MapView() {
     setTapMode(false);
   }, []);
 
+  // 시트 푸터의 "지도보기" 버튼 핸들러
+  const handleCollapse = useCallback(() => {
+    rankingRef.current?.collapse();
+  }, []);
+
+  // 플로팅 버튼: 지도보기(collapsed) 또는 카드 열림 상태에서만 표시
   const handleRankingToggle = useCallback(() => {
     if (selectedStore) {
-      // 카드 닫고 랭킹 시트 열기
       setSelectedStore(null);
       setTapMode(false);
       rankingRef.current?.open();
-    } else if (isMapFull) {
-      rankingRef.current?.open();
     } else {
-      rankingRef.current?.collapse();
+      // isMapFull인 경우에만 이 버튼이 노출됨
+      rankingRef.current?.open();
     }
-  }, [isMapFull, selectedStore]);
+  }, [selectedStore]);
+
+  // 플로팅 버튼 위치: 카드 열림 → 카드 위, collapsed → 시트 위
+  const floatingButtonBottom = selectedStore ? "168px" : "96px";
 
   return (
     <div className="relative flex-1 overflow-hidden">
@@ -442,20 +487,23 @@ export default function MapView() {
           onLoadMore={() => goToPage(page + 1)}
           onStoreClick={handleStoreClick}
           onSnapChange={setSnap}
+          onCollapse={handleCollapse}
           defaultSnap={sheetDefaultSnap}
           regionName={regionName}
         />
       )}
 
-      {/* 랭킹보기/지도보기 토글 버튼 — 가게 카드가 있어도 항상 표시 */}
-      <button
-        onClick={handleRankingToggle}
-        className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
-        style={{ bottom: buttonBottom, transition: "bottom 0.3s ease-out" }}
-      >
-        <span>{showRankingLabel ? "🏆" : "🗺️"}</span>
-        <span>{buttonLabel}</span>
-      </button>
+      {/* 플로팅 버튼: 지도보기(collapsed) 또는 카드 열림 시에만 표시 */}
+      {(isMapFull || !!selectedStore) && (
+        <button
+          onClick={handleRankingToggle}
+          className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          style={{ bottom: floatingButtonBottom, transition: "bottom 0.3s ease-out" }}
+        >
+          <span>🏆</span>
+          <span>랭킹보기</span>
+        </button>
+      )}
 
       {/* 선택된 가게 카드 */}
       {selectedStore && (
