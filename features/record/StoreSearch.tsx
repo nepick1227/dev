@@ -30,6 +30,7 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const search = useCallback(async (keyword: string) => {
     if (!keyword.trim()) {
@@ -38,18 +39,23 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
       return;
     }
 
+    // 이전 요청 취소 (응답 순서 역전 방지)
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
     setIsLoading(true);
     setHasSearched(true);
 
     try {
       const res = await fetch(
-        `/api/kakao-search?query=${encodeURIComponent(keyword)}`
+        `/api/kakao-search?query=${encodeURIComponent(keyword)}`,
+        { signal: abortRef.current.signal }
       );
       if (!res.ok) throw new Error("검색 실패");
       const data = await res.json();
       setResults(data.documents ?? []);
-    } catch {
-      setResults([]);
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setResults([]);
     } finally {
       setIsLoading(false);
     }

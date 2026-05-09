@@ -118,7 +118,7 @@ export default function RecordForm({ onContentChange }: RecordFormProps) {
       const recordData: RecordInsert = {
         user_id: user.id,
         store_id: storeResult.id,
-        visited_at: new Date(`${visitedAt}T${visitedTime}`).toISOString(),
+        visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
         recommendation,
         comment,
         image_url: imageUrl,

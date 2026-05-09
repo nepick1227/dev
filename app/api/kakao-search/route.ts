@@ -14,6 +14,9 @@ export async function GET(req: NextRequest) {
   if (!query || query.trim() === "") {
     return NextResponse.json({ error: "검색어를 입력하세요." }, { status: 400 });
   }
+  if (query.length > 100) {
+    return NextResponse.json({ error: "검색어는 100자 이하여야 합니다." }, { status: 400 });
+  }
 
   const params = new URLSearchParams({
     query: query.trim(),

@@ -32,6 +32,7 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const search = useCallback(async (keyword: string) => {
     if (!keyword.trim()) {
@@ -39,15 +40,21 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
       setIsOpen(false);
       return;
     }
+    // 이전 요청 취소 (응답 순서 역전 방지)
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
     setIsLoading(true);
     setIsOpen(true);
     try {
-      const res = await fetch(`/api/kakao-search?query=${encodeURIComponent(keyword)}`);
+      const res = await fetch(`/api/kakao-search?query=${encodeURIComponent(keyword)}`, {
+        signal: abortRef.current.signal,
+      });
       if (!res.ok) throw new Error();
       const data = await res.json();
       setResults(data.documents ?? []);
-    } catch {
-      setResults([]);
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setResults([]);
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +112,7 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
 
         {/* 검색 결과 드롭다운 */}
         {isOpen && (
-          <div className="absolute left-0 right-0 top-full mt-1.5 max-h-[240px] overflow-y-auto rounded-2xl border border-border bg-white shadow-lg">
+          <div className="absolute left-0 right-0 top-full mt-1.5 max-h-60 overflow-y-auto rounded-2xl border border-border bg-white shadow-lg">
             {isLoading ? (
               <div className="flex justify-center py-5">
                 <Spinner size={22} />

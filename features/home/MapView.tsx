@@ -165,19 +165,31 @@ export default function MapView() {
 
   // stores 변경 시 마커 갱신
   useEffect(() => {
-    if (!mapRef.current) return;
+    const map = mapRef.current;
+    if (!map) return;
+
+    // 기존 마커 정리
     markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = stores.map((store, idx) => {
+    markersRef.current = [];
+
+    // 새 마커 생성
+    stores.forEach((store, idx) => {
       const rank = page * 20 + idx + 1;
-      const marker = createRankMarker(mapRef.current!, store, rank);
+      const marker = createRankMarker(map, store, rank);
       kakao.maps.event.addListener(marker, "click", () => {
         cardOpenedRef.current = true;
         setSelectedStore(store);
         setSelectedRank(rank);
-        mapRef.current?.panTo(new kakao.maps.LatLng(store.lat, store.lng));
+        map.panTo(new kakao.maps.LatLng(store.lat, store.lng));
       });
-      return marker;
+      markersRef.current.push(marker);
     });
+
+    // 언마운트 시 마커 정리
+    return () => {
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+    };
   }, [stores, page]);
 
   const handleMapReady = useCallback(async (map: kakao.maps.Map) => {

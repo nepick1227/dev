@@ -70,12 +70,20 @@ const LAST_PROVIDER_KEY = "nepick_last_provider";
 
 function getLastProvider(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(LAST_PROVIDER_KEY);
+  try {
+    return localStorage.getItem(LAST_PROVIDER_KEY);
+  } catch {
+    return null;
+  }
 }
 
 function setLastProvider(provider: string) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(LAST_PROVIDER_KEY, provider);
+  try {
+    localStorage.setItem(LAST_PROVIDER_KEY, provider);
+  } catch {
+    // 프라이빗 브라우징 등 localStorage 비활성화 환경에서 무시
+  }
 }
 
 // ── 카카오 로그인 버튼 ──────────────────────────────
