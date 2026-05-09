@@ -54,14 +54,17 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
           }`}
         >
           <span>📍</span>
-          {hasMore ? (
-            <span className="text-text-secondary">더보기 {page + 1}/{totalPages}</span>
-          ) : (
-            <span>
-              <span className="text-primary">{page + 1}</span>
-              <span className="text-text-secondary">/{totalPages}</span>
-            </span>
-          )}
+          <span>
+            <span className="text-text-secondary">더보기 </span>
+            {hasMore ? (
+              <span className="text-text-secondary">{page + 1}/{totalPages}</span>
+            ) : (
+              <>
+                <span className="text-primary">{page + 1}</span>
+                <span className="text-text-secondary">/{totalPages}</span>
+              </>
+            )}
+          </span>
         </button>
       )}
     </div>
