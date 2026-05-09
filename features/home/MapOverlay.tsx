@@ -11,7 +11,7 @@ type PlaceResult = Pick<KakaoSearchResult, "id" | "place_name" | "road_address_n
 interface MapOverlayProps {
   category: Category;
   onCategoryChange: (cat: Category) => void;
-  onPlaceSelect: (lat: number, lng: number) => void;
+  onPlaceSelect: (place: Pick<KakaoSearchResult, "id" | "x" | "y">) => void;
 }
 
 const FILTER_TABS: { key: Category; label: string }[] = [
@@ -47,7 +47,7 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
 
   const handleSelect = useCallback(
     (place: PlaceResult) => {
-      onPlaceSelect(parseFloat(place.y), parseFloat(place.x));
+      onPlaceSelect({ id: place.id, x: place.x, y: place.y });
       setQuery(place.place_name);
       clear();
       setIsOpen(false);
