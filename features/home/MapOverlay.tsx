@@ -1,18 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { SearchIcon, CloseIcon, MapPinIcon } from "@/components/ui/icons";
 import Spinner from "@/components/ui/Spinner";
+import { useKakaoSearch, type KakaoSearchResult } from "@/hooks/use-kakao-search";
 import type { Category } from "./types";
 
-interface PlaceResult {
-  id: string;
-  place_name: string;
-  road_address_name: string;
-  address_name: string;
-  x: string;
-  y: string;
-}
+type PlaceResult = Pick<KakaoSearchResult, "id" | "place_name" | "road_address_name" | "address_name" | "x" | "y">;
 
 interface MapOverlayProps {
   category: Category;
@@ -28,61 +22,37 @@ const FILTER_TABS: { key: Category; label: string }[] = [
 
 export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }: MapOverlayProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<PlaceResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-
-  const search = useCallback(async (keyword: string) => {
-    if (!keyword.trim()) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
-    // 이전 요청 취소 (응답 순서 역전 방지)
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
-
-    setIsLoading(true);
-    setIsOpen(true);
-    try {
-      const res = await fetch(`/api/kakao-search?query=${encodeURIComponent(keyword)}`, {
-        signal: abortRef.current.signal,
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setResults(data.documents ?? []);
-    } catch (e) {
-      if ((e as Error).name !== "AbortError") setResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { results, isLoading, searchDebounced, clear } = useKakaoSearch();
 
   const handleChange = useCallback(
     (value: string) => {
       setQuery(value);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => search(value), 400);
+      if (!value.trim()) {
+        clear();
+        setIsOpen(false);
+        return;
+      }
+      setIsOpen(true);
+      searchDebounced(value);
     },
-    [search]
+    [searchDebounced, clear]
   );
 
   const handleClear = useCallback(() => {
     setQuery("");
-    setResults([]);
+    clear();
     setIsOpen(false);
-  }, []);
+  }, [clear]);
 
   const handleSelect = useCallback(
     (place: PlaceResult) => {
       onPlaceSelect(parseFloat(place.y), parseFloat(place.x));
       setQuery(place.place_name);
-      setResults([]);
+      clear();
       setIsOpen(false);
     },
-    [onPlaceSelect]
+    [onPlaceSelect, clear]
   );
 
   return (
