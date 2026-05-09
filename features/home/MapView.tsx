@@ -22,7 +22,7 @@ function createRankMarker(
   dimmed = false
 ): kakao.maps.Marker {
   const fontSize = rank > 9 ? 9 : 11;
-  const opacity = dimmed ? 0.25 : 1;
+  const opacity = dimmed ? 0.5 : 1;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42" opacity="${opacity}">
     <defs>
       <radialGradient id="g" cx="40%" cy="30%" r="65%">
@@ -182,45 +182,44 @@ export default function MapView() {
   }, [snap]);
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
+  // 핀(SVG 42px 높이)이 가장자리에서 잘리지 않도록 안쪽으로 일정 여백을 줄임
   const getBounds = useCallback((map: kakao.maps.Map): MapBounds => {
     const bounds = map.getBounds();
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
 
+    const latRange = ne.getLat() - sw.getLat();
+    const lngRange = ne.getLng() - sw.getLng();
+    const latPad = latRange * 0.09;  // 핀 balloon 높이 보정 (상단 ~40px)
+    const lngPad = lngRange * 0.05;  // 핀 좌우 너비 보정 (~16px)
+
     if (snapRef.current === "half") {
       const centerLat = map.getCenter().getLat();
       return {
-        sw: { lat: centerLat, lng: sw.getLng() },
-        ne: { lat: ne.getLat(), lng: ne.getLng() },
+        sw: { lat: centerLat + latPad, lng: sw.getLng() + lngPad },
+        ne: { lat: ne.getLat() - latPad, lng: ne.getLng() - lngPad },
       };
     }
 
     return {
-      sw: { lat: sw.getLat(), lng: sw.getLng() },
-      ne: { lat: ne.getLat(), lng: ne.getLng() },
+      sw: { lat: sw.getLat() + latPad, lng: sw.getLng() + lngPad },
+      ne: { lat: ne.getLat() - latPad, lng: ne.getLng() - lngPad },
     };
   }, []);
 
   // 선택한 장소가 사용자에게 보이는 영역의 정중앙에 오도록 panTo 오프셋 적용
   const panToVisible = useCallback((map: kakao.maps.Map, lat: number, lng: number) => {
+    const bounds = map.getBounds();
+    const latRange = bounds.getNorthEast().getLat() - bounds.getSouthWest().getLat();
+
     if (snapRef.current === "half") {
-      const bounds = map.getBounds();
-      const latRange = bounds.getNorthEast().getLat() - bounds.getSouthWest().getLat();
-      // 가시 영역 중앙 = 지도 DOM 기준 상단 25% 지점 → 지도 중심 기준 25% 위
-      // panTo 목표를 남쪽으로 offset하면 가게가 가시 중앙에 위치
-      const offset = latRange * 0.25;
-      map.panTo(new kakao.maps.LatLng(lat - offset, lng));
+      // 가시 영역 = 지도 DOM 상단 50% → 가시 중앙 = 지도 중심 기준 25% 위
+      map.panTo(new kakao.maps.LatLng(lat - latRange * 0.25, lng));
     } else {
-      map.panTo(new kakao.maps.LatLng(lat, lng));
+      // 가게 카드(~130px)가 하단을 가리므로 핀이 카드 위 가시 영역 중앙에 오도록 조정
+      map.panTo(new kakao.maps.LatLng(lat - latRange * 0.09, lng));
     }
   }, []);
-
-  // snap 변경 시 visible bounds 재조회
-  useEffect(() => {
-    if (mapRef.current && isInitializedRef.current) {
-      fetchStores(getBounds(mapRef.current), categoryRef.current, 0);
-    }
-  }, [snap, fetchStores, getBounds]);
 
   // accumulatedStores 또는 selectedStore 변경 시 마커 갱신 (선택된 가게 외 흐릿하게)
   useEffect(() => {
