@@ -163,26 +163,43 @@ export default function MapView() {
   const isInitializedRef = useRef(false);
   const categoryRef = useRef<Category>("all");
   const snapRef = useRef<"collapsed" | "half" | "full">("half");
+  const cardOpenedRef = useRef(false);
+  const accumulatedStoresRef = useRef<Store[]>([]);
 
   const [category, setCategory] = useState<Category>("all");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedRank, setSelectedRank] = useState<number>(0);
   const [regionName, setRegionName] = useState<string>("");
-  const cardOpenedRef = useRef(false);
-  const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
+  // tapMode: 지도 배경 탭으로 가게 선택 시 랭킹 마커 숨기고 단일 핀만 표시
+  const [tapMode, setTapMode] = useState(false);
 
+  const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
   const isMapFull = snap === "collapsed";
-  const buttonBottom = isMapFull ? "96px" : "calc(50vh + 8px)";
-  const buttonLabel = isMapFull ? "랭킹보기" : "지도보기";
   const { stores, accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
+
+  const hasMore = totalPages > 1 && page < totalPages - 1;
+
+  // 랭킹보기/지도보기 토글 버튼 상태
+  const showRankingLabel = isMapFull || !!selectedStore;
+  const buttonLabel = showRankingLabel ? "랭킹보기" : "지도보기";
+  const buttonBottom = selectedStore
+    ? "168px"           // 가게카드(~130px) + 28px 여백 위
+    : isMapFull
+    ? "96px"            // collapsed 시트(88px) 위
+    : "calc(50vh + 8px)"; // half 시트 상단 바로 위
+
+  // accumulatedStores 변경 시 ref 동기화 (이벤트 클로저에서 최신값 접근용)
+  useEffect(() => {
+    accumulatedStoresRef.current = accumulatedStores;
+  }, [accumulatedStores]);
 
   useEffect(() => {
     snapRef.current = snap;
   }, [snap]);
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
-  // 핀(SVG 42px 높이)이 가장자리에서 잘리지 않도록 안쪽으로 일정 여백을 줄임
+  // 상단 검색/필터 오버레이 높이(~20%)와 핀 SVG 크기를 고려해 안쪽으로 inset 적용
   const getBounds = useCallback((map: kakao.maps.Map): MapBounds => {
     const bounds = map.getBounds();
     const sw = bounds.getSouthWest();
@@ -190,20 +207,21 @@ export default function MapView() {
 
     const latRange = ne.getLat() - sw.getLat();
     const lngRange = ne.getLng() - sw.getLng();
-    const latPad = latRange * 0.09;  // 핀 balloon 높이 보정 (상단 ~40px)
-    const lngPad = lngRange * 0.05;  // 핀 좌우 너비 보정 (~16px)
+    const latPadTop = latRange * 0.20;    // 검색/필터 오버레이 영역 + 핀 balloon 보정
+    const latPadBottom = latRange * 0.05;
+    const lngPad = lngRange * 0.05;
 
     if (snapRef.current === "half") {
       const centerLat = map.getCenter().getLat();
       return {
-        sw: { lat: centerLat + latPad, lng: sw.getLng() + lngPad },
-        ne: { lat: ne.getLat() - latPad, lng: ne.getLng() - lngPad },
+        sw: { lat: centerLat + latPadBottom, lng: sw.getLng() + lngPad },
+        ne: { lat: ne.getLat() - latPadTop, lng: ne.getLng() - lngPad },
       };
     }
 
     return {
-      sw: { lat: sw.getLat() + latPad, lng: sw.getLng() + lngPad },
-      ne: { lat: ne.getLat() - latPad, lng: ne.getLng() - lngPad },
+      sw: { lat: sw.getLat() + latPadBottom, lng: sw.getLng() + lngPad },
+      ne: { lat: ne.getLat() - latPadTop, lng: ne.getLng() - lngPad },
     };
   }, []);
 
@@ -221,7 +239,7 @@ export default function MapView() {
     }
   }, []);
 
-  // accumulatedStores 또는 selectedStore 변경 시 마커 갱신 (선택된 가게 외 흐릿하게)
+  // 마커 렌더링 (tapMode일 때는 선택된 가게 마커 1개만 표시)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -229,11 +247,22 @@ export default function MapView() {
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
 
+    if (tapMode) {
+      // 지도 탭으로 선택된 경우 단일 마커만 표시
+      if (selectedStore) {
+        const marker = createRankMarker(map, selectedStore, selectedRank || 0, false);
+        markersRef.current.push(marker);
+      }
+      return;
+    }
+
+    // 랭킹 마커: 선택된 가게 외 흐릿하게
     accumulatedStores.forEach((store, idx) => {
       const rank = idx + 1;
       const dimmed = selectedStore !== null && selectedStore.id !== store.id;
       const marker = createRankMarker(map, store, rank, dimmed);
       kakao.maps.event.addListener(marker, "click", () => {
+        setTapMode(false);
         cardOpenedRef.current = true;
         setSelectedStore(store);
         setSelectedRank(rank);
@@ -246,7 +275,7 @@ export default function MapView() {
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
     };
-  }, [accumulatedStores, selectedStore, panToVisible]);
+  }, [accumulatedStores, selectedStore, selectedRank, panToVisible, tapMode]);
 
   const handleMapReady = useCallback(async (map: kakao.maps.Map) => {
     if (isInitializedRef.current) return;
@@ -277,11 +306,46 @@ export default function MapView() {
     };
     kakao.maps.event.addListener(map, "zoom_changed", refetch);
     kakao.maps.event.addListener(map, "dragend", refetch);
-    kakao.maps.event.addListener(map, "dragstart", () => setSelectedStore(null));
+    kakao.maps.event.addListener(map, "dragstart", () => {
+      setSelectedStore(null);
+      setTapMode(false);
+    });
+
+    // 지도 배경 탭: 주변 가게 검색 후 단일 핀 + 카드 표시
+    kakao.maps.event.addListener(map, "click", async (...args: unknown[]) => {
+      const mouseEvent = args[0] as { latLng: kakao.maps.LatLng };
+      const lat = mouseEvent.latLng.getLat();
+      const lng = mouseEvent.latLng.getLng();
+      const radius = 0.0005; // ~55m
+
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("stores")
+          .select("*")
+          .gte("lat", lat - radius).lte("lat", lat + radius)
+          .gte("lng", lng - radius).lte("lng", lng + radius)
+          .order("score", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data) {
+          const store = data as Store;
+          const idx = accumulatedStoresRef.current.findIndex((s) => s.id === store.id);
+          cardOpenedRef.current = true;
+          setTapMode(true);
+          setSelectedStore(store);
+          setSelectedRank(idx >= 0 ? idx + 1 : 0);
+          panToVisible(map, store.lat, store.lng);
+        }
+      } catch {
+        // 조회 실패 시 무시
+      }
+    });
 
     fetchStores(getBounds(map), categoryRef.current, 0);
     fetchRegion();
-  }, [fetchStores, getBounds]);
+  }, [fetchStores, getBounds, panToVisible]);
 
   const handleCategoryChange = useCallback((cat: Category) => {
     categoryRef.current = cat;
@@ -302,6 +366,7 @@ export default function MapView() {
     panToVisible(map, lat, lng);
     rankingRef.current?.collapse();
     setSelectedStore(null);
+    setTapMode(false);
 
     try {
       const supabase = createClient();
@@ -313,8 +378,9 @@ export default function MapView() {
 
       if (data) {
         cardOpenedRef.current = true;
+        setTapMode(true);
         setSelectedStore(data as Store);
-        setSelectedRank(0); // 검색 결과는 순위 미표시
+        setSelectedRank(0);
       }
     } catch {
       // 조회 실패 시 카드 없이 이동만
@@ -326,6 +392,7 @@ export default function MapView() {
     const idx = accumulatedStores.findIndex((s) => s.id === storeId);
     const store = accumulatedStores[idx];
     if (store && mapRef.current) {
+      setTapMode(false);
       cardOpenedRef.current = true;
       setSelectedStore(store);
       setSelectedRank(idx + 1);
@@ -333,13 +400,23 @@ export default function MapView() {
     }
   }, [accumulatedStores, panToVisible]);
 
+  const handleCloseCard = useCallback(() => {
+    setSelectedStore(null);
+    setTapMode(false);
+  }, []);
+
   const handleRankingToggle = useCallback(() => {
-    if (isMapFull) {
+    if (selectedStore) {
+      // 카드 닫고 랭킹 시트 열기
+      setSelectedStore(null);
+      setTapMode(false);
+      rankingRef.current?.open();
+    } else if (isMapFull) {
       rankingRef.current?.open();
     } else {
       rankingRef.current?.collapse();
     }
-  }, [isMapFull]);
+  }, [isMapFull, selectedStore]);
 
   return (
     <div className="relative flex-1 overflow-hidden">
@@ -351,49 +428,39 @@ export default function MapView() {
         onPlaceSelect={handlePlaceSelect}
       />
 
+      {/* 랭킹 시트: 가게 카드가 없을 때만 표시 */}
       {!selectedStore && (
-        <>
-          <RankingSheet
-            ref={rankingRef}
-            stores={stores}
-            isLoading={isLoading}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={goToPage}
-            onStoreClick={handleStoreClick}
-            onSnapChange={setSnap}
-            defaultSnap={sheetDefaultSnap}
-            regionName={regionName}
-          />
-
-          {/* 지도보기 상태에서 더보기 버튼 (최대 3페이지 누적) */}
-          {isMapFull && totalPages > 1 && page < totalPages - 1 && (
-            <button
-              onClick={() => goToPage(page + 1)}
-              className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2 text-[13px] font-semibold text-text-primary shadow-lg"
-              style={{ bottom: "152px", transition: "bottom 0.3s ease-out" }}
-            >
-              <span>📍</span>
-              <span>더보기 {page + 1}/{totalPages}</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleRankingToggle}
-            className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
-            style={{ bottom: buttonBottom, transition: "bottom 0.3s ease-out" }}
-          >
-            <span>{isMapFull ? "🏆" : "🗺️"}</span>
-            <span>{buttonLabel}</span>
-          </button>
-        </>
+        <RankingSheet
+          ref={rankingRef}
+          stores={accumulatedStores}
+          isLoading={isLoading}
+          page={page}
+          totalPages={totalPages}
+          hasMore={hasMore}
+          onLoadMore={() => goToPage(page + 1)}
+          onStoreClick={handleStoreClick}
+          onSnapChange={setSnap}
+          defaultSnap={sheetDefaultSnap}
+          regionName={regionName}
+        />
       )}
 
+      {/* 랭킹보기/지도보기 토글 버튼 — 가게 카드가 있어도 항상 표시 */}
+      <button
+        onClick={handleRankingToggle}
+        className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+        style={{ bottom: buttonBottom, transition: "bottom 0.3s ease-out" }}
+      >
+        <span>{showRankingLabel ? "🏆" : "🗺️"}</span>
+        <span>{buttonLabel}</span>
+      </button>
+
+      {/* 선택된 가게 카드 */}
       {selectedStore && (
         <SelectedStoreCard
           store={selectedStore}
           rank={selectedRank}
-          onClose={() => setSelectedStore(null)}
+          onClose={handleCloseCard}
         />
       )}
     </div>
