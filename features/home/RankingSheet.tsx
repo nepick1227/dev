@@ -15,7 +15,6 @@ interface RankingSheetProps {
   onLoadMore?: () => void;
   onStoreClick?: (storeId: number) => void;
   onSnapChange?: (snap: "collapsed" | "half" | "full") => void;
-  onCollapse?: () => void;
   defaultSnap?: "collapsed" | "half" | "full";
   regionName?: string;
 }
@@ -26,7 +25,7 @@ export interface RankingSheetHandle {
 }
 
 const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function RankingSheet(
-  { stores, isLoading, page, totalPages, hasMore, onLoadMore, onStoreClick, onSnapChange, onCollapse, defaultSnap = "half", regionName },
+  { stores, isLoading, page, totalPages, hasMore, onLoadMore, onStoreClick, onSnapChange, defaultSnap = "half", regionName },
   ref
 ) {
   const sheetRef = useRef<BottomSheetHandle>(null);
@@ -68,18 +67,8 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
     </div>
   );
 
-  const footer = onCollapse ? (
-    <button
-      onClick={onCollapse}
-      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-text-primary py-3.5 text-[15px] font-bold text-white"
-    >
-      <span>🗺️</span>
-      <span>지도보기</span>
-    </button>
-  ) : undefined;
-
   return (
-    <BottomSheet ref={sheetRef} defaultSnap={defaultSnap} onSnapChange={onSnapChange} showClose header={header} footer={footer}>
+    <BottomSheet ref={sheetRef} defaultSnap={defaultSnap} onSnapChange={onSnapChange} showClose header={header}>
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Spinner size={28} />

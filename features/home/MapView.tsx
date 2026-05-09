@@ -487,29 +487,31 @@ export default function MapView() {
           onLoadMore={() => goToPage(page + 1)}
           onStoreClick={handleStoreClick}
           onSnapChange={setSnap}
-          onCollapse={handleCollapse}
           defaultSnap={sheetDefaultSnap}
           regionName={regionName}
         />
       )}
 
-      {/* 플로팅 버튼: 지도보기(collapsed) 또는 카드 열림 시 → 랭킹보기 */}
-      {(isMapFull || !!selectedStore) && (
+      {/* 플로팅 버튼 — 항상 표시, 상태에 따라 내용/위치 변경 */}
+      {isMapFull || !!selectedStore ? (
+        // 지도보기 or 카드 열림 → 랭킹보기
         <button
           onClick={handleRankingToggle}
-          className="absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
           style={{ bottom: floatingButtonBottom, transition: "bottom 0.3s ease-out" }}
         >
           <span>🏆</span>
           <span>랭킹보기</span>
         </button>
-      )}
-
-      {/* 풀화면 랭킹 상태 → 지도보기 플로팅 버튼 (시트 위에 오버레이) */}
-      {snap === "full" && !selectedStore && (
+      ) : (
+        // half / full 랭킹 상태 → 지도보기 (시트 위 플로팅)
         <button
           onClick={handleCollapse}
-          className="absolute bottom-8 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-full bg-text-primary px-6 py-3.5 text-[15px] font-bold text-white shadow-xl"
+          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          style={{
+            bottom: snap === "full" ? "32px" : "calc(50vh + 8px)",
+            transition: "bottom 0.3s ease-out",
+          }}
         >
           <span>🗺️</span>
           <span>지도보기</span>
