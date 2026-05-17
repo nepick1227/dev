@@ -9,6 +9,7 @@ interface HeaderProps {
   rightAction?: React.ReactNode;
   /** 투명 배경 (지도 페이지용) */
   transparent?: boolean;
+  noBorder?: boolean;
 }
 
 /**
@@ -21,12 +22,13 @@ export default function Header({
   onBack,
   rightAction,
   transparent = false,
+  noBorder = false,
 }: HeaderProps) {
   return (
     <header
       className={[
         "sticky top-0 z-10 flex h-14 items-center justify-between px-4",
-        transparent ? "bg-transparent" : "border-b border-border bg-white",
+        transparent ? "bg-transparent" : noBorder ? "bg-surface" : "border-b border-border bg-surface",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -38,7 +40,7 @@ export default function Header({
             className="flex h-9 w-9 items-center justify-center rounded-full transition-colors active:bg-bg"
             aria-label="뒤로가기"
           >
-            <ChevronLeftIcon size={24} color="#111827" />
+            <ChevronLeftIcon size={24} color="var(--color-text-primary)" />
           </button>
         )}
         {title && (

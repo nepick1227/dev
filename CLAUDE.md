@@ -16,19 +16,31 @@ nepick/
 ├── app/                    # Next.js App Router (페이지 라우팅만)
 │   ├── layout.tsx
 │   ├── page.tsx            # 랜딩 (→ /auth/login 리다이렉트)
+│   ├── error.tsx           # Next.js 전역 에러 바운더리
+│   ├── api/
+│   │   ├── auth/naver/route.ts           # 네이버 OAuth 시작
+│   │   ├── auth/naver/callback/route.ts  # 네이버 OAuth 콜백
+│   │   └── kakao-search/route.ts         # 카카오 장소 검색 프록시
 │   ├── auth/
 │   │   ├── login/page.tsx
 │   │   ├── callback/route.ts
 │   │   ├── terms/page.tsx
-│   │   └── signup/page.tsx
+│   │   ├── signup/page.tsx
+│   │   ├── error/page.tsx       # 인증 오류 안내
+│   │   └── naver/verify/page.tsx
 │   ├── home/page.tsx
-│   ├── record/page.tsx
+│   ├── record/
+│   │   ├── page.tsx
+│   │   └── [id]/edit/page.tsx
 │   ├── mypick/page.tsx
 │   └── profile/
 │       ├── page.tsx
-│       └── edit/page.tsx
+│       ├── edit/page.tsx
+│       ├── permissions/page.tsx
+│       ├── withdrawal/page.tsx
+│       └── withdrawal/done/page.tsx
 ├── components/             # 공통 UI 컴포넌트
-│   ├── ui/                 # Button, Input, Modal, Toast, Spinner
+│   ├── ui/                 # Button, Input, Modal, Toast, Spinner, Badge, Chip, Textarea
 │   ├── layout/             # Header, BottomNav, PageContainer
 │   └── map/                # KakaoMap, MapMarker, BottomSheet
 ├── features/               # 페이지별 비즈니스 로직 + 전용 컴포넌트
@@ -38,7 +50,6 @@ nepick/
 │   ├── mypick/             # Timeline, RecordCard, MonthFilter
 │   └── profile/            # ProfileView, ProfileEditForm
 ├── hooks/                  # 커스텀 훅
-│   ├── use-auth.ts         # 인증 상태 관리
 │   ├── use-kakao-map.ts    # 카카오맵 인스턴스
 │   └── use-toast.ts        # 토스트 메시지
 ├── lib/                    # 외부 서비스 클라이언트
@@ -97,7 +108,7 @@ export default function StoreCard({ store, onClick }: StoreCardProps) {
   if (!store) return null;
 
   return (
-    <div className="flex items-center gap-3 p-4 border-b border-gray-200">
+    <div className="flex items-center gap-3 p-4 border-b border-border">
       ...
     </div>
   );
@@ -110,19 +121,57 @@ export default function StoreCard({ store, onClick }: StoreCardProps) {
 - `any` 타입 사용 금지 → `unknown` + 타입 가드 사용
 - SVG 아이콘은 `components/ui/icons/` 에 컴포넌트로 분리
 
-## 디자인 토큰 (@/styles/tokens.ts)
+## 디자인 토큰 (app/globals.css @theme inline)
 
-색상은 반드시 토큰에서 참조합니다. Tailwind 클래스에 없는 경우 `tailwind.config.ts`에 커스텀 색상을 추가합니다.
+색상은 `globals.css`의 `@theme inline {}` 블록에 CSS 변수로 정의됩니다. Tailwind 클래스(`text-primary`, `bg-surface` 등)로 바로 사용할 수 있습니다. 새 색상이 필요하면 `tailwind.config.ts`가 아닌 `globals.css @theme inline`에 추가합니다.
 
 ```
-primary:       #D32F2F   브랜드 레드, 주요 액션
-recommend:     #DF6767   추천(👍) 배지
-neutral:       #EA9C9C   보통(😐) 배지
-notRecommend:  #FFD6D6   비추(👎) 배지
-textPrimary:   #111827   본문
-textSecondary: #6B7280   보조 텍스트
-border:        #E5E7EB   선/구분선
-background:    #F9FAFB   배경
+/* 브랜드 */
+primary:         #D32F2F   주요 액션, 에러 상태
+primary-dark:    #B71C1C   호버/강조
+primary-soft:    #FFF1F1   선택된 항목 배경
+primary-border:  #F3B4B4   선택된 항목 테두리
+
+/* 텍스트 */
+text-primary:    #111827   본문
+text-secondary:  #6B7280   보조
+text-tertiary:   #9CA3AF   비활성/플레이스홀더
+
+/* UI */
+border:          #E5E7EB   선/구분선
+bg:              #FAFAFA   페이지 배경
+surface:         #FFFFFF   카드/시트 배경
+
+/* 성공 */
+success:         #10B981   성공 아이콘
+success-text:    #047857   성공 텍스트
+success-border:  #34D399   성공 테두리
+success-soft:    #ECFDF5   성공 배경
+
+/* 비활성 */
+disabled-bg:     #E5E7EB
+disabled-text:   #9CA3AF
+```
+
+### 추천 배지 색상
+
+추천 배지는 별도 색상 토큰 없이 아래 조합을 사용합니다 (`components/ui/Badge.tsx` 참조):
+
+```
+추천(👍):   bg-primary-soft text-primary
+보통(😐):   bg-bg text-text-secondary
+비추(👎):   bg-bg text-text-secondary
+```
+
+### CSS 유틸리티 클래스 (globals.css)
+
+```
+nepick-fade-in   진입 애니메이션 (240ms, translateY 8px→0 + opacity)
+                 stagger는 [animation-delay:Xms] Tailwind 임의값으로 추가
+safe-area-pb     padding-bottom: max(16px, env(safe-area-inset-bottom))
+                 → 탭바·바텀시트 footer 등 iOS 홈 인디케이터 영역에 사용
+safe-area-pb-lg  padding-bottom: calc(24px + env(safe-area-inset-bottom))
+                 → 페이지 고정 CTA 버튼 영역에 사용
 ```
 
 ## Supabase 데이터 레이어 패턴
