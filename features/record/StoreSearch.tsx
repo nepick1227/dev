@@ -45,14 +45,14 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
       {/* 검색 입력 */}
       <div className="relative">
         <div className="absolute left-4 top-1/2 -translate-y-1/2">
-          <SearchIcon size={18} color="#9CA3AF" />
+          <SearchIcon size={18} color="var(--color-text-tertiary)" />
         </div>
         <input
           type="text"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           placeholder="가게 이름으로 검색"
-          className="w-full rounded-xl border-[1.5px] border-border bg-white py-3.5 pl-10 pr-10 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary placeholder:text-text-secondary"
+          className="h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface pl-11 pr-10 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary placeholder:text-text-tertiary"
           autoComplete="off"
         />
         {query && (
@@ -61,7 +61,7 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
             className="absolute right-3.5 top-1/2 -translate-y-1/2"
             aria-label="검색어 지우기"
           >
-            <CloseIcon size={18} color="#9CA3AF" />
+            <CloseIcon size={18} color="var(--color-text-tertiary)" />
           </button>
         )}
       </div>
@@ -74,20 +74,20 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
       )}
 
       {!isLoading && hasSearched && results.length === 0 && (
-        <div className="py-8 text-center text-[14px] text-text-secondary">
+        <div className="nepick-fade-in py-8 text-center text-[14px] text-text-secondary">
           검색 결과가 없어요
         </div>
       )}
 
       {!isLoading && results.length > 0 && (
-        <ul className="divide-y divide-border rounded-xl border border-border overflow-hidden">
+        <ul className="nepick-fade-in divide-y divide-border rounded-xl border border-border overflow-hidden">
           {results.map((place) => (
             <li key={place.id}>
               <button
                 onClick={() => onSelect(place)}
                 className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors active:bg-bg"
               >
-                <MapPinIcon size={16} color="#D32F2F" className="mt-0.5 shrink-0" />
+                <MapPinIcon size={16} color="var(--color-primary)" className="mt-0.5 shrink-0" />
                 <div className="flex flex-col gap-0.5 overflow-hidden">
                   <span className="truncate text-[14px] font-semibold tracking-tight text-text-primary">
                     {place.place_name}

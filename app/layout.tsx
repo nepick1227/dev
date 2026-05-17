@@ -19,6 +19,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
   themeColor: "#D32F2F",
 };
 
@@ -29,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className="h-full">
-      <body className="min-h-full bg-white antialiased">{children}</body>
+      <body className="min-h-full bg-surface antialiased">{children}</body>
     </html>
   );
 }

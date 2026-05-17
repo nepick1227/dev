@@ -151,13 +151,13 @@ function SelectedStoreCard({ store, rank, onClose }: { store: Store; rank: numbe
 
   return (
     <div
-      className="absolute left-3 right-3 z-40 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.16)] p-4"
+      className="absolute left-3 right-3 z-40 rounded-2xl bg-surface shadow-[0_4px_24px_rgba(0,0,0,0.16)] p-4"
       style={{ bottom: "28px" }}
     >
       {/* 1행: 순위 배지 + 카테고리 배지 + 닫기 */}
       <div className="mb-2 flex items-center gap-1.5">
         {rank > 0 && (
-          <span className="rounded-full bg-[#FEE2E2] px-2 py-0.5 text-[11px] font-extrabold tracking-tight text-primary">
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-extrabold tracking-tight text-primary">
             {rank}위
           </span>
         )}
@@ -165,7 +165,7 @@ function SelectedStoreCard({ store, rank, onClose }: { store: Store; rank: numbe
           {categoryLabel}
         </span>
         <button onClick={onClose} className="ml-auto p-0.5" aria-label="닫기">
-          <CloseIcon size={18} color="#9CA3AF" />
+          <CloseIcon size={18} color="var(--color-text-tertiary)" />
         </button>
       </div>
 
@@ -186,12 +186,12 @@ function SelectedStoreCard({ store, rank, onClose }: { store: Store; rank: numbe
         <button onClick={handleCopy} className="shrink-0 rounded-full bg-bg p-1.5" aria-label="주소 복사">
           {copied ? (
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12L10 17L19 8" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M5 12L10 17L19 8" stroke="var(--color-success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           ) : (
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <rect x="9" y="9" width="13" height="13" rx="2" stroke="#9CA3AF" strokeWidth="2"/>
-              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="#9CA3AF" strokeWidth="2"/>
+              <rect x="9" y="9" width="13" height="13" rx="2" stroke="var(--color-text-tertiary)" strokeWidth="2"/>
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="var(--color-text-tertiary)" strokeWidth="2"/>
             </svg>
           )}
         </button>
@@ -229,7 +229,7 @@ export default function MapView() {
 
   const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
   const isMapFull = snap === "collapsed";
-  const { stores, accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
+  const { accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
 
   const hasMore = totalPages > 1 && page < totalPages - 1;
 
@@ -497,7 +497,7 @@ export default function MapView() {
         // 지도보기 or 카드 열림 → 랭킹보기
         <button
           onClick={handleRankingToggle}
-          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
           style={{ bottom: floatingButtonBottom, transition: "bottom 0.3s ease-out" }}
         >
           <span>🏆</span>
@@ -507,7 +507,7 @@ export default function MapView() {
         // half / full 랭킹 상태 → 지도보기 (시트 위 플로팅)
         <button
           onClick={handleCollapse}
-          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
           style={{
             bottom: snap === "full" ? "32px" : "calc(50vh + 8px)",
             transition: "bottom 0.3s ease-out",

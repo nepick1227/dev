@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageContainer from "@/components/layout/PageContainer";
 import Header from "@/components/layout/Header";
 import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import RecordEditForm from "@/features/record/RecordEditForm";
 import Spinner from "@/components/ui/Spinner";
 import type { RecordWithStore } from "@/types/database";
@@ -75,18 +76,12 @@ export default function RecordEditPage() {
         title="기록 수정을 그만두시겠어요?"
         footer={
           <div className="flex gap-2.5">
-            <button
-              onClick={() => setShowLeaveModal(false)}
-              className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary"
-            >
+            <Button variant="secondary" fullWidth onClick={() => setShowLeaveModal(false)}>
               계속 수정
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="flex-1 rounded-xl bg-primary py-3.5 text-[15px] font-semibold text-white"
-            >
+            </Button>
+            <Button fullWidth onClick={() => router.back()}>
               나가기
-            </button>
+            </Button>
           </div>
         }
       >
@@ -95,7 +90,7 @@ export default function RecordEditPage() {
         </p>
       </Modal>
 
-      <Header title="기록 수정" showBack onBack={handleBack} />
+      <Header title="기록 수정" showBack onBack={handleBack} noBorder />
       <div className="flex flex-1 flex-col overflow-hidden">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">

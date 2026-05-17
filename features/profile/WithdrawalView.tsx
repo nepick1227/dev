@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
+import Textarea from "@/components/ui/Textarea";
 
 const REASONS = [
   "자주 사용하지 않아요",
@@ -73,22 +75,12 @@ export default function WithdrawalView() {
         title="정말 탈퇴하시겠어요?"
         footer={
           <div className="flex gap-2.5">
-            <button
-              onClick={() => { setShowConfirm(false); router.push("/home"); }}
-              disabled={isSubmitting}
-              className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary disabled:opacity-50"
-            >
+            <Button variant="secondary" fullWidth onClick={() => { setShowConfirm(false); router.push("/home"); }} disabled={isSubmitting}>
               취소
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={!agreed || isSubmitting}
-              className={`flex-1 rounded-xl py-3.5 text-[15px] font-semibold text-white transition-colors ${
-                agreed && !isSubmitting ? "bg-primary" : "bg-border"
-              }`}
-            >
-              {isSubmitting ? "처리 중..." : "확인"}
-            </button>
+            </Button>
+            <Button variant="danger" fullWidth onClick={handleConfirm} disabled={!agreed || isSubmitting} isLoading={isSubmitting}>
+              탈퇴하기
+            </Button>
           </div>
         }
       >
@@ -107,7 +99,7 @@ export default function WithdrawalView() {
         >
           <div
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-colors ${
-              agreed ? "bg-primary" : "border-2 border-border bg-white"
+              agreed ? "bg-primary" : "border-2 border-border bg-surface"
             }`}
           >
             {agreed && (
@@ -144,39 +136,26 @@ export default function WithdrawalView() {
 
         {reason === "기타" && (
           <div className="mt-3">
-            <textarea
+            <Textarea
               value={customText}
-              onChange={(e) => { if (e.target.value.length <= 500) setCustomText(e.target.value); }}
+              onChange={(e) => setCustomText(e.target.value)}
               placeholder="탈퇴 사유를 입력해 주세요"
               rows={3}
-              className="w-full resize-none rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[14px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+              maxLength={500}
+              currentLength={customText.length}
             />
-            <div className="mt-1.5 flex justify-end px-1">
-              <span className="text-[12px]" style={{ color: customText.length >= 500 ? "#D32F2F" : "#6B7280" }}>
-                {customText.length}/500
-              </span>
-            </div>
           </div>
         )}
       </div>
 
       {/* 하단 버튼 */}
-      <div className="fixed bottom-0 left-1/2 flex w-full max-w-107.5 -translate-x-1/2 gap-2.5 border-t border-border bg-white px-5 pb-9 pt-3">
-        <button
-          onClick={() => router.push("/home")}
-          className="flex-1 rounded-xl border border-border py-4 text-[15px] font-semibold text-text-secondary"
-        >
+      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 flex w-full max-w-107.5 -translate-x-1/2 gap-2.5 border-t border-border bg-surface px-5 pt-3">
+        <Button variant="secondary" fullWidth onClick={() => router.push("/home")}>
           이전
-        </button>
-        <button
-          onClick={handleOpenConfirm}
-          disabled={!canProceed}
-          className={`flex-1 rounded-xl py-4 text-[15px] font-bold text-white transition-colors ${
-            canProceed ? "bg-primary" : "bg-border"
-          }`}
-        >
+        </Button>
+        <Button variant="danger" fullWidth onClick={handleOpenConfirm} disabled={!canProceed}>
           탈퇴하기
-        </button>
+        </Button>
       </div>
     </>
   );

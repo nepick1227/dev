@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import MonthFilter from "./MonthFilter";
+import MonthlyStats from "./MonthlyStats";
 import RecordCard from "./RecordCard";
 import Spinner from "@/components/ui/Spinner";
 import { formatYearMonth, formatDateGroupLabel } from "@/utils/format";
@@ -81,37 +82,37 @@ export default function Timeline() {
     <div className="flex flex-1 flex-col overflow-hidden">
       <Toast message={toast.message} visible={toast.visible} />
 
-      {/* 상단 컨트롤 바 */}
-      <div className="shrink-0 border-b border-border bg-white px-5 py-3">
+      {/* 상단 헤더 */}
+      <div className="shrink-0 bg-surface px-5 pb-3 pt-5">
+        <h1 className="mb-4 text-[28px] font-extrabold tracking-tight text-text-primary">내 픽</h1>
+
+        {/* 타임라인 / 월별 세그먼트 토글 + 추가 버튼 */}
         <div className="flex items-center justify-between">
-          {/* 타임라인 / 월별 토글 */}
-          <div className="flex items-center gap-2">
+          <div className="flex rounded-full border border-border bg-surface p-0.5">
             <button
               onClick={() => setViewMode("timeline")}
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
                 viewMode === "timeline"
-                  ? "bg-primary text-white"
-                  : "bg-bg text-text-secondary"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-text-secondary"
               }`}
             >
               타임라인
             </button>
             <button
               onClick={() => setViewMode("monthly")}
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
                 viewMode === "monthly"
-                  ? "bg-primary text-white"
-                  : "bg-bg text-text-secondary"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-text-secondary"
               }`}
             >
               월별
             </button>
           </div>
-
-          {/* 내 픽 추가 버튼 */}
           <button
             onClick={() => router.push("/record")}
-            className="flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-[13px] font-semibold text-white"
+            className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-white"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
               <path d="M6 1.5V10.5M1.5 6H10.5" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -133,52 +134,51 @@ export default function Timeline() {
         <div className="flex flex-1 items-center justify-center">
           <Spinner size={28} />
         </div>
-      ) : records.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5">
-          <p className="text-[40px]">🗺️</p>
-          <div className="text-center">
-            <p className="text-[15px] font-semibold tracking-tight text-text-primary">
-              {viewMode === "monthly" ? "이 달의 기록이 없어요" : "아직 내가 픽한 맛집이 없어요!"}
-            </p>
-            <p className="mt-1 text-[13px] tracking-tight text-text-secondary">
-              {viewMode === "monthly" ? "다른 달을 선택하거나 새로 픽해 보세요" : "나만의 맛집을 내 픽에 담아볼까요?"}
-            </p>
-          </div>
-          {viewMode === "timeline" && (
-            <button
-              onClick={() => router.push("/record")}
-              className="mt-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-bold tracking-tight text-white"
-            >
-              첫 맛집 픽하기
-            </button>
-          )}
-        </div>
       ) : (
         <div className="hide-scrollbar flex-1 overflow-y-auto">
-          {grouped.map(([date, dayRecords]) => (
-            <div key={date} className="px-5 pt-5">
-              {/* 날짜 그룹 헤더 */}
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-[13px] font-bold tracking-tight text-text-secondary">
-                  {formatDateGroupLabel(date)}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-[12px] tracking-tight text-border">
-                  {dayRecords.length}건
-                </span>
+          {viewMode === "monthly" && <MonthlyStats records={records} />}
+          {records.length === 0 ? (
+            <div className="nepick-fade-in flex flex-col items-center justify-center gap-3 px-5 py-16">
+              <p className="text-[40px]">🗺️</p>
+              <div className="text-center">
+                <p className="text-[15px] font-semibold tracking-tight text-text-primary">
+                  {viewMode === "monthly" ? "이 달의 기록이 없어요" : "아직 내가 픽한 맛집이 없어요!"}
+                </p>
+                <p className="mt-1 text-[13px] tracking-tight text-text-secondary">
+                  {viewMode === "monthly" ? "다른 달을 선택하거나 새로 픽해 보세요" : "나만의 맛집을 내 픽에 담아볼까요?"}
+                </p>
               </div>
-
-              {/* 해당 날짜 기록 */}
-              {dayRecords.map((record, idx) => (
-                <RecordCard
-                  key={record.id}
-                  record={record}
-                  isLast={idx === dayRecords.length - 1}
-                  onShowToast={showToast}
-                />
-              ))}
+              {viewMode === "timeline" && (
+                <button
+                  onClick={() => router.push("/record")}
+                  className="mt-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-bold tracking-tight text-white"
+                >
+                  첫 맛집 픽하기
+                </button>
+              )}
             </div>
-          ))}
+          ) : (
+            <>
+              {grouped.map(([date, dayRecords]) => (
+                <div key={date} className="px-5 pt-5">
+                  <div className="mb-3">
+                    <span className="text-[15px] font-bold tracking-tight text-text-primary">
+                      {formatDateGroupLabel(date)}
+                    </span>
+                  </div>
+                  {dayRecords.map((record, idx) => (
+                    <RecordCard
+                      key={record.id}
+                      record={record}
+                      isLast={idx === dayRecords.length - 1}
+                      onShowToast={showToast}
+                      onDelete={() => fetchRecords(viewMode, currentMonth)}
+                    />
+                  ))}
+                </div>
+              ))}
+            </>
+          )}
           <div className="h-6" />
         </div>
       )}

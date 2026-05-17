@@ -36,7 +36,10 @@ export function useKakaoSearch() {
       });
       if (!res.ok) throw new Error("검색 실패");
       const data = await res.json();
-      setResults(data.documents ?? []);
+      const filtered = (data.documents ?? []).filter(
+        (p: KakaoSearchResult) => p.category_group_code === "FD6" || p.category_group_code === "CE7"
+      );
+      setResults(filtered);
     } catch (e) {
       if ((e as Error).name !== "AbortError") setResults([]);
     } finally {

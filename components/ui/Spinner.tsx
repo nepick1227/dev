@@ -4,7 +4,7 @@ interface SpinnerProps {
   className?: string;
 }
 
-export default function Spinner({ color = "#D32F2F", size = 20, className }: SpinnerProps) {
+export default function Spinner({ color = "var(--color-primary)", size = 20, className }: SpinnerProps) {
   return (
     <svg
       width={size}

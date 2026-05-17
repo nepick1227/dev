@@ -26,10 +26,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={[
-              "w-full rounded-xl border-[1.5px] bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors duration-200",
-              "placeholder:text-text-secondary",
+              "h-14 w-full rounded-2xl border-[1.5px] bg-surface px-5 text-[16px] tracking-tight text-text-primary outline-none transition-colors duration-200",
+              "placeholder:text-text-tertiary",
               error
-                ? "border-primary focus:border-primary"
+                ? "border-primary-dark focus:border-primary-dark"
                 : "border-border focus:border-primary",
               rightElement ? "pr-11" : "",
               className,
@@ -39,14 +39,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightElement && (
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2">{rightElement}</div>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">{rightElement}</div>
           )}
         </div>
         {error && (
-          <p className="text-[12px] tracking-tight text-primary">{error}</p>
+          <p className="text-[13px] tracking-tight text-primary-dark">{error}</p>
         )}
         {hint && !error && (
-          <p className="text-[12px] tracking-tight text-text-secondary">{hint}</p>
+          <p className="text-[13px] tracking-tight text-text-secondary">{hint}</p>
         )}
       </div>
     );

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import { UserIcon, ChevronRightIcon, KakaoIcon, NaverIcon, GoogleIcon } from "@/components/ui/icons";
 import type { Profile } from "@/types/database";
 
@@ -79,18 +80,12 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
         title="로그아웃"
         footer={
           <div className="flex gap-2.5">
-            <button
-              onClick={() => setShowLogoutModal(false)}
-              className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary"
-            >
+            <Button variant="secondary" fullWidth onClick={() => setShowLogoutModal(false)}>
               취소
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex-1 rounded-xl bg-primary py-3.5 text-[15px] font-semibold text-white"
-            >
+            </Button>
+            <Button fullWidth onClick={handleLogout}>
               확인
-            </button>
+            </Button>
           </div>
         }
       >
@@ -113,7 +108,7 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
               />
             ) : (
               <div className="flex h-19 w-19 items-center justify-center rounded-full bg-bg ring-2 ring-border">
-                <UserIcon size={34} color="#9CA3AF" />
+                <UserIcon size={34} color="var(--color-text-tertiary)" />
               </div>
             )}
           </div>
@@ -191,7 +186,7 @@ function MenuRow({ item }: { item: MenuItem }) {
       <span className={`text-[15px] tracking-tight ${item.isDestructive ? "text-primary" : "text-text-primary"}`}>
         {item.label}
       </span>
-      {item.right ?? <ChevronRightIcon size={16} color="#9CA3AF" />}
+      {item.right ?? <ChevronRightIcon size={16} color="var(--color-text-tertiary)" />}
     </div>
   );
 

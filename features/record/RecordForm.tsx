@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
+import Textarea from "@/components/ui/Textarea";
 import StoreSearch, { type KakaoPlace } from "./StoreSearch";
 import ImageUpload from "./ImageUpload";
 import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
@@ -149,126 +150,116 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto px-5 pt-6 pb-32">
-        {/* 가게 선택 */}
-        <section className="mb-6">
-          <p className="mb-2 text-[14px] font-semibold tracking-tight text-text-primary">
-            맛집 이름
-            <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
-          </p>
+      <div className="hide-scrollbar flex-1 overflow-y-auto pb-32">
+        <div className="px-5 pt-6">
+          {/* 이미지 업로드 */}
+          <section className="mb-6">
+            <ImageUpload value={imageFile} onChange={setImageFile} onError={showToast} />
+          </section>
 
-          {selectedPlace ? (
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-bg p-4">
-              <MapPinIcon size={18} color="#D32F2F" className="shrink-0" />
-              <div className="flex-1 overflow-hidden">
-                <p className="truncate text-[15px] font-semibold tracking-tight text-text-primary">
-                  {selectedPlace.place_name}
-                </p>
-                <p className="truncate text-[12px] tracking-tight text-text-secondary">
-                  {selectedPlace.road_address_name || selectedPlace.address_name}
-                </p>
-              </div>
-              <button
-                onClick={handleClearPlace}
-                className="shrink-0"
-                aria-label="가게 선택 취소"
-              >
-                <CloseIcon size={18} color="#9CA3AF" />
-              </button>
-            </div>
-          ) : (
-            <StoreSearch onSelect={handlePlaceSelect} />
-          )}
-        </section>
+          {/* 가게 선택 */}
+          <section className="mb-6">
+            <p className="mb-2 text-[14px] font-semibold tracking-tight text-text-primary">
+              맛집 이름
+              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+            </p>
 
-        {/* 방문 일시 */}
-        <section className="mb-6">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
-            방문일시
-            <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={visitedAt}
-              onChange={(e) => setVisitedAt(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
-              className="flex-3 min-w-0 rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-            />
-            <input
-              type="time"
-              value={visitedTime}
-              onChange={(e) => setVisitedTime(e.target.value)}
-              step="600"
-              className="flex-2 min-w-0 rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-            />
-          </div>
-        </section>
-
-        {/* 추천 여부 */}
-        <section className="mb-6">
-          <p className="mb-2.5 text-[14px] font-semibold tracking-tight text-text-primary">
-            내 입맛엔 어땠나요?
-            <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
-          </p>
-          <div className="flex gap-3">
-            {RECOMMENDATION_OPTIONS.map((opt) => {
-              const isSelected = recommendation === opt;
-              return (
+            {selectedPlace ? (
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-bg p-4">
+                <MapPinIcon size={18} color="var(--color-primary)" className="shrink-0" />
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-[15px] font-semibold tracking-tight text-text-primary">
+                    {selectedPlace.place_name}
+                  </p>
+                  <p className="truncate text-[12px] tracking-tight text-text-secondary">
+                    {selectedPlace.road_address_name || selectedPlace.address_name}
+                  </p>
+                </div>
                 <button
-                  key={opt}
-                  onClick={() => setRecommendation(opt)}
-                  className={`flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200 ${
-                    isSelected ? "border-primary/30 bg-primary/13" : "border-border bg-bg"
-                  }`}
+                  onClick={handleClearPlace}
+                  className="shrink-0"
+                  aria-label="가게 선택 취소"
                 >
-                  <span className="text-[22px]">{recommendationEmojis[opt]}</span>
-                  <span className={`text-[12px] font-semibold tracking-tight ${isSelected ? "text-primary" : "text-text-secondary"}`}>
-                    {recommendationLabels[opt]}
-                  </span>
+                  <CloseIcon size={18} color="var(--color-text-tertiary)" />
                 </button>
-              );
-            })}
-          </div>
-        </section>
+              </div>
+            ) : (
+              <StoreSearch onSelect={handlePlaceSelect} />
+            )}
+          </section>
 
-        {/* 코멘트 */}
-        <section className="mb-6">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
-            코멘트
-            <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
-          </label>
-          <textarea
-            value={comment}
-            onChange={(e) => {
-              if (e.target.value.length <= 500) setComment(e.target.value);
-            }}
-            placeholder="이 맛집에 대한 솔직한 이야기를 남겨 주세요"
-            rows={4}
-            className="w-full resize-none rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-          />
-          <div className="mt-1.5 flex items-center justify-between px-1">
-            <span className="text-[12px] text-primary">
-              {commentError}
-            </span>
-            <span className={`text-[12px] ${comment.length >= 500 ? "text-primary" : "text-text-secondary"}`}>
-              {comment.length}/500
-            </span>
-          </div>
-        </section>
+          {/* 방문 일시 */}
+          <section className="mb-6">
+            <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+              방문일시
+              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={visitedAt}
+                onChange={(e) => setVisitedAt(e.target.value)}
+                max={new Date().toISOString().split("T")[0]}
+                className="flex-3 min-w-0 h-14 rounded-2xl border-[1.5px] border-border bg-surface px-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+              />
+              <input
+                type="time"
+                value={visitedTime}
+                onChange={(e) => setVisitedTime(e.target.value)}
+                step="600"
+                className="flex-2 min-w-0 h-14 rounded-2xl border-[1.5px] border-border bg-surface px-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+              />
+            </div>
+          </section>
 
-        {/* 이미지 */}
-        <section className="mb-6">
-          <ImageUpload
-            value={imageFile}
-            onChange={setImageFile}
-            onError={showToast}
-          />
-        </section>
+          {/* 추천 여부 */}
+          <section className="mb-6">
+            <p className="mb-2.5 text-[14px] font-semibold tracking-tight text-text-primary">
+              내 입맛엔 어땠나요?
+              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+            </p>
+            <div className="flex gap-3">
+              {RECOMMENDATION_OPTIONS.map((opt) => {
+                const isSelected = recommendation === opt;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => setRecommendation(opt)}
+                    className={`flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200 ${
+                      isSelected ? "border-primary/30 bg-primary/13" : "border-border bg-bg"
+                    }`}
+                  >
+                    <span className="text-[22px]">{recommendationEmojis[opt]}</span>
+                    <span className={`text-[12px] font-semibold tracking-tight ${isSelected ? "text-primary" : "text-text-secondary"}`}>
+                      {recommendationLabels[opt]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* 코멘트 */}
+          <section className="mb-6">
+            <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+              코멘트
+              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+            </label>
+            <Textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="이 맛집에 대한 솔직한 이야기를 남겨 주세요"
+              rows={4}
+              maxLength={500}
+              currentLength={comment.length}
+              error={commentError || undefined}
+            />
+          </section>
+        </div>
       </div>
 
       {/* 저장 버튼 */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-white px-5 pb-9 pt-3">
+      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
         <Button
           fullWidth
           isLoading={isSubmitting}

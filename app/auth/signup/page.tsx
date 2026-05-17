@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Spinner from "@/components/ui/Spinner";
+import Button from "@/components/ui/Button";
+import Textarea from "@/components/ui/Textarea";
 import { validateNickname } from "@/utils/validation";
 
 // ── 타입 ─────────────────────────────────────────────
@@ -19,22 +21,21 @@ function RadioOption({ selected, label, onClick }: { selected: boolean; label: s
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl border-[1.5px] p-3.5 transition-all duration-200"
-      style={{
-        background: selected ? "rgba(211,47,47,0.06)" : "#F9FAFB",
-        borderColor: selected ? "rgba(211,47,47,0.25)" : "#E5E7EB",
-      }}
+      className={[
+        "flex w-full items-center gap-3 rounded-2xl border-[1.5px] p-3.5 transition-all duration-200",
+        selected ? "border-primary-border bg-primary-soft" : "border-border bg-bg",
+      ].join(" ")}
     >
-      <div
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200"
-        style={{ borderColor: selected ? "#D32F2F" : "#E5E7EB" }}
-      >
-        {selected && <div className="h-4 w-4 rounded-full opacity-50" style={{ background: "#D32F2F" }} />}
+      <div className={[
+        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+        selected ? "border-primary" : "border-border",
+      ].join(" ")}>
+        {selected && <div className="h-4 w-4 rounded-full bg-primary opacity-50" />}
       </div>
-      <span
-        className="text-[15px] tracking-tight text-text-primary"
-        style={{ fontWeight: selected ? 600 : 400 }}
-      >
+      <span className={[
+        "text-[15px] tracking-tight text-text-primary",
+        selected ? "font-semibold" : "font-normal",
+      ].join(" ")}>
         {label}
       </span>
     </button>
@@ -56,14 +57,7 @@ function SignupContent() {
   const [gender, setGender] = useState<Gender | null>("unknown");
   const [intro, setIntro] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [animateIn, setAnimateIn] = useState(false);
-
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimateIn(true), 80);
-    return () => clearTimeout(timer);
-  }, []);
 
   // 뒤로가기 → 에러 페이지로 강제 이동 (회원가입 중단 방지)
   useEffect(() => {
@@ -173,17 +167,17 @@ function SignupContent() {
   }, [isSaving, router, showToast]);
 
   // 닉네임 상태별 스타일
-  const inputBorderColor =
+  const inputBorderClass =
     nicknameStatus === "ok"
-      ? "#16A34A"
+      ? "border-success-border focus:border-success-border"
       : nicknameStatus === "error" || nicknameStatus === "taken"
-        ? "#D32F2F"
-        : "#E5E7EB";
+        ? "border-primary-dark focus:border-primary-dark"
+        : "border-border focus:border-primary";
 
-  const msgColor =
-    nicknameStatus === "ok" ? "#16A34A"
-    : nicknameStatus === "checking" ? "#6B7280"
-    : "#D32F2F";
+  const msgColorClass =
+    nicknameStatus === "ok" ? "text-success-text"
+    : nicknameStatus === "checking" ? "text-text-secondary"
+    : "text-primary-dark";
 
   const canSubmit = nicknameStatus === "ok" && !isSaving;
 
@@ -193,10 +187,7 @@ function SignupContent() {
 
       <div className="hide-scrollbar flex-1 overflow-y-auto px-6 pt-6">
         {/* 타이틀 */}
-        <div
-          className="mb-7"
-          style={{ opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(10px)", transition: "all 0.4s ease-out" }}
-        >
+        <div className="nepick-fade-in mb-7">
           <h2 className="mb-1.5 text-[22px] font-extrabold tracking-tight text-text-primary">
             프로필을 설정해 주세요
           </h2>
@@ -206,10 +197,7 @@ function SignupContent() {
         </div>
 
         {/* ── 닉네임 ── */}
-        <div
-          className="mb-6"
-          style={{ opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(10px)", transition: "all 0.4s ease-out 0.05s" }}
-        >
+        <div className="nepick-fade-in mb-6 [animation-delay:50ms]">
           <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
             닉네임
           </label>
@@ -219,10 +207,10 @@ function SignupContent() {
               value={nickname}
               onChange={(e) => handleNicknameChange(e.target.value)}
               placeholder="2~12자, 특수문자는 _만 가능"
-              className="w-full rounded-xl px-4 py-3.5 pr-11 text-[15px] tracking-tight text-text-primary outline-none transition-colors duration-200"
-              style={{ border: `1.5px solid ${inputBorderColor}`, background: "#fff" }}
-              onFocus={(e) => { if (!nicknameStatus) e.currentTarget.style.borderColor = "#D32F2F"; }}
-              onBlur={(e) => { if (!nicknameStatus) e.currentTarget.style.borderColor = "#E5E7EB"; }}
+              className={[
+                "h-14 w-full rounded-2xl border-[1.5px] bg-surface px-5 pr-12 text-[16px] tracking-tight text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary",
+                inputBorderClass,
+              ].join(" ")}
               autoComplete="off"
               maxLength={12}
             />
@@ -230,20 +218,20 @@ function SignupContent() {
               {nicknameStatus === "checking" && <Spinner size={16} />}
               {nicknameStatus === "ok" && (
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                  <circle cx="9" cy="9" r="9" fill="#16A34A" />
+                  <circle cx="9" cy="9" r="9" fill="var(--color-success)" />
                   <path d="M5 9.5L7.5 12L13 6.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
               {(nicknameStatus === "error" || nicknameStatus === "taken") && (
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                  <circle cx="9" cy="9" r="9" fill="#D32F2F" />
+                  <circle cx="9" cy="9" r="9" fill="var(--color-primary)" />
                   <path d="M6 6L12 12M12 6L6 12" stroke="white" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               )}
             </div>
           </div>
           <div className="mt-1.5 flex items-center justify-between px-1">
-            <span className="text-[12px] tracking-tight" style={{ color: nicknameMessage ? msgColor : "transparent" }}>
+            <span className={["text-[12px] tracking-tight", nicknameMessage ? msgColorClass : "text-transparent"].join(" ")}>
               {nicknameMessage || "ㅤ"}
             </span>
             <span className="text-[12px] text-text-secondary">{nickname.length}/12</span>
@@ -251,10 +239,7 @@ function SignupContent() {
         </div>
 
         {/* ── 생년월일 ── */}
-        <div
-          className="mb-6"
-          style={{ opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(10px)", transition: "all 0.4s ease-out 0.1s" }}
-        >
+        <div className="nepick-fade-in mb-6 [animation-delay:100ms]">
           <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
             생년월일{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
@@ -264,16 +249,15 @@ function SignupContent() {
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
             max={new Date().toISOString().split("T")[0]}
-            className="w-full rounded-xl border-[1.5px] border-border px-4 py-3.5 text-[15px] tracking-tight outline-none transition-colors duration-200 focus:border-primary"
-            style={{ color: birthDate ? "#111827" : "#6B7280", background: "#fff" }}
+            className={[
+              "h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface px-5 text-[16px] tracking-tight outline-none transition-colors duration-200 focus:border-primary",
+              birthDate ? "text-text-primary" : "text-text-tertiary",
+            ].join(" ")}
           />
         </div>
 
         {/* ── 성별 ── */}
-        <div
-          className="mb-6"
-          style={{ opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(10px)", transition: "all 0.4s ease-out 0.15s" }}
-        >
+        <div className="nepick-fade-in mb-6 [animation-delay:150ms]">
           <label className="mb-2.5 block text-[14px] font-semibold tracking-tight text-text-primary">
             성별{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
@@ -286,53 +270,32 @@ function SignupContent() {
         </div>
 
         {/* ── 한줄소개 ── */}
-        <div
-          className="mb-8"
-          style={{ opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(10px)", transition: "all 0.4s ease-out 0.2s" }}
-        >
+        <div className="nepick-fade-in mb-8 [animation-delay:200ms]">
           <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
             한줄소개{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </label>
-          <textarea
+          <Textarea
             value={intro}
-            onChange={(e) => { if (e.target.value.length <= 100) setIntro(e.target.value); }}
+            onChange={(e) => setIntro(e.target.value)}
             placeholder="자신을 소개해 보세요"
             rows={3}
-            className="w-full resize-none rounded-xl border-[1.5px] border-border px-4 py-3.5 text-[15px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors duration-200 focus:border-primary"
-            style={{ background: "#fff", minHeight: 80 }}
+            maxLength={100}
+            currentLength={intro.length}
           />
-          <div className="mt-1.5 flex justify-end px-1">
-            <span className="text-[12px]" style={{ color: intro.length >= 100 ? "#D32F2F" : "#6B7280" }}>
-              {intro.length}/100
-            </span>
-          </div>
         </div>
       </div>
 
       {/* ── CTA ── */}
-      <div
-        className="border-t border-border bg-white px-6 pb-9 pt-3"
-        style={{ opacity: animateIn ? 1 : 0, transition: "all 0.4s ease-out 0.25s" }}
-      >
-        <button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="mb-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[16px] font-bold tracking-tight transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed"
-          style={{
-            background: canSubmit ? "#D32F2F" : "#E5E7EB",
-            color: canSubmit ? "#fff" : "#6B7280",
-          }}
-        >
-          {isSaving ? <Spinner color="#fff" size={20} /> : "시작하기"}
-        </button>
-        <button
-          onClick={handleSkip}
-          disabled={isSaving}
-          className="w-full rounded-xl py-3.5 text-[14px] font-medium tracking-tight text-text-secondary transition-colors disabled:opacity-50"
-        >
+      <div className="nepick-fade-in safe-area-pb-lg border-t border-border bg-surface px-6 pt-3 [animation-delay:250ms]">
+        <div className="mb-2.5">
+          <Button fullWidth onClick={handleSubmit} disabled={!canSubmit} isLoading={isSaving}>
+            시작하기
+          </Button>
+        </div>
+        <Button variant="ghost" fullWidth onClick={handleSkip} disabled={isSaving}>
           나중에 입력할게요
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 // ── 약관 데이터 ──────────────────────────────────────
 const TERMS_CONTENT = {
@@ -35,12 +36,10 @@ function CheckboxItem({ checked, required, label, desc, onChange, onDetailClick 
   return (
     <div className="flex items-start justify-between py-3.5">
       <div className="flex flex-1 cursor-pointer items-start gap-3" onClick={onChange}>
-        <div
-          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-200"
-          style={{
-            background: checked ? "#D32F2F" : "#fff",
-            border: checked ? "none" : "2px solid #E5E7EB",
-          }}
+        <div className={[
+          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-200",
+          checked ? "bg-primary" : "border-2 border-border bg-surface",
+        ].join(" ")}
         >
           {checked && (
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
@@ -78,10 +77,10 @@ function TermsDetailView({ termsKey, onBack }: { termsKey: TermsKey; onBack: () 
   const terms = TERMS_CONTENT[termsKey];
   return (
     <div className="page-container">
-      <div className="sticky top-0 z-10 flex items-center border-b border-border bg-white px-5 py-4">
+      <div className="sticky top-0 z-10 flex items-center border-b border-border bg-surface px-5 py-4">
         <button onClick={onBack} className="flex items-center p-1 pr-2" aria-label="뒤로가기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 18L9 12L15 6" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M15 18L9 12L15 6" stroke="var(--color-text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <h1 className="text-[18px] font-bold tracking-tight text-text-primary">{terms.title}</h1>
@@ -99,18 +98,12 @@ function TermsDetailView({ termsKey, onBack }: { termsKey: TermsKey; onBack: () 
 export default function TermsPage() {
   const router = useRouter();
   const [detailKey, setDetailKey] = useState<TermsKey | null>(null);
-  const [animateIn, setAnimateIn] = useState(false);
   const [agreements, setAgreements] = useState({
     service: false,
     privacy: false,
     location: false,
     marketing: false,
   });
-
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimateIn(true), 80);
-    return () => clearTimeout(timer);
-  }, []);
 
   const requiredKeys = ["service", "privacy", "location"] as const;
   const allRequired = requiredKeys.every((k) => agreements[k]);
@@ -147,14 +140,7 @@ export default function TermsPage() {
     <div className="page-container">
       <div className="flex flex-1 flex-col">
         {/* 로고 & 타이틀 */}
-        <div
-          className="px-6 pb-8 pt-16"
-          style={{
-            opacity: animateIn ? 1 : 0,
-            transform: animateIn ? "translateY(0)" : "translateY(12px)",
-            transition: "all 0.5s ease-out",
-          }}
-        >
+        <div className="nepick-fade-in px-6 pb-8 pt-16">
           <svg width="48" height="48" viewBox="0 0 80 80" fill="none" className="mb-4" aria-hidden="true">
             <defs>
               <linearGradient id="terms-logo" x1="0" y1="0" x2="0" y2="1">
@@ -175,31 +161,19 @@ export default function TermsPage() {
         </div>
 
         {/* 약관 목록 */}
-        <div
-          className="px-6"
-          style={{
-            opacity: animateIn ? 1 : 0,
-            transform: animateIn ? "translateY(0)" : "translateY(12px)",
-            transition: "all 0.5s ease-out 0.1s",
-          }}
-        >
+        <div className="nepick-fade-in px-6 [animation-delay:100ms]">
           {/* 전체 동의 */}
           <div
             onClick={handleAllToggle}
-            className="mb-2 flex cursor-pointer items-center gap-3 rounded-xl border-[1.5px] p-4 transition-all duration-200"
-            style={{
-              background: allChecked ? "rgba(211,47,47,0.06)" : "#F9FAFB",
-              borderColor: allChecked ? "rgba(211,47,47,0.25)" : "#E5E7EB",
-            }}
+            className={[
+              "mb-2 flex cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] p-4 transition-all duration-200",
+              allChecked ? "border-primary-border bg-primary-soft" : "border-border bg-bg",
+            ].join(" ")}
           >
-            <div
-              className="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-200"
-              style={{
-                background: allChecked ? "#D32F2F" : "#fff",
-                border: allChecked ? "none" : "2px solid #E5E7EB",
-                width: 26,
-                height: 26,
-              }}
+            <div className={[
+              "flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-200",
+              allChecked ? "bg-primary" : "border-2 border-border bg-surface",
+            ].join(" ")}
             >
               {allChecked && (
                 <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
@@ -220,25 +194,10 @@ export default function TermsPage() {
       </div>
 
       {/* CTA */}
-      <div
-        className="px-6 pb-9 pt-4"
-        style={{
-          opacity: animateIn ? 1 : 0,
-          transform: animateIn ? "translateY(0)" : "translateY(12px)",
-          transition: "all 0.5s ease-out 0.25s",
-        }}
-      >
-        <button
-          onClick={handleStart}
-          disabled={!allRequired}
-          className="w-full rounded-xl py-4 text-[16px] font-bold tracking-tight transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed"
-          style={{
-            background: allRequired ? "#D32F2F" : "#E5E7EB",
-            color: allRequired ? "#fff" : "#6B7280",
-          }}
-        >
+      <div className="nepick-fade-in safe-area-pb-lg px-6 pt-4 [animation-delay:250ms]">
+        <Button fullWidth onClick={handleStart} disabled={!allRequired}>
           시작하기
-        </button>
+        </Button>
       </div>
     </div>
   );

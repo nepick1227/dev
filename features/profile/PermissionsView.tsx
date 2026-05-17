@@ -128,7 +128,7 @@ export default function PermissionsView() {
           {ITEMS.map((item) => (
             <div
               key={item.key}
-              className="flex items-center gap-4 rounded-2xl border border-border bg-white px-4 py-4"
+              className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-4"
             >
               {/* 아이콘 */}
               <div
@@ -170,14 +170,14 @@ export default function PermissionsView() {
 function StatusBadge({ status }: { status: PermStatus }) {
   if (status === "granted") {
     return (
-      <span className="shrink-0 rounded-full bg-green-100 px-3 py-1 text-[12px] font-semibold text-green-700">
+      <span className="shrink-0 rounded-full bg-success-soft px-3 py-1 text-[12px] font-semibold text-success-text">
         허용
       </span>
     );
   }
   if (status === "denied") {
     return (
-      <span className="shrink-0 rounded-full bg-red-100 px-3 py-1 text-[12px] font-semibold text-primary">
+      <span className="shrink-0 rounded-full bg-primary-soft px-3 py-1 text-[12px] font-semibold text-primary">
         거부
       </span>
     );

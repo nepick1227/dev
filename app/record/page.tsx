@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
 import Header from "@/components/layout/Header";
 import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import RecordForm from "@/features/record/RecordForm";
 import type { KakaoPlace } from "@/features/record/StoreSearch";
 
@@ -51,18 +52,12 @@ function RecordPageContent() {
         title="기록을 그만두시겠어요?"
         footer={
           <div className="flex gap-2.5">
-            <button
-              onClick={() => setShowLeaveModal(false)}
-              className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary"
-            >
+            <Button variant="secondary" fullWidth onClick={() => setShowLeaveModal(false)}>
               계속 작성
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="flex-1 rounded-xl bg-primary py-3.5 text-[15px] font-semibold text-white"
-            >
+            </Button>
+            <Button fullWidth onClick={() => router.back()}>
               나가기
-            </button>
+            </Button>
           </div>
         }
       >
@@ -71,7 +66,7 @@ function RecordPageContent() {
         </p>
       </Modal>
 
-      <Header title="기록 추가" showBack onBack={handleBack} />
+      <Header title="기록 추가" showBack onBack={handleBack} noBorder />
       <div className="flex flex-1 flex-col overflow-hidden">
         <RecordForm onContentChange={handleContentChange} initialPlace={initialPlace} />
       </div>

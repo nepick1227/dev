@@ -57,8 +57,7 @@ export default function Modal({
 
         {/* 팝업 카드 */}
         <div
-          className="relative w-full max-w-[320px] rounded-2xl bg-white px-6 py-7"
-          style={{ animation: "nepick-fade-in 0.2s ease-out" }}
+          className="nepick-fade-in relative w-full max-w-[320px] rounded-3xl bg-surface px-6 py-7"
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? "modal-title" : undefined}
@@ -92,8 +91,7 @@ export default function Modal({
 
       {/* 시트 패널 */}
       <div
-        className="relative w-full max-w-107.5 rounded-t-2xl bg-white"
-        style={{ animation: "nepick-fade-up 0.25s ease-out" }}
+        className="nepick-fade-in relative w-full max-w-107.5 rounded-t-3xl bg-surface"
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
