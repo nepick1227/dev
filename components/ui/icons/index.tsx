@@ -166,7 +166,7 @@ export function ChevronDownIcon({ size = 24, color = "currentColor", className }
   );
 }
 
-export function CopyIcon({ size = 12, color = "#9CA3AF" }: { size?: number; color?: string }) {
+export function CopyIcon({ size = 12, color = "currentColor" }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <rect x="5" y="5" width="9" height="9" rx="2" stroke={color} strokeWidth="1.3" />
@@ -175,19 +175,8 @@ export function CopyIcon({ size = 12, color = "#9CA3AF" }: { size?: number; colo
   );
 }
 
-export function KakaoMapShareIcon({ size = 12, color = "#9CA3AF" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="18" cy="5" r="3" stroke={color} strokeWidth="1.8" />
-      <circle cx="6" cy="12" r="3" stroke={color} strokeWidth="1.8" />
-      <circle cx="18" cy="19" r="3" stroke={color} strokeWidth="1.8" />
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke={color} strokeWidth="1.8" />
-      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke={color} strokeWidth="1.8" />
-    </svg>
-  );
-}
 
-export function ShareIcon({ size = 12, color = "#9CA3AF" }: { size?: number; color?: string }) {
+export function ShareIcon({ size = 12, color = "currentColor" }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -229,6 +218,30 @@ export function NepickLogo({ size = 80 }: { size?: number }) {
       >
         N
       </text>
+    </svg>
+  );
+}
+
+export function CafeIcon({ size = 20, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M7 10H15C16.1046 10 17 10.8954 17 12V13C17 15.7614 14.7614 18 12 18H10C7.23858 18 5 15.7614 5 13V12C5 10.8954 5.89543 10 7 10Z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 11H18C19.6569 11 21 12.3431 21 14C21 15.6569 19.6569 17 18 17H17" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 20H18" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M9 4V7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M13 4V7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function RestaurantIcon({ size = 20, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M6 3V10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8 3V10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M10 3V10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8 10V21" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M16 3C14.8954 3 14 3.89543 14 5V9C14 10.1046 14.8954 11 16 11H18V21" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
