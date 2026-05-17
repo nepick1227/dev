@@ -18,7 +18,7 @@ export default function SelectedStoreCard({ store, rank, onClose }: SelectedStor
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const address = store.road_address ?? store.address;
-  const categoryLabel = store.category === "cafe" ? "카페" : "음식점";
+  const categoryLabel = store.subcategory ?? (store.category === "cafe" ? "카페" : "음식점");
 
   const handleCopy = useCallback(async () => {
     try {
