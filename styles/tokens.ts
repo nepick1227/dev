@@ -44,6 +44,12 @@ export const recommendationEmojis: Record<RecommendationType, string> = {
   not_recommend: "👎",
 };
 
+export const recommendationColors: Record<RecommendationType, string> = {
+  recommend: "#D32F2F",
+  neutral: "#6B7280",
+  not_recommend: "#6B7280",
+};
+
 export type RecommendationType = "recommend" | "neutral" | "not_recommend";
 
 // ── 카테고리 ───────────────────────────────────────────
