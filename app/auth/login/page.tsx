@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -129,6 +129,7 @@ function KakaoButton({
 
 // ── 메인: 로그인 페이지 ─────────────────────────────
 function LoginContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
 
@@ -140,10 +141,19 @@ function LoginContent() {
     setLastProviderState(getLastProvider());
   }, []);
 
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/home");
+    });
+  }, [router]);
+
   // URL 에러 파라미터를 직접 메시지로 변환 (effect 불필요)
   const errorMessage =
     errorParam === "account_deleted"
       ? "탈퇴 후 30일 이내에는 동일 계정으로 재가입이 불가합니다."
+      : errorParam === "login_failed"
+      ? "로그인에 실패했습니다. 다시 시도해 주세요."
       : null;
 
   useEffect(() => {
