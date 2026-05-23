@@ -63,7 +63,7 @@ export function useMapStores() {
       setTotalPages(Math.max(total, 1));
     } catch {
       setStores([]);
-      setAccumulatedStores([]);
+      if (pageNum === 0) setAccumulatedStores([]);
       setTotalPages(1);
     } finally {
       setIsLoading(false);

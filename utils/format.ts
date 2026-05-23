@@ -16,6 +16,19 @@ export function parseKakaoCategory(categoryGroupCode: string): "restaurant" | "c
 }
 
 /**
+ * 카카오 category_name → 세부 카테고리
+ * "음식점 > 한식 > 냉면집" → "냉면집"
+ * "카페 > 커피전문점" → "커피전문점"
+ * "음식점" → null (상위 분류만 있는 경우)
+ */
+export function parseKakaoSubcategory(categoryName: string): string | null {
+  if (!categoryName) return null;
+  const parts = categoryName.split(" > ");
+  if (parts.length < 2) return null;
+  return parts[parts.length - 1];
+}
+
+/**
  * Date → "오후 2:30" 형식 (내 픽 카드 시간 표시용)
  */
 export function formatTime(date: Date | string): string {

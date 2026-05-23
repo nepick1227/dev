@@ -26,6 +26,7 @@ export interface Store {
   kakao_id: string; // 카카오 장소 ID
   name: string;
   category: "restaurant" | "cafe";
+  subcategory: string | null; // 세부 카테고리 (예: 냉면, 커피전문점, 디저트카페)
   address: string; // 지번 주소
   road_address: string | null; // 도로명 주소
   lat: number;

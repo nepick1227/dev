@@ -7,6 +7,7 @@ import Header from "@/components/layout/Header";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import RecordForm from "@/features/record/RecordForm";
+import Spinner from "@/components/ui/Spinner";
 import type { KakaoPlace } from "@/features/record/StoreSearch";
 
 function RecordPageContent() {
@@ -17,7 +18,10 @@ function RecordPageContent() {
 
   // 지도 가게카드 기록+ 버튼으로 진입 시 가게 자동 선택
   const kakaoId = searchParams.get("kakao_id");
-  const initialPlace: KakaoPlace | null = kakaoId
+  const rawX = searchParams.get("x") ?? "";
+  const rawY = searchParams.get("y") ?? "";
+  const validCoords = !isNaN(parseFloat(rawX)) && !isNaN(parseFloat(rawY)) && rawX !== "" && rawY !== "";
+  const initialPlace: KakaoPlace | null = kakaoId && validCoords
     ? {
         id: kakaoId,
         place_name: searchParams.get("place_name") ?? "",
@@ -26,8 +30,8 @@ function RecordPageContent() {
         address_name: searchParams.get("address_name") ?? "",
         road_address_name: searchParams.get("road_address_name") ?? "",
         phone: searchParams.get("phone") ?? "",
-        x: searchParams.get("x") ?? "",
-        y: searchParams.get("y") ?? "",
+        x: rawX,
+        y: rawY,
       }
     : null;
 
@@ -76,7 +80,7 @@ function RecordPageContent() {
 
 export default function RecordPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="flex h-dvh items-center justify-center"><Spinner size={28} /></div>}>
       <RecordPageContent />
     </Suspense>
   );

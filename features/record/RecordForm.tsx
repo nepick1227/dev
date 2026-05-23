@@ -10,7 +10,7 @@ import Textarea from "@/components/ui/Textarea";
 import StoreSearch, { type KakaoPlace } from "./StoreSearch";
 import ImageUpload from "./ImageUpload";
 import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
-import { parseKakaoCategory } from "@/utils/format";
+import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
 import { validateComment } from "@/utils/validation";
 import {
   recommendationLabels,
@@ -99,6 +99,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
         kakao_id: selectedPlace.id,
         name: selectedPlace.place_name,
         category: parseKakaoCategory(selectedPlace.category_group_code),
+        subcategory: parseKakaoSubcategory(selectedPlace.category_name),
         address: selectedPlace.address_name,
         road_address: selectedPlace.road_address_name || null,
         lat: parseFloat(selectedPlace.y),
