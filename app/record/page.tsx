@@ -25,7 +25,7 @@ function RecordPageContent() {
     ? {
         id: kakaoId,
         place_name: searchParams.get("place_name") ?? "",
-        category_name: "",
+        category_name: searchParams.get("category_name") ?? "",
         category_group_code: searchParams.get("category_group_code") ?? "",
         address_name: searchParams.get("address_name") ?? "",
         road_address_name: searchParams.get("road_address_name") ?? "",

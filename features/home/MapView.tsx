@@ -9,6 +9,7 @@ import Spinner from "@/components/ui/Spinner";
 import { useMapStores, type MapBounds } from "@/hooks/use-map-stores";
 import { getCurrentPosition } from "@/lib/kakao/map";
 import { createClient } from "@/lib/supabase/client";
+import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
 import type { Category } from "./types";
 import type { Store } from "@/types/database";
 import type { KakaoSearchResult } from "@/hooks/use-kakao-search";
@@ -23,7 +24,8 @@ function createRankMarker(
   lat: number,
   lng: number
 ): kakao.maps.Marker {
-  const fontSize = rank > 9 ? 9 : 11;
+  const label = rank > 0 ? String(rank) : "+";
+  const fontSize = rank > 9 ? 9 : rank > 0 ? 11 : 14;
   const opacity = dimmed ? 0.5 : 1;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42" opacity="${opacity}">
     <defs>
@@ -38,7 +40,7 @@ function createRankMarker(
     <path d="M16 2C9.4 2 4 7.4 4 14C4 23 16 40 16 40C16 40 28 23 28 14C28 7.4 22.6 2 16 2Z" fill="url(#g)" filter="url(#s)"/>
     <ellipse cx="11.5" cy="8.5" rx="3.5" ry="2.5" fill="white" opacity="0.25"/>
     <circle cx="16" cy="14" r="8" fill="white" opacity="0.92"/>
-    <text x="16" y="18" text-anchor="middle" font-size="${fontSize}" font-weight="bold" font-family="sans-serif" fill="#D32F2F">${rank}</text>
+    <text x="16" y="18" text-anchor="middle" font-size="${fontSize}" font-weight="bold" font-family="sans-serif" fill="#D32F2F">${label}</text>
   </svg>`;
   const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   const image = new kakao.maps.MarkerImage(url, new kakao.maps.Size(32, 40), {
@@ -310,7 +312,12 @@ export default function MapView() {
   }, [fetchStores, getBounds]);
 
   // 검색으로 가게 선택: 가시 중앙 이동 + DB 조회 후 카드 표시
-  const handlePlaceSelect = useCallback(async (place: Pick<KakaoSearchResult, "id" | "x" | "y">) => {
+  const handlePlaceSelect = useCallback(async (
+    place: Pick<
+      KakaoSearchResult,
+      "id" | "place_name" | "category_name" | "category_group_code" | "road_address_name" | "address_name" | "phone" | "x" | "y"
+    >
+  ) => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -335,7 +342,29 @@ export default function MapView() {
         setTapMode(true);
         setSelectedStore(data as Store);
         setSelectedRank(0);
+        return;
       }
+
+      const draftStore: Store = {
+        id: -Math.abs(Number.parseInt(place.id, 10) || Date.now()),
+        kakao_id: place.id,
+        name: place.place_name,
+        category: parseKakaoCategory(place.category_group_code),
+        subcategory: parseKakaoSubcategory(place.category_name),
+        address: place.address_name,
+        road_address: place.road_address_name || null,
+        lat,
+        lng,
+        phone: place.phone || null,
+        score: 0,
+        pick_count: 0,
+        created_at: new Date().toISOString(),
+      };
+
+      cardOpenedRef.current = true;
+      setTapMode(true);
+      setSelectedStore(draftStore);
+      setSelectedRank(0);
     } catch {
       // 조회 실패 시 카드 없이 이동만
     }

@@ -7,12 +7,15 @@ import Chip from "@/components/ui/Chip";
 import { useKakaoSearch, type KakaoSearchResult } from "@/hooks/use-kakao-search";
 import type { Category } from "./types";
 
-type PlaceResult = Pick<KakaoSearchResult, "id" | "place_name" | "road_address_name" | "address_name" | "x" | "y">;
+type PlaceResult = Pick<
+  KakaoSearchResult,
+  "id" | "place_name" | "category_name" | "category_group_code" | "road_address_name" | "address_name" | "phone" | "x" | "y"
+>;
 
 interface MapOverlayProps {
   category: Category;
   onCategoryChange: (cat: Category) => void;
-  onPlaceSelect: (place: Pick<KakaoSearchResult, "id" | "x" | "y">) => void;
+  onPlaceSelect: (place: PlaceResult) => void;
 }
 
 const FILTER_TABS: { key: Category; label: string }[] = [
@@ -48,7 +51,7 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
 
   const handleSelect = useCallback(
     (place: PlaceResult) => {
-      onPlaceSelect({ id: place.id, x: place.x, y: place.y });
+      onPlaceSelect(place);
       setQuery(place.place_name);
       clear();
       setIsOpen(false);

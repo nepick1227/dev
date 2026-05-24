@@ -40,6 +40,7 @@ export default function SelectedStoreCard({ store, rank, onClose }: SelectedStor
       x: String(store.lng),
       y: String(store.lat),
       category_group_code: store.category === "cafe" ? "CE7" : "FD6",
+      category_name: store.subcategory ?? "",
     });
     router.push(`/record?${params.toString()}`);
   }, [store, router]);
