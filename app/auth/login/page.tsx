@@ -138,7 +138,10 @@ function LoginContent() {
   const [lastProvider, setLastProviderState] = useState<string | null>(null);
 
   useEffect(() => {
-    setLastProviderState(getLastProvider());
+    const timer = window.setTimeout(() => {
+      setLastProviderState(getLastProvider());
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback } from "react";
-import { useRouter } from "next/navigation";
 import type { Store } from "@/types/database";
 
 interface StoreCardProps {
@@ -14,16 +13,9 @@ interface StoreCardProps {
  * 가게 카드 컴포넌트 (랭킹 목록용)
  */
 export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
-  const router = useRouter();
-
   const handleClick = useCallback(() => {
     onClick?.(store.id);
   }, [store.id, onClick]);
-
-  const handleRecord = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    router.push(`/record?store_kakao_id=${store.kakao_id}&store_name=${encodeURIComponent(store.name)}`);
-  }, [store.kakao_id, store.name, router]);
 
   const categoryLabel = store.category === "cafe" ? "카페" : "음식점";
 

@@ -142,7 +142,7 @@ export default function MapView() {
 
   const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
   const isMapFull = snap === "collapsed";
-  const { stores, accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
+  const { accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
 
   const hasMore = totalPages > 1 && page < totalPages - 1;
 
@@ -299,7 +299,7 @@ export default function MapView() {
 
     fetchStores(getBounds(map), categoryRef.current, 0);
     fetchRegion();
-  }, [fetchStores, getBounds, panToVisible, fetchRegion]);
+  }, [fetchStores, getBounds, fetchRegion]);
 
   const handleCategoryChange = useCallback((cat: Category) => {
     categoryRef.current = cat;
