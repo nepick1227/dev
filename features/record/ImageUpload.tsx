@@ -49,7 +49,7 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
         onChange={handleFileChange}
         className="hidden"
         aria-label="사진 업로드"
@@ -91,7 +91,7 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
               사진을 추가해 보세요
             </span>
             <span className="text-[11px] text-text-secondary opacity-70">
-              JPG, PNG, WebP, HEIC · 최대 5MB
+              JPG, PNG, WebP, HEIC, HEIF · 최대 5MB
             </span>
           </button>
         </div>

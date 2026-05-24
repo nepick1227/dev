@@ -241,7 +241,7 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
         <input
           ref={imageInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
           onChange={handleImageChange}
           className="hidden"
         />

@@ -120,5 +120,5 @@ export const validation = {
   intro: { max: 100 },
   comment: { max: 500 },
   imageSize: 5 * 1024 * 1024,
-  imageTypes: ["image/jpeg", "image/png", "image/webp", "image/heic"],
+  imageTypes: ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"],
 } as const;

@@ -73,10 +73,14 @@ export function validateComment(comment: string): ValidationResult {
  * 이미지 파일 검증 (타입 + 크기)
  */
 export function validateImageFile(file: File): ValidationResult {
-  if (!validation.imageTypes.includes(file.type as (typeof validation.imageTypes)[number])) {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const isAllowedType = validation.imageTypes.includes(file.type as (typeof validation.imageTypes)[number]);
+  const isAllowedExtension = ["jpg", "jpeg", "png", "webp", "heic", "heif"].includes(extension ?? "");
+
+  if (!isAllowedType && !isAllowedExtension) {
     return {
       isValid: false,
-      message: "JPG, PNG, WebP, HEIC 형식의 이미지만 업로드할 수 있습니다",
+      message: "JPG, PNG, WebP, HEIC, HEIF 형식의 이미지만 업로드할 수 있습니다",
     };
   }
   if (file.size > validation.imageSize) {
@@ -85,4 +89,3 @@ export function validateImageFile(file: File): ValidationResult {
 
   return { isValid: true, message: "" };
 }
-
