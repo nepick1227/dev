@@ -130,7 +130,7 @@ export default function RecordCard({
             {/* 가게명 + 추천 배지 + ⋮ 버튼 */}
             <div className="flex h-7 items-center justify-between">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="truncate text-[15px] font-bold tracking-tight text-text-primary">
+                <span className="min-w-0 truncate text-[15px] font-bold tracking-tight text-text-primary">
                   {record.stores.name}
                 </span>
                 <RecommendationBadge type={record.recommendation} />

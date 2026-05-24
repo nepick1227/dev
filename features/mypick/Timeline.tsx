@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import MonthFilter from "./MonthFilter";
-import MonthlyStats from "./MonthlyStats";
 import RecordCard from "./RecordCard";
 import Spinner from "@/components/ui/Spinner";
 import { formatYearMonth, formatDateGroupLabel } from "@/utils/format";
 import type { RecordWithStore } from "@/types/database";
 
 type ViewMode = "timeline" | "monthly";
+
+interface TimelineProps {
+  initialRecords?: RecordWithStore[];
+}
 
 // 날짜 문자열(YYYY-MM-DD) 기준으로 기록 그룹핑, 최신순 정렬
 function groupByDate(records: RecordWithStore[]): [string, RecordWithStore[]][] {
@@ -31,14 +34,16 @@ function groupByDate(records: RecordWithStore[]): [string, RecordWithStore[]][] 
  * 내 픽 타임라인 컴포넌트
  * 타임라인(전체) / 월별 뷰 토글, 날짜별 그룹핑
  */
-export default function Timeline() {
+export default function Timeline({ initialRecords }: TimelineProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
-  const [records, setRecords] = useState<RecordWithStore[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [records, setRecords] = useState<RecordWithStore[]>(initialRecords ?? []);
+  const [isLoading, setIsLoading] = useState(!initialRecords);
+  // 서버에서 초기 데이터를 받은 경우, 첫 번째 timeline 모드 fetch는 스킵
+  const skipInitialFetch = useRef(!!initialRecords);
 
   const fetchRecords = useCallback(async (mode: ViewMode, month: Date) => {
     setIsLoading(true);
@@ -73,6 +78,10 @@ export default function Timeline() {
   }, []);
 
   useEffect(() => {
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
     fetchRecords(viewMode, currentMonth);
   }, [viewMode, currentMonth, fetchRecords]);
 
@@ -83,9 +92,7 @@ export default function Timeline() {
       <Toast message={toast.message} visible={toast.visible} />
 
       {/* 상단 헤더 */}
-      <div className="shrink-0 bg-surface px-5 pb-3 pt-5">
-        <h1 className="mb-4 text-[28px] font-extrabold tracking-tight text-text-primary">내 픽</h1>
-
+      <div className={`shrink-0 bg-surface px-5 pt-3 ${viewMode === "monthly" ? "pb-1" : "pb-3"}`}>
         {/* 타임라인 / 월별 세그먼트 토글 + 추가 버튼 */}
         <div className="flex items-center justify-between">
           <div className="flex rounded-full border border-border bg-surface p-0.5">
@@ -136,7 +143,6 @@ export default function Timeline() {
         </div>
       ) : (
         <div className="hide-scrollbar flex-1 overflow-y-auto">
-          {viewMode === "monthly" && <MonthlyStats records={records} />}
           {records.length === 0 ? (
             <div className="nepick-fade-in flex flex-col items-center justify-center gap-3 px-5 py-16">
               <p className="text-[40px]">🗺️</p>
@@ -160,7 +166,7 @@ export default function Timeline() {
           ) : (
             <>
               {grouped.map(([date, dayRecords]) => (
-                <div key={date} className="px-5 pt-5">
+                <div key={date} className="px-5 pt-4">
                   <div className="mb-3">
                     <span className="text-[15px] font-bold tracking-tight text-text-primary">
                       {formatDateGroupLabel(date)}

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Spinner from "@/components/ui/Spinner";
 import { NepickLogo } from "@/components/ui/icons";
+import { getCurrentPosition } from "@/lib/kakao/map";
 
 const LAST_PROVIDER_KEY = "nepick_last_provider";
 
@@ -167,6 +168,8 @@ function LoginContent() {
 
   useEffect(() => {
     setLastProviderState(getLastProvider());
+    // 로그인 중 백그라운드에서 GPS 워밍업 → 홈 진입 시 캐시 활용
+    getCurrentPosition();
   }, []);
 
   const errorMessage =
@@ -200,7 +203,7 @@ function LoginContent() {
       {/* 로고 & 타이틀 */}
       <div className="nepick-fade-in relative flex flex-1 flex-col items-center justify-center px-6">
         <div className="mb-5">
-          <NepickLogo size={80} />
+          <NepickLogo size={60} />
         </div>
         <h1 className="mb-2.5 text-[32px] font-extrabold tracking-[-1px]">
           <span className="text-primary">Ne</span>
@@ -304,7 +307,7 @@ function LoginContent() {
         </div>
 
         {/* 버전 */}
-        <p className="pt-14 text-center text-[12px] text-text-tertiary">ver 1.0.0</p>
+        <p className="pt-14 text-center text-[12px] text-text-tertiary">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
       </div>
     </div>
   );

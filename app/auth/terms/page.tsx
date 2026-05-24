@@ -112,23 +112,27 @@ export default function TermsPage() {
   const handleAllToggle = useCallback(() => {
     const next = !allChecked;
     setAgreements({ service: next, privacy: next, location: next, marketing: next });
-    if (next && !agreements.marketing && typeof Notification !== "undefined" && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, [allChecked, agreements.marketing]);
+  }, [allChecked]);
 
   const handleToggle = useCallback((key: keyof typeof agreements) => {
-    setAgreements((prev) => {
-      const next = !prev[key];
-      if (key === "marketing" && next && typeof Notification !== "undefined" && Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-      return { ...prev, [key]: next };
-    });
+    setAgreements((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     if (!allRequired) return;
+
+    // 1. 위치 권한 요청 (필수 약관 동의 완료 후)
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      await new Promise<void>((resolve) => {
+        navigator.geolocation.getCurrentPosition(() => resolve(), () => resolve());
+      });
+    }
+
+    // 2. 알림 권한 요청 (마케팅 동의한 경우만, 순차적으로)
+    if (agreements.marketing && typeof Notification !== "undefined" && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+
     router.replace(`/auth/signup${agreements.marketing ? "?marketing=1" : ""}`);
   }, [allRequired, agreements.marketing, router]);
 
@@ -141,17 +145,8 @@ export default function TermsPage() {
       <div className="flex flex-1 flex-col">
         {/* 로고 & 타이틀 */}
         <div className="nepick-fade-in px-6 pb-8 pt-16">
-          <svg width="48" height="48" viewBox="0 0 80 80" fill="none" className="mb-4" aria-hidden="true">
-            <defs>
-              <linearGradient id="terms-logo" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#D32F2F" stopOpacity="0.05" />
-                <stop offset="100%" stopColor="#D32F2F" stopOpacity="0.3" />
-              </linearGradient>
-            </defs>
-            <path d="M40 74C40 74 64 50 64 30C64 16.75 53.25 6 40 6C26.75 6 16 16.75 16 30C16 50 40 74 40 74Z" fill="#D32F2F" />
-            <path d="M25 38h30v3c0 7-5.5 11-15 11S25 48 25 41v-3z" fill="url(#terms-logo)" stroke="#DF6767" strokeWidth="1.8" strokeLinejoin="round" />
-            <text x="40" y="31" textAnchor="middle" dominantBaseline="central" fontSize="24" fontWeight="900" fontFamily="sans-serif" fill="white">N</text>
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="네픽 로고" width={48} height={48} className="mb-4 object-contain" />
           <h1 className="mb-2 text-[26px] font-extrabold leading-tight tracking-tight text-text-primary">
             서비스 이용 동의
           </h1>
