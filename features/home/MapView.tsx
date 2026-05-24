@@ -299,7 +299,7 @@ export default function MapView() {
 
     fetchStores(getBounds(map), categoryRef.current, 0);
     fetchRegion();
-  }, [fetchStores, getBounds, panToVisible, fetchRegion]);
+  }, [fetchStores, getBounds, fetchRegion]);
 
   const handleCategoryChange = useCallback((cat: Category) => {
     categoryRef.current = cat;

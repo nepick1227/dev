@@ -139,7 +139,7 @@ function SignupContent() {
     } finally {
       setIsSaving(false);
     }
-  }, [nickname, nicknameStatus, birthDate, gender, intro, isSaving, router, showToast]);
+  }, [nickname, nicknameStatus, birthDate, gender, intro, marketingAgree, isSaving, router, showToast]);
 
   // ── 나중에 입력 ──────────────────────────────────────
   const handleSkip = useCallback(async () => {
@@ -164,7 +164,7 @@ function SignupContent() {
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, router, showToast]);
+  }, [marketingAgree, isSaving, router, showToast]);
 
   // 닉네임 상태별 스타일
   const inputBorderClass =

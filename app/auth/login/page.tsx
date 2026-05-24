@@ -168,9 +168,12 @@ function LoginContent() {
   const isLoading = loadingProvider !== null;
 
   useEffect(() => {
-    setLastProviderState(getLastProvider());
-    // 로그인 중 백그라운드에서 GPS 워밍업 → 홈 진입 시 캐시 활용
-    getCurrentPosition();
+    const timer = window.setTimeout(() => {
+      setLastProviderState(getLastProvider());
+      // 로그인 중 백그라운드에서 GPS 워밍업 → 홈 진입 시 캐시 활용
+      getCurrentPosition();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {

@@ -3,6 +3,7 @@
  *
  * 사용법:
  *   KAKAO_REST_API_KEY=<키> SUPABASE_URL=<url> SUPABASE_SERVICE_KEY=<key> node scripts/batch-kakao-places.js
+ *   DRY_RUN=1 MAX_CELLS=3 ... node scripts/batch-kakao-places.js
  *
  * 동작:
  *   - 서울 전체를 500m 그리드로 분할
@@ -17,14 +18,16 @@
  *   - 전체 호출: ~84,000회 → 하루 50,000회 제한 시 약 2일 소요
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
 
 // ── 환경변수 ────────────────────────────────────────────
 const KAKAO_KEY = process.env.KAKAO_REST_API_KEY;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!KAKAO_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error("환경변수 KAKAO_REST_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY 를 설정하세요.");
@@ -33,10 +36,12 @@ if (!KAKAO_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
 
 // ── 설정 ────────────────────────────────────────────────
 const MAX_DAILY_CALLS = 50_000;   // 하루 최대 API 호출 수 (안전 마진 포함)
+const MAX_CELLS = Number.parseInt(process.env.MAX_CELLS ?? "0", 10);
 const GRID_STEP_M = 500;          // 그리드 간격 (미터)
 const RADIUS = 350;               // 검색 반경 (미터) — 그리드 겹침으로 누락 방지
 const DELAY_MS = 100;             // 호출 간 딜레이 (ms) — 초당 10회 이내 유지
 const PROGRESS_FILE = path.join(__dirname, ".batch-progress.json");
+const DRY_RUN = process.env.DRY_RUN === "1";
 
 // ── 서울 경계 (위경도) ──────────────────────────────────
 const BOUNDS = {
@@ -163,12 +168,20 @@ function upsertStores(rows) {
   });
 }
 
+/** 카카오 category_name → 세부 카테고리 ("음식점 > 한식 > 냉면" → "냉면") */
+function parseSubcategory(categoryName) {
+  if (!categoryName) return null;
+  const parts = categoryName.split(" > ");
+  return parts.length >= 2 ? parts[parts.length - 1] : null;
+}
+
 /** 카카오 PlaceResult → stores row 변환 */
 function toStoreRow(place, category) {
   return {
     kakao_id: place.id,
     name: place.place_name,
     category,
+    subcategory: parseSubcategory(place.category_name),
     address: place.address_name,
     road_address: place.road_address_name || null,
     lat: parseFloat(place.y),
@@ -187,7 +200,9 @@ async function main() {
 
   let insertedTotal = 0;
 
-  for (; cellIndex < grid.length; cellIndex++) {
+  const endCellIndex = MAX_CELLS > 0 ? Math.min(cellIndex + MAX_CELLS, grid.length) : grid.length;
+
+  for (; cellIndex < endCellIndex; cellIndex++) {
     if (callCount >= MAX_DAILY_CALLS) {
       console.log(`\n하루 호출 한도(${MAX_DAILY_CALLS})에 도달. 진행 상태 저장 후 종료.`);
       saveProgress({ cellIndex, callCount });
@@ -218,7 +233,9 @@ async function main() {
 
     if (rows.length > 0) {
       try {
-        await upsertStores(rows);
+        if (!DRY_RUN) {
+          await upsertStores(rows);
+        }
         insertedTotal += rows.length;
       } catch (e) {
         console.error(`  upsert 오류:`, e.message);
@@ -233,7 +250,7 @@ async function main() {
 
   // 완료 시 진행 파일 삭제
   if (fs.existsSync(PROGRESS_FILE)) fs.unlinkSync(PROGRESS_FILE);
-  console.log(`\n완료! 총 적재: ${insertedTotal}건 | 총 API 호출: ${callCount}회`);
+  console.log(`\n완료${DRY_RUN ? " (dry-run)" : ""}! 총 적재 대상: ${insertedTotal}건 | 총 API 호출: ${callCount}회`);
 }
 
 main().catch((e) => {
