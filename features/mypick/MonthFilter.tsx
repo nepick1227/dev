@@ -30,7 +30,7 @@ export default function MonthFilter({ value, onChange }: MonthFilterProps) {
     onChange(new Date(value.getFullYear(), value.getMonth() + 1, 1));
   }, [value, onChange, isCurrentMonth]);
 
-  const label = `${value.getFullYear()}.${String(value.getMonth() + 1).padStart(2, "0")}`;
+  const label = `${value.getFullYear()}년 ${value.getMonth() + 1}월`;
 
   return (
     <>
@@ -40,7 +40,7 @@ export default function MonthFilter({ value, onChange }: MonthFilterProps) {
           className="flex h-8 w-8 items-center justify-center rounded-full transition-colors active:bg-bg"
           aria-label="이전 달"
         >
-          <ChevronLeftIcon size={20} color="#6B7280" />
+          <ChevronLeftIcon size={20} color="var(--color-text-secondary)" />
         </button>
 
         <button
@@ -56,7 +56,7 @@ export default function MonthFilter({ value, onChange }: MonthFilterProps) {
           className="flex h-8 w-8 items-center justify-center rounded-full transition-colors active:bg-bg disabled:opacity-30"
           aria-label="다음 달"
         >
-          <ChevronRightIcon size={20} color="#6B7280" />
+          <ChevronRightIcon size={20} color="var(--color-text-secondary)" />
         </button>
       </div>
 
@@ -99,7 +99,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-75 rounded-2xl bg-white p-6"
+        className="w-75 rounded-2xl bg-surface p-6"
       >
         {yearMode ? (
           <>
@@ -123,7 +123,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
                     className={`rounded-[10px] py-3 text-[14px] font-semibold tracking-tight transition-colors disabled:opacity-20 ${
                       isSelected
                         ? "bg-primary text-white"
-                        : "border border-border text-text-primary"
+                        : "text-text-primary"
                     }`}
                   >
                     {y}
@@ -141,7 +141,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
                 className="flex h-8 w-8 items-center justify-center rounded-full active:bg-bg"
                 aria-label="이전 년도"
               >
-                <ChevronLeftIcon size={18} color="#111827" />
+                <ChevronLeftIcon size={18} color="var(--color-text-primary)" />
               </button>
               <button
                 onClick={() => setYearMode(true)}
@@ -155,7 +155,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
                 className="flex h-8 w-8 items-center justify-center rounded-full active:bg-bg disabled:opacity-30"
                 aria-label="다음 년도"
               >
-                <ChevronRightIcon size={18} color="#111827" />
+                <ChevronRightIcon size={18} color="var(--color-text-primary)" />
               </button>
             </div>
 
@@ -175,7 +175,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
                     className={`rounded-[10px] py-2.5 text-[14px] font-semibold tracking-tight transition-colors disabled:opacity-20 ${
                       isSelected
                         ? "bg-primary text-white"
-                        : "border border-border text-text-primary"
+                        : "text-text-primary"
                     }`}
                   >
                     {m}월

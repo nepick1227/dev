@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 // ── 약관 데이터 ──────────────────────────────────────
 const TERMS_CONTENT = {
@@ -35,12 +36,10 @@ function CheckboxItem({ checked, required, label, desc, onChange, onDetailClick 
   return (
     <div className="flex items-start justify-between py-3.5">
       <div className="flex flex-1 cursor-pointer items-start gap-3" onClick={onChange}>
-        <div
-          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-200"
-          style={{
-            background: checked ? "#D32F2F" : "#fff",
-            border: checked ? "none" : "2px solid #E5E7EB",
-          }}
+        <div className={[
+          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-200",
+          checked ? "bg-primary" : "border-2 border-border bg-surface",
+        ].join(" ")}
         >
           {checked && (
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
@@ -78,10 +77,10 @@ function TermsDetailView({ termsKey, onBack }: { termsKey: TermsKey; onBack: () 
   const terms = TERMS_CONTENT[termsKey];
   return (
     <div className="page-container">
-      <div className="sticky top-0 z-10 flex items-center border-b border-border bg-white px-5 py-4">
+      <div className="sticky top-0 z-10 flex items-center border-b border-border bg-surface px-5 py-4">
         <button onClick={onBack} className="flex items-center p-1 pr-2" aria-label="뒤로가기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 18L9 12L15 6" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M15 18L9 12L15 6" stroke="var(--color-text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <h1 className="text-[18px] font-bold tracking-tight text-text-primary">{terms.title}</h1>
@@ -99,18 +98,12 @@ function TermsDetailView({ termsKey, onBack }: { termsKey: TermsKey; onBack: () 
 export default function TermsPage() {
   const router = useRouter();
   const [detailKey, setDetailKey] = useState<TermsKey | null>(null);
-  const [animateIn, setAnimateIn] = useState(false);
   const [agreements, setAgreements] = useState({
     service: false,
     privacy: false,
     location: false,
     marketing: false,
   });
-
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimateIn(true), 80);
-    return () => clearTimeout(timer);
-  }, []);
 
   const requiredKeys = ["service", "privacy", "location"] as const;
   const allRequired = requiredKeys.every((k) => agreements[k]);
@@ -119,23 +112,27 @@ export default function TermsPage() {
   const handleAllToggle = useCallback(() => {
     const next = !allChecked;
     setAgreements({ service: next, privacy: next, location: next, marketing: next });
-    if (next && !agreements.marketing && typeof Notification !== "undefined" && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, [allChecked, agreements.marketing]);
+  }, [allChecked]);
 
   const handleToggle = useCallback((key: keyof typeof agreements) => {
-    setAgreements((prev) => {
-      const next = !prev[key];
-      if (key === "marketing" && next && typeof Notification !== "undefined" && Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-      return { ...prev, [key]: next };
-    });
+    setAgreements((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     if (!allRequired) return;
+
+    // 1. 위치 권한 요청 (필수 약관 동의 완료 후)
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      await new Promise<void>((resolve) => {
+        navigator.geolocation.getCurrentPosition(() => resolve(), () => resolve());
+      });
+    }
+
+    // 2. 알림 권한 요청 (마케팅 동의한 경우만, 순차적으로)
+    if (agreements.marketing && typeof Notification !== "undefined" && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+
     router.replace(`/auth/signup${agreements.marketing ? "?marketing=1" : ""}`);
   }, [allRequired, agreements.marketing, router]);
 
@@ -147,25 +144,9 @@ export default function TermsPage() {
     <div className="page-container">
       <div className="flex flex-1 flex-col">
         {/* 로고 & 타이틀 */}
-        <div
-          className="px-6 pb-8 pt-16"
-          style={{
-            opacity: animateIn ? 1 : 0,
-            transform: animateIn ? "translateY(0)" : "translateY(12px)",
-            transition: "all 0.5s ease-out",
-          }}
-        >
-          <svg width="48" height="48" viewBox="0 0 80 80" fill="none" className="mb-4" aria-hidden="true">
-            <defs>
-              <linearGradient id="terms-logo" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#D32F2F" stopOpacity="0.05" />
-                <stop offset="100%" stopColor="#D32F2F" stopOpacity="0.3" />
-              </linearGradient>
-            </defs>
-            <path d="M40 74C40 74 64 50 64 30C64 16.75 53.25 6 40 6C26.75 6 16 16.75 16 30C16 50 40 74 40 74Z" fill="#D32F2F" />
-            <path d="M25 38h30v3c0 7-5.5 11-15 11S25 48 25 41v-3z" fill="url(#terms-logo)" stroke="#DF6767" strokeWidth="1.8" strokeLinejoin="round" />
-            <text x="40" y="31" textAnchor="middle" dominantBaseline="central" fontSize="24" fontWeight="900" fontFamily="sans-serif" fill="white">N</text>
-          </svg>
+        <div className="nepick-fade-in px-6 pb-8 pt-16">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="네픽 로고" width={48} height={48} className="mb-4 object-contain" />
           <h1 className="mb-2 text-[26px] font-extrabold leading-tight tracking-tight text-text-primary">
             서비스 이용 동의
           </h1>
@@ -175,31 +156,19 @@ export default function TermsPage() {
         </div>
 
         {/* 약관 목록 */}
-        <div
-          className="px-6"
-          style={{
-            opacity: animateIn ? 1 : 0,
-            transform: animateIn ? "translateY(0)" : "translateY(12px)",
-            transition: "all 0.5s ease-out 0.1s",
-          }}
-        >
+        <div className="nepick-fade-in px-6 [animation-delay:100ms]">
           {/* 전체 동의 */}
           <div
             onClick={handleAllToggle}
-            className="mb-2 flex cursor-pointer items-center gap-3 rounded-xl border-[1.5px] p-4 transition-all duration-200"
-            style={{
-              background: allChecked ? "rgba(211,47,47,0.06)" : "#F9FAFB",
-              borderColor: allChecked ? "rgba(211,47,47,0.25)" : "#E5E7EB",
-            }}
+            className={[
+              "mb-2 flex cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] p-4 transition-all duration-200",
+              allChecked ? "border-primary-border bg-primary-soft" : "border-border bg-bg",
+            ].join(" ")}
           >
-            <div
-              className="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-200"
-              style={{
-                background: allChecked ? "#D32F2F" : "#fff",
-                border: allChecked ? "none" : "2px solid #E5E7EB",
-                width: 26,
-                height: 26,
-              }}
+            <div className={[
+              "flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-200",
+              allChecked ? "bg-primary" : "border-2 border-border bg-surface",
+            ].join(" ")}
             >
               {allChecked && (
                 <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
@@ -220,25 +189,10 @@ export default function TermsPage() {
       </div>
 
       {/* CTA */}
-      <div
-        className="px-6 pb-9 pt-4"
-        style={{
-          opacity: animateIn ? 1 : 0,
-          transform: animateIn ? "translateY(0)" : "translateY(12px)",
-          transition: "all 0.5s ease-out 0.25s",
-        }}
-      >
-        <button
-          onClick={handleStart}
-          disabled={!allRequired}
-          className="w-full rounded-xl py-4 text-[16px] font-bold tracking-tight transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed"
-          style={{
-            background: allRequired ? "#D32F2F" : "#E5E7EB",
-            color: allRequired ? "#fff" : "#6B7280",
-          }}
-        >
+      <div className="nepick-fade-in safe-area-pb-lg px-6 pt-4 [animation-delay:250ms]">
+        <Button fullWidth onClick={handleStart} disabled={!allRequired}>
           시작하기
-        </button>
+        </Button>
       </div>
     </div>
   );

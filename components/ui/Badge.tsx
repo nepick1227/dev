@@ -16,7 +16,7 @@ const recommendationStyles: Record<RecommendationType, string> = {
 export function RecommendationBadge({ type, showEmoji = true }: RecommendationBadgeProps) {
   return (
     <span className={[
-      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold tracking-tight",
+      "inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold tracking-tight",
       recommendationStyles[type],
     ].join(" ")}>
       {showEmoji && <span className="inline-flex h-3.5 w-3.5 items-center justify-center leading-none">{recommendationEmojis[type]}</span>}

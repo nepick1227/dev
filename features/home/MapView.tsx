@@ -142,7 +142,7 @@ export default function MapView() {
 
   const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
   const isMapFull = snap === "collapsed";
-  const { stores, accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
+  const { accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
 
   const hasMore = totalPages > 1 && page < totalPages - 1;
 
@@ -429,7 +429,7 @@ export default function MapView() {
         // 지도보기 or 카드 열림 → 랭킹보기
         <button
           onClick={handleRankingToggle}
-          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
           style={{ bottom: floatingButtonBottom, transition: "bottom 0.3s ease-out" }}
         >
           <span>🏆</span>
@@ -439,7 +439,7 @@ export default function MapView() {
         // half / full 랭킹 상태 → 지도보기 (시트 위 플로팅)
         <button
           onClick={handleCollapse}
-          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
           style={{
             bottom: snap === "full" ? "32px" : "calc(50vh + 8px)",
             transition: "bottom 0.3s ease-out",

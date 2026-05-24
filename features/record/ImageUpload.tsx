@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useCallback } from "react";
-import { CameraIcon, CloseIcon } from "@/components/ui/icons";
+import { useRef, useCallback, useMemo, useEffect } from "react";
+import { CameraIcon, TrashIcon, EditIcon } from "@/components/ui/icons";
 import { validateImageFile } from "@/utils/validation";
 
 interface ImageUploadProps {
@@ -10,13 +10,13 @@ interface ImageUploadProps {
   onError?: (message: string) => void;
 }
 
-/**
- * 이미지 업로드 컴포넌트
- * MIME 타입 검사 + 5MB 이하 제한을 포함합니다.
- */
 export default function ImageUpload({ value, onChange, onError }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const previewUrl = value ? URL.createObjectURL(value) : null;
+  const previewUrl = useMemo(() => (value ? URL.createObjectURL(value) : null), [value]);
+
+  useEffect(() => {
+    return () => { if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,12 +45,7 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
   );
 
   return (
-    <div>
-      <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
-        사진{" "}
-        <span className="text-[12px] font-normal text-text-secondary">선택</span>
-      </label>
-
+    <>
       <input
         ref={inputRef}
         type="file"
@@ -66,30 +61,41 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
           <img
             src={previewUrl}
             alt="업로드 이미지 미리보기"
-            className="aspect-video w-full object-cover"
+            className="h-52.5 w-full object-cover"
           />
-          <button
-            onClick={handleRemove}
-            className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/50"
-            aria-label="이미지 제거"
-          >
-            <CloseIcon size={14} color="#fff" />
-          </button>
+          <div className="absolute right-3 top-3 flex flex-col gap-2">
+            <button
+              onClick={() => inputRef.current?.click()}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-[0_2px_8px_rgba(17,24,39,0.10)] transition-colors"
+              aria-label="이미지 변경"
+            >
+              <EditIcon size={18} color="#374151" />
+            </button>
+            <button
+              onClick={handleRemove}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-[0_2px_8px_rgba(17,24,39,0.10)] transition-colors"
+              aria-label="이미지 제거"
+            >
+              <TrashIcon size={18} color="#374151" />
+            </button>
+          </div>
         </div>
       ) : (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-border py-8 transition-colors active:bg-bg"
-        >
-          <CameraIcon size={28} color="#9CA3AF" />
-          <span className="text-[13px] tracking-tight text-text-secondary">
-            사진을 추가해 보세요
-          </span>
-          <span className="text-[11px] text-text-secondary opacity-70">
-            JPG, PNG, WebP, HEIC · 최대 5MB
-          </span>
-        </button>
+        <div>
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-border py-8 transition-colors active:bg-bg"
+          >
+            <CameraIcon size={28} color="var(--color-text-tertiary)" />
+            <span className="text-[13px] tracking-tight text-text-secondary">
+              사진을 추가해 보세요
+            </span>
+            <span className="text-[11px] text-text-secondary opacity-70">
+              JPG, PNG, WebP, HEIC · 최대 5MB
+            </span>
+          </button>
+        </div>
       )}
-    </div>
+    </>
   );
 }

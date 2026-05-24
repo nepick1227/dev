@@ -61,7 +61,38 @@ export function getCurrentPosition(): Promise<{ lat: number; lng: number }> {
         // 권한 거부 또는 타임아웃 → 기본 위치
         resolve({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
       },
-      { timeout: 5000 }
+      {
+        timeout: 3000,
+        maximumAge: 30000, // 30초 이내 캐시 위치 즉시 반환 (재방문 시 거의 즉시)
+        enableHighAccuracy: false, // 빠른 응답 우선
+      }
+    );
+  });
+}
+
+/**
+ * 현재 위치 조회 (strict)
+ * 권한 거부 또는 오류 시 throw합니다. 현재 위치 버튼 등 명시적 요청에 사용하세요.
+ */
+export function getCurrentPositionStrict(): Promise<{ lat: number; lng: number }> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("geolocation_unavailable"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {
+        reject(new Error("geolocation_denied"));
+      },
+      {
+        timeout: 5000,
+        maximumAge: 10000,
+        enableHighAccuracy: false,
+      }
     );
   });
 }

@@ -11,16 +11,13 @@ export default function WithdrawalDonePage() {
   }, []);
 
   return (
-    <div
-      className="flex h-screen flex-col items-center justify-center gap-4 px-6 text-center"
-      style={{ maxWidth: 430, margin: "0 auto", background: "white" }}
-    >
+    <div className="mx-auto flex h-screen max-w-107.5 flex-col items-center justify-center gap-4 bg-surface px-6 text-center">
       {/* 완료 아이콘 */}
       <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-bg">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
           <path
             d="M5 12L10 17L19 8"
-            stroke="#16A34A"
+            stroke="var(--color-success)"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"

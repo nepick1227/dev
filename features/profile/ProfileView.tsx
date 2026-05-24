@@ -5,12 +5,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Modal from "@/components/ui/Modal";
-import { UserIcon, ChevronRightIcon, KakaoIcon, NaverIcon, GoogleIcon } from "@/components/ui/icons";
+import Button from "@/components/ui/Button";
+import { UserIcon, ChevronRightIcon, KakaoIcon, NaverIcon, GoogleIcon, EditIcon } from "@/components/ui/icons";
+import { recommendationEmojis } from "@/styles/tokens";
 import type { Profile } from "@/types/database";
+
+interface RecordStats {
+  total: number;
+  recommend: number;
+  neutral: number;
+  notRecommend: number;
+}
 
 interface ProfileViewProps {
   profile: Profile;
-  recordCount: number;
+  stats: RecordStats;
   providers: string[];
 }
 
@@ -26,7 +35,7 @@ function SocialIcons({ providers }: { providers: string[] }) {
   );
 }
 
-export default function ProfileView({ profile, recordCount, providers }: ProfileViewProps) {
+export default function ProfileView({ profile, stats, providers }: ProfileViewProps) {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -79,18 +88,12 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
         title="로그아웃"
         footer={
           <div className="flex gap-2.5">
-            <button
-              onClick={() => setShowLogoutModal(false)}
-              className="flex-1 rounded-xl border border-border py-3.5 text-[15px] font-semibold text-text-secondary"
-            >
+            <Button variant="secondary" fullWidth onClick={() => setShowLogoutModal(false)}>
               취소
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex-1 rounded-xl bg-primary py-3.5 text-[15px] font-semibold text-white"
-            >
+            </Button>
+            <Button fullWidth onClick={handleLogout}>
               확인
-            </button>
+            </Button>
           </div>
         }
       >
@@ -102,20 +105,29 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
       <div className="flex flex-1 flex-col">
         {/* 프로필 헤더 */}
         <div className="px-6 pb-6 pt-8 text-center">
-          {/* 아바타 */}
+          {/* 아바타 + 수정 버튼 */}
           <div className="mb-4 flex justify-center">
-            {profile.profile_image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profile.profile_image}
-                alt={profile.nickname ?? "프로필"}
-                className="h-19 w-19 rounded-full object-cover ring-2 ring-border"
-              />
-            ) : (
-              <div className="flex h-19 w-19 items-center justify-center rounded-full bg-bg ring-2 ring-border">
-                <UserIcon size={34} color="#9CA3AF" />
-              </div>
-            )}
+            <div className="relative inline-block">
+              {profile.profile_image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.profile_image}
+                  alt={profile.nickname ?? "프로필"}
+                  className="h-19 w-19 rounded-full object-cover ring-2 ring-border"
+                />
+              ) : (
+                <div className="flex h-19 w-19 items-center justify-center rounded-full bg-bg ring-2 ring-border">
+                  <UserIcon size={34} color="var(--color-text-tertiary)" />
+                </div>
+              )}
+              <Link
+                href="/profile/edit"
+                className="absolute bottom-0 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-[0_2px_8px_rgba(17,24,39,0.10)] transition-opacity active:opacity-70"
+                aria-label="프로필 수정"
+              >
+                <EditIcon size={14} color="#374151" />
+              </Link>
+            </div>
           </div>
 
           {/* 닉네임 + 소셜 아이콘 */}
@@ -131,21 +143,26 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
             {profile.intro ?? "소개를 작성해보세요!"}
           </p>
 
-          {/* 기록 수 배지 */}
+          {/* 기록 통계 */}
           <div className="mb-4 flex justify-center">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-bg px-4 py-2">
-              <span className="text-[13px] tracking-tight text-text-secondary">나의 기록</span>
-              <span className="text-[15px] font-bold text-primary">{recordCount}</span>
+            <div className="flex h-9 items-center justify-center rounded-full bg-bg px-4">
+              {[
+                { label: "내픽", count: stats.total, unit: "개", emoji: null, highlight: false },
+                { label: "추천", count: stats.recommend, unit: "", emoji: recommendationEmojis.recommend, highlight: true },
+                { label: "보통", count: stats.neutral, unit: "", emoji: recommendationEmojis.neutral, highlight: false },
+                { label: "비추천", count: stats.notRecommend, unit: "", emoji: recommendationEmojis.not_recommend, highlight: false },
+              ].map(({ label, count, unit, emoji, highlight }, idx) => (
+                <div key={label} className="flex items-center">
+                  {idx > 0 && <span className="mx-3 select-none text-[13px] text-gray-300">·</span>}
+                  <span className="flex items-center gap-1 text-[13px] tracking-tight">
+                    {emoji && <span className="text-[13px] leading-none">{emoji}</span>}
+                    <span className="text-text-secondary">{label}</span>
+                    <span className={`font-bold ${highlight ? "text-primary" : "text-text-primary"}`}>{count}{unit}</span>
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* 프로필 수정 버튼 */}
-          <Link
-            href="/profile/edit"
-            className="inline-block rounded-xl border border-border px-6 py-2.5 text-[13px] font-semibold tracking-tight text-text-primary transition-colors active:bg-bg"
-          >
-            프로필 수정
-          </Link>
         </div>
 
         {/* 구분선 */}
@@ -167,7 +184,7 @@ export default function ProfileView({ profile, recordCount, providers }: Profile
 
         {/* 앱 버전 */}
         <div className="px-5 pb-8 pt-2 text-center">
-          <span className="text-[12px] tracking-tight text-text-secondary">v0.1.0</span>
+          <span className="text-[12px] tracking-tight text-text-secondary">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
         </div>
       </div>
     </>
@@ -191,7 +208,7 @@ function MenuRow({ item }: { item: MenuItem }) {
       <span className={`text-[15px] tracking-tight ${item.isDestructive ? "text-primary" : "text-text-primary"}`}>
         {item.label}
       </span>
-      {item.right ?? <ChevronRightIcon size={16} color="#9CA3AF" />}
+      {item.right ?? <ChevronRightIcon size={16} color="var(--color-text-tertiary)" />}
     </div>
   );
 

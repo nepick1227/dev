@@ -101,7 +101,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
   return (
     <div
       ref={sheetRef}
-      className="absolute bottom-0 left-0 right-0 z-30 flex flex-col rounded-t-2xl bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out"
+      className="absolute bottom-0 left-0 right-0 z-30 flex flex-col rounded-t-3xl bg-surface shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out"
       style={{ height: SNAP_HEIGHTS[snap] }}
     >
       {/* 드래그 핸들 */}
@@ -125,11 +125,11 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
         {showClose && snap !== "collapsed" ? (
           <button
             onClick={(e) => { e.stopPropagation(); updateSnap("collapsed"); }}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg text-text-tertiary"
             aria-label="닫기"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M2 2L12 12M12 2L2 12" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" />
+              <path d="M2 2L12 12M12 2L2 12" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
         ) : (
@@ -141,12 +141,12 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
       {header && <div className="shrink-0 px-4 pb-2">{header}</div>}
 
       {/* 스크롤 영역 — flex-1 + min-h-0 으로 남은 공간만 차지 */}
-      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div className="nepick-fade-in hide-scrollbar min-h-0 flex-1 overflow-y-auto">
         {children}
       </div>
 
       {/* 고정 푸터 (지도보기 버튼 등) */}
-      {footer && <div className="shrink-0 px-5 pb-5 pt-3">{footer}</div>}
+      {footer && <div className="safe-area-pb shrink-0 px-5 pt-3">{footer}</div>}
     </div>
   );
 });

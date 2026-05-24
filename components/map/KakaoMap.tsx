@@ -36,7 +36,7 @@ export default function KakaoMap({
       {/* 로딩 상태 */}
       {!isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-bg">
-          <Spinner color="#D32F2F" size={32} />
+          <Spinner color="var(--color-primary)" size={32} />
         </div>
       )}
 

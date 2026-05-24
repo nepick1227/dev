@@ -10,10 +10,17 @@ import ProfileView from "@/features/profile/ProfileView";
 import Spinner from "@/components/ui/Spinner";
 import type { Profile } from "@/types/database";
 
+interface RecordStats {
+  total: number;
+  recommend: number;
+  neutral: number;
+  notRecommend: number;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [recordCount, setRecordCount] = useState(0);
+  const [stats, setStats] = useState<RecordStats>({ total: 0, recommend: 0, neutral: 0, notRecommend: 0 });
   const [providers, setProviders] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -27,12 +34,9 @@ export default function ProfilePage() {
         return;
       }
 
-      const [profileRes, countRes] = await Promise.all([
+      const [profileRes, recordsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase
-          .from("records")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id),
+        supabase.from("records").select("recommendation").eq("user_id", user.id),
       ]);
 
       // 네이버는 커스텀 이메일 플로우라 identities.provider가 "email"로 잡힘 → user_metadata.provider로 보완
@@ -42,8 +46,16 @@ export default function ProfilePage() {
         ? [...identityProviders, metaProvider]
         : identityProviders;
 
+      const records = (recordsRes.data ?? []) as { recommendation: string }[];
+      const computedStats: RecordStats = {
+        total: records.length,
+        recommend: records.filter((r) => r.recommendation === "recommend").length,
+        neutral: records.filter((r) => r.recommendation === "neutral").length,
+        notRecommend: records.filter((r) => r.recommendation === "not_recommend").length,
+      };
+
       setProfile(profileRes.data as Profile | null);
-      setRecordCount(countRes.count ?? 0);
+      setStats(computedStats);
       setProviders(providers);
       setIsLoading(false);
     };
@@ -61,7 +73,7 @@ export default function ProfilePage() {
           </div>
         ) : profile ? (
           <div className="hide-scrollbar flex-1 overflow-y-auto">
-            <ProfileView profile={profile} recordCount={recordCount} providers={providers} />
+            <ProfileView profile={profile} stats={stats} providers={providers} />
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center text-text-secondary">

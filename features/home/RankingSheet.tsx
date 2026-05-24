@@ -77,12 +77,12 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
           <Spinner size={28} />
         </div>
       ) : stores.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-text-secondary">
+        <div className="nepick-fade-in flex flex-col items-center justify-center py-16 text-text-secondary">
           <p className="text-[15px]">이 지역에 기록된 가게가 없어요</p>
           <p className="mt-1 text-[13px]">지도를 이동하거나 첫 기록을 남겨보세요!</p>
         </div>
       ) : (
-        <ul className="divide-y divide-border pb-4">
+        <ul className="nepick-fade-in divide-y divide-border pb-4">
           {stores.map((store, idx) => (
             <li key={store.id}>
               <StoreCard

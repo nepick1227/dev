@@ -3,60 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
-function NepickLogo({ size = 80 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 80 80" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="logo-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#D32F2F" stopOpacity="0.05" />
-          <stop offset="100%" stopColor="#D32F2F" stopOpacity="0.3" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M40 74C40 74 64 50 64 30C64 16.75 53.25 6 40 6C26.75 6 16 16.75 16 30C16 50 40 74 40 74Z"
-        fill="#D32F2F"
-      />
-      <path
-        d="M25 38h30v3c0 7-5.5 11-15 11S25 48 25 41v-3z"
-        fill="url(#logo-grad)"
-        stroke="#DF6767"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <text
-        x="40"
-        y="31"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize="24"
-        fontWeight="900"
-        fontFamily="sans-serif"
-        fill="white"
-      >
-        N
-      </text>
-    </svg>
-  );
-}
-
-function Spinner() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      style={{ animation: "nepick-spin 0.8s linear infinite" }}
-      aria-hidden="true"
-    >
-      <circle
-        cx="12" cy="12" r="10"
-        stroke="#D32F2F" strokeWidth="3" fill="none"
-        strokeDasharray="30 70" strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+import Spinner from "@/components/ui/Spinner";
+import Button from "@/components/ui/Button";
+import { NepickLogo } from "@/components/ui/icons";
 
 export default function AuthErrorPage() {
   const router = useRouter();
@@ -90,7 +39,7 @@ export default function AuthErrorPage() {
 
   if (isRefreshing) {
     return (
-      <div className="mx-auto flex h-screen max-w-107.5 flex-col items-center justify-center gap-5 bg-white font-sans">
+      <div className="mx-auto flex h-screen max-w-107.5 flex-col items-center justify-center gap-5 bg-surface font-sans">
         <NepickLogo size={80} />
         <Spinner />
       </div>
@@ -98,7 +47,7 @@ export default function AuthErrorPage() {
   }
 
   return (
-    <div className="mx-auto flex h-screen max-w-107.5 flex-col bg-white font-sans">
+    <div className="mx-auto flex h-screen max-w-107.5 flex-col bg-surface font-sans">
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8">
         <NepickLogo size={80} />
 
@@ -112,7 +61,7 @@ export default function AuthErrorPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 px-6 pb-11">
+      <div className="safe-area-pb-lg flex flex-col gap-3 px-6">
         <a
           href="#"
           target="_blank"
@@ -121,12 +70,9 @@ export default function AuthErrorPage() {
         >
           문의하기
         </a>
-        <button
-          onClick={handleRefresh}
-          className="flex w-full items-center justify-center rounded-xl bg-primary py-4 text-[15px] font-bold tracking-tight text-white transition-opacity active:opacity-80"
-        >
+        <Button fullWidth onClick={handleRefresh}>
           새로고침 하기
-        </button>
+        </Button>
       </div>
     </div>
   );

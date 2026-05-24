@@ -86,24 +86,3 @@ export function validateImageFile(file: File): ValidationResult {
   return { isValid: true, message: "" };
 }
 
-/**
- * 생년월일 검증 (과거 날짜, 만 14세 이상)
- */
-export function validateBirthDate(birthDate: string): ValidationResult {
-  if (!birthDate) {
-    return { isValid: false, message: "생년월일을 선택해주세요" };
-  }
-
-  const birth = new Date(birthDate);
-  const now = new Date();
-  const age = now.getFullYear() - birth.getFullYear();
-
-  if (birth > now) {
-    return { isValid: false, message: "올바른 생년월일을 입력해주세요" };
-  }
-  if (age < 14) {
-    return { isValid: false, message: "만 14세 이상만 가입할 수 있습니다" };
-  }
-
-  return { isValid: true, message: "" };
-}

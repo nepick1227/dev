@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
+import Textarea from "@/components/ui/Textarea";
 import { UserIcon, CameraIcon } from "@/components/ui/icons";
 import { validateNickname, validateIntro, validateImageFile } from "@/utils/validation";
 import type { Profile, ProfileUpdate } from "@/types/database";
@@ -209,7 +210,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
               />
             ) : (
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-bg ring-2 ring-border">
-                <UserIcon size={40} color="#9CA3AF" />
+                <UserIcon size={40} color="var(--color-text-tertiary)" />
               </div>
             )}
             <button
@@ -251,7 +252,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
               if (e.target.value.length <= 12) setNickname(e.target.value);
             }}
             placeholder="2~12자"
-            className="w-full rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+            className="h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface px-5 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary placeholder:text-text-tertiary"
             autoComplete="off"
             maxLength={12}
           />
@@ -269,20 +270,16 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
             한줄소개{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </label>
-          <textarea
+          <Textarea
             value={intro}
             onChange={(e) => {
               if (e.target.value.length <= 100) setIntro(e.target.value);
             }}
             placeholder="자신을 소개해 보세요"
             rows={2}
-            className="w-full resize-none rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] leading-relaxed tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+            maxLength={100}
+            currentLength={intro.length}
           />
-          <div className="mt-1.5 flex justify-end px-1">
-            <span className={`text-[12px] ${intro.length >= 100 ? "text-primary" : "text-text-secondary"}`}>
-              {intro.length}/100
-            </span>
-          </div>
         </div>
 
         {/* 생년월일 */}
@@ -296,7 +293,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
             max={new Date().toISOString().split("T")[0]}
-            className="w-full rounded-xl border-[1.5px] border-border bg-white px-4 py-3.5 text-[15px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+            className="h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface px-5 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
           />
         </div>
 
@@ -315,7 +312,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
                 className={`flex-1 rounded-xl border py-3 text-[14px] font-semibold tracking-tight transition-colors ${
                   gender === opt.value
                     ? "border-primary bg-primary text-white"
-                    : "border-border bg-white text-text-secondary"
+                    : "border-border bg-surface text-text-secondary"
                 }`}
               >
                 {opt.label}
@@ -325,7 +322,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
         </div>
 
         {/* 프로필 공개 여부 */}
-        <div className="flex items-center justify-between rounded-xl border border-border bg-white px-4 py-4">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-4">
           <div>
             <p className="text-[15px] font-semibold tracking-tight text-text-primary">
               프로필 공개
@@ -353,7 +350,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
       </div>
 
       {/* 저장 버튼 */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-white px-5 pb-9 pt-3">
+      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
         <Button
           fullWidth
           isLoading={isSubmitting}
@@ -407,7 +404,7 @@ function NicknameHint({ nickname, formatResult, status, isOriginal }: NicknameHi
   }
   if (status === "available") {
     return (
-      <p className="mt-1.5 text-[12px] tracking-tight text-green-700">
+      <p className="mt-1.5 text-[12px] tracking-tight text-success-text">
         사용 가능한 닉네임이에요
       </p>
     );

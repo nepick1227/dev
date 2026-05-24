@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { CategoryBadge } from "@/components/ui/Badge";
 import type { Store } from "@/types/database";
 
 interface StoreCardProps {
@@ -10,22 +10,10 @@ interface StoreCardProps {
   onClick?: (storeId: number) => void;
 }
 
-/**
- * 가게 카드 컴포넌트 (랭킹 목록용)
- */
 export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
-  const router = useRouter();
-
   const handleClick = useCallback(() => {
     onClick?.(store.id);
   }, [store.id, onClick]);
-
-  const handleRecord = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    router.push(`/record?store_kakao_id=${store.kakao_id}&store_name=${encodeURIComponent(store.name)}`);
-  }, [store.kakao_id, store.name, router]);
-
-  const categoryLabel = store.category === "cafe" ? "카페" : "음식점";
 
   return (
     <div
@@ -37,26 +25,22 @@ export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
     >
       {/* 순위 */}
       {rank !== undefined && (
-        <span
-          className="w-6 shrink-0 text-center text-[15px] font-extrabold"
-          style={{ color: rank <= 3 ? "#D32F2F" : "#9CA3AF" }}
-        >
+        <span className={[
+          "w-6 shrink-0 text-center text-[15px] font-extrabold",
+          rank <= 3 ? "text-primary" : "text-text-tertiary",
+        ].join(" ")}>
           {rank}
         </span>
       )}
 
       {/* 가게 정보 */}
       <div className="flex flex-1 flex-col gap-1 overflow-hidden">
-        {/* 가게명 + 카테고리 배지 */}
         <div className="flex items-center gap-1.5">
           <span className="truncate text-[14px] font-semibold tracking-tight text-text-primary">
             {store.name}
           </span>
-          <span className="shrink-0 rounded-full bg-bg px-1.5 py-0.5 text-[10px] font-medium tracking-tight text-text-secondary">
-            {categoryLabel}
-          </span>
+          <CategoryBadge category={store.category} />
         </div>
-        {/* 주소 */}
         <span className="truncate text-[12px] tracking-tight text-text-secondary">
           {store.road_address ?? store.address}
         </span>
