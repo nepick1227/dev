@@ -84,6 +84,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      e.preventDefault();
       dragStartY.current = e.clientY;
       dragStartSnap.current = snap;
 
@@ -104,9 +105,9 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
       className="absolute bottom-0 left-0 right-0 z-30 flex flex-col rounded-t-3xl bg-surface shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out"
       style={{ height: SNAP_HEIGHTS[snap] }}
     >
-      {/* 드래그 핸들 */}
+      {/* 드래그 영역: 핸들 + 헤더 통합 */}
       <div
-        className="flex shrink-0 cursor-grab touch-none items-center px-3 pb-2 pt-3 active:cursor-grabbing"
+        className="shrink-0 cursor-grab touch-none select-none active:cursor-grabbing"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
@@ -118,27 +119,30 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
           if (e.key === "ArrowDown") cycleSnap("down");
         }}
       >
-        <div className="w-7 shrink-0" />
-        <div className="flex flex-1 justify-center">
-          <div className="h-1 w-10 rounded-full bg-border" />
-        </div>
-        {showClose && snap !== "collapsed" ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); updateSnap("collapsed"); }}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg text-text-tertiary"
-            aria-label="닫기"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M2 2L12 12M12 2L2 12" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        ) : (
+        {/* 핸들 막대 */}
+        <div className="flex items-center px-3 pb-2 pt-3">
           <div className="w-7 shrink-0" />
-        )}
-      </div>
+          <div className="flex flex-1 justify-center">
+            <div className="h-1 w-10 rounded-full bg-border" />
+          </div>
+          {showClose && snap !== "collapsed" ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); updateSnap("collapsed"); }}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg text-text-tertiary"
+              aria-label="닫기"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 2L12 12M12 2L2 12" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          ) : (
+            <div className="w-7 shrink-0" />
+          )}
+        </div>
 
-      {/* 고정 헤더 */}
-      {header && <div className="shrink-0 px-4 pb-2">{header}</div>}
+        {/* 헤더 (맛집 랭킹 영역) */}
+        {header && <div className="px-4 pb-3">{header}</div>}
+      </div>
 
       {/* 스크롤 영역 — flex-1 + min-h-0 으로 남은 공간만 차지 */}
       <div className="nepick-fade-in hide-scrollbar min-h-0 flex-1 overflow-y-auto">
