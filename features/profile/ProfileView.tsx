@@ -102,7 +102,7 @@ export default function ProfileView({ profile, stats, providers }: ProfileViewPr
         </p>
       </Modal>
 
-      <div className="flex flex-1 flex-col">
+      <div className="app-content-readable flex flex-1 flex-col">
         {/* 프로필 헤더 */}
         <div className="px-6 pb-6 pt-8 text-center">
           {/* 아바타 + 수정 버튼 */}

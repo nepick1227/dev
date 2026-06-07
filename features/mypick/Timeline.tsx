@@ -92,7 +92,7 @@ export default function Timeline({ initialRecords }: TimelineProps) {
       <Toast message={toast.message} visible={toast.visible} />
 
       {/* 상단 헤더 */}
-      <div className={`shrink-0 bg-surface px-5 pt-3 ${viewMode === "monthly" ? "pb-1" : "pb-3"}`}>
+      <div className={`app-content-readable shrink-0 bg-surface px-5 pt-3 ${viewMode === "monthly" ? "pb-1" : "pb-3"}`}>
         {/* 타임라인 / 월별 세그먼트 토글 + 추가 버튼 */}
         <div className="flex items-center justify-between">
           <div className="flex rounded-full border border-border bg-surface p-0.5">
@@ -166,7 +166,7 @@ export default function Timeline({ initialRecords }: TimelineProps) {
           ) : (
             <>
               {grouped.map(([date, dayRecords]) => (
-                <div key={date} className="px-5 pt-4">
+                <div key={date} className="app-content-readable px-5 pt-4">
                   <div className="mb-3">
                     <span className="text-[15px] font-bold tracking-tight text-text-primary">
                       {formatDateGroupLabel(date)}

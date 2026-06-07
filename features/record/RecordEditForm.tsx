@@ -246,7 +246,7 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
           className="hidden"
         />
 
-        <div className="px-5 pt-6">
+        <div className="app-content-narrow px-5 pt-6">
           {/* 이미지 */}
           <section className="mb-6">
             {previewUrl ? (
@@ -371,7 +371,7 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
       </div>
 
       {/* 저장/삭제 버튼 */}
-      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
         <div className="flex gap-2.5">
           <button
             onClick={() => setShowDeleteModal(true)}

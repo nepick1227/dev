@@ -115,7 +115,7 @@ export default function WithdrawalView() {
       </Modal>
 
       {/* 탈퇴 사유 선택 */}
-      <div className="flex flex-1 flex-col px-5 pt-6 pb-32">
+      <div className="app-content-narrow flex flex-1 flex-col px-5 pt-6 pb-32">
         <h2 className="mb-1.5 text-[18px] font-bold tracking-tight text-text-primary">
           탈퇴 사유를 알려주세요
         </h2>
@@ -149,7 +149,7 @@ export default function WithdrawalView() {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 flex w-full max-w-107.5 -translate-x-1/2 gap-2.5 border-t border-border bg-surface px-5 pt-3">
+      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 flex -translate-x-1/2 gap-2.5 border-t border-border bg-surface px-5 pt-3">
         <Button variant="secondary" fullWidth onClick={() => router.push("/home")}>
           이전
         </Button>

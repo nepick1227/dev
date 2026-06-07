@@ -60,7 +60,7 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
   );
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-4 pt-6">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-4 pt-6 md:left-1/2 md:right-auto md:w-full md:max-w-xl md:-translate-x-1/2">
       {/* 검색바 */}
       <div className="pointer-events-auto relative">
         <div className="absolute left-4 top-1/2 -translate-y-1/2">

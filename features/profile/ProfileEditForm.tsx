@@ -197,7 +197,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto px-5 pb-32 pt-6">
+      <div className="app-content-narrow hide-scrollbar flex-1 overflow-y-auto px-5 pb-32 pt-6">
         {/* 프로필 이미지 편집 */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="relative">
@@ -350,7 +350,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
       </div>
 
       {/* 저장 버튼 */}
-      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
         <Button
           fullWidth
           isLoading={isSubmitting}

@@ -47,7 +47,7 @@ export default function SelectedStoreCard({ store, rank, onClose }: SelectedStor
 
   return (
     <div
-      className="absolute left-3 right-3 z-40 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.16)] p-4"
+      className="absolute left-3 right-3 z-40 rounded-2xl bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.16)] md:left-1/2 md:right-auto md:w-full md:max-w-xl md:-translate-x-1/2"
       style={{ bottom: `${CARD_BOTTOM_PX}px` }}
     >
       {/* 1행: 순위 배지 + 카테고리 배지 + 닫기 */}

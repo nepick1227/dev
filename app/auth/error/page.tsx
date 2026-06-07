@@ -39,7 +39,7 @@ export default function AuthErrorPage() {
 
   if (isRefreshing) {
     return (
-      <div className="mx-auto flex h-screen max-w-107.5 flex-col items-center justify-center gap-5 bg-surface font-sans">
+      <div className="page-container items-center justify-center gap-5 font-sans">
         <NepickLogo size={80} />
         <Spinner />
       </div>
@@ -47,7 +47,7 @@ export default function AuthErrorPage() {
   }
 
   return (
-    <div className="mx-auto flex h-screen max-w-107.5 flex-col bg-surface font-sans">
+    <div className="page-container font-sans">
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8">
         <NepickLogo size={80} />
 

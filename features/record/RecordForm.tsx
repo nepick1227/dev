@@ -152,7 +152,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
       <Toast message={toast.message} visible={toast.visible} />
 
       <div className="hide-scrollbar flex-1 overflow-y-auto pb-32">
-        <div className="px-5 pt-6">
+        <div className="app-content-narrow px-5 pt-6">
           {/* 이미지 업로드 */}
           <section className="mb-6">
             <ImageUpload value={imageFile} onChange={setImageFile} onError={showToast} />
@@ -260,7 +260,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
       </div>
 
       {/* 저장 버튼 */}
-      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
         <Button
           fullWidth
           isLoading={isSubmitting}

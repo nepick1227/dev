@@ -91,7 +91,7 @@ export default function Modal({
 
       {/* 시트 패널 */}
       <div
-        className="nepick-fade-in relative w-full max-w-107.5 rounded-t-3xl bg-surface"
+        className="app-fixed-bar nepick-fade-in relative rounded-t-3xl bg-surface"
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
