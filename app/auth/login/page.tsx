@@ -215,7 +215,7 @@ function LoginContent() {
       <LoginBackground />
 
       {/* 로고 & 타이틀 */}
-      <div className="nepick-fade-in relative flex flex-1 flex-col items-center justify-center px-6">
+      <div className="app-content-narrow nepick-fade-in relative flex flex-1 flex-col items-center justify-center px-6">
         <div className="mb-5">
           <NepickLogo size={60} />
         </div>
@@ -231,7 +231,7 @@ function LoginContent() {
       </div>
 
       {/* 로그인 버튼 영역 */}
-      <div className="nepick-fade-in safe-area-pb-lg relative flex flex-col gap-3 px-6 [animation-delay:150ms]">
+      <div className="app-content-narrow nepick-fade-in safe-area-pb-lg relative flex flex-col gap-3 px-6 [animation-delay:150ms]">
         {/* 에러 메시지 */}
         {(errorMessage ?? loginError) && (
           <p className="mb-1 text-center text-[13px] text-primary">{errorMessage ?? loginError}</p>

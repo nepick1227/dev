@@ -26,9 +26,10 @@ const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "n
 interface RecordFormProps {
   onContentChange?: (hasContent: boolean) => void;
   initialPlace?: KakaoPlace | null;
+  onSaved?: () => void;
 }
 
-export default function RecordForm({ onContentChange, initialPlace }: RecordFormProps) {
+export default function RecordForm({ onContentChange, initialPlace, onSaved }: RecordFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -118,20 +119,38 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
       if (recordError) throw recordError;
 
       showToast("기록이 저장되었습니다 🎉");
-      setTimeout(() => router.push("/mypick"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/mypick");
+        }
+      }, 800);
     } catch {
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedPlace, recommendation, comment, visitedAt, visitedTime, imageFile, isSubmitting, router, showToast]);
+  }, [
+    selectedPlace,
+    recommendation,
+    comment,
+    visitedAt,
+    visitedTime,
+    imageFile,
+    isSubmitting,
+    onSaved,
+    router,
+    showToast,
+  ]);
+
 
   return (
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
       <div className="hide-scrollbar flex-1 overflow-y-auto pb-32">
-        <div className="px-5 pt-6">
+        <div className="app-content-narrow px-5 pt-6">
           {/* 이미지 업로드 */}
           <section className="mb-6">
             <ImageUpload value={imageFile} onChange={setImageFile} onError={showToast} />
@@ -231,8 +250,13 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
       </div>
 
       {/* 저장 버튼 */}
-      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
-        <Button fullWidth isLoading={isSubmitting} disabled={!canSubmit} onClick={handleSubmit}>
+      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+        <Button
+          fullWidth
+          isLoading={isSubmitting}
+          disabled={!canSubmit}
+          onClick={handleSubmit}
+        >
           저장하기
         </Button>
       </div>

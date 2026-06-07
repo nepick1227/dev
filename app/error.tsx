@@ -18,7 +18,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   }, [error]);
 
   return (
-    <div className="mx-auto flex h-screen max-w-107.5 flex-col bg-surface font-sans">
+    <div className="page-container font-sans">
       {/* 아이콘 + 메시지 */}
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8">
         <div className="flex h-18 w-18 items-center justify-center rounded-[20px] bg-bg">

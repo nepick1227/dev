@@ -15,6 +15,7 @@ interface RecordCardProps {
   isLast?: boolean;
   onShowToast?: (message: string) => void;
   onDelete?: () => void;
+  onEdit?: (recordId: number) => void;
 }
 
 export default function RecordCard({
@@ -22,6 +23,7 @@ export default function RecordCard({
   isLast = false,
   onShowToast,
   onDelete,
+  onEdit,
 }: RecordCardProps) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
@@ -73,8 +75,12 @@ export default function RecordCard({
 
   const handleEdit = useCallback(() => {
     setMenuOpen(false);
-    router.push(`/record/${record.id}/edit`);
-  }, [record.id, router]);
+    if (onEdit) {
+      onEdit(record.id);
+    } else {
+      router.push(`/record/${record.id}/edit`);
+    }
+  }, [record.id, onEdit, router]);
 
   const handleDelete = useCallback(async () => {
     try {

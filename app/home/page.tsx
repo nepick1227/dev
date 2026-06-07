@@ -48,7 +48,7 @@ function ProfileGuard() {
 
 export default function HomePage() {
   return (
-    <PageContainer>
+    <PageContainer className="home-page-container">
       <Suspense>
         <WelcomeToast />
       </Suspense>

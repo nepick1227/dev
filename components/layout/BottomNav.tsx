@@ -1,5 +1,6 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
@@ -37,6 +38,16 @@ const NAV_ITEMS: NavItem[] = [
 export default function BottomNav() {
   const pathname = usePathname();
 
+  const handleDesktopPanelNav = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (typeof window === "undefined" || !window.matchMedia("(min-width: 768px)").matches) return;
+    if (!pathname.startsWith("/home")) return;
+
+    event.preventDefault();
+    window.dispatchEvent(new CustomEvent("nepick:home-panel", {
+      detail: href === "/home" ? "ranking" : href === "/mypick" ? "mypick" : "profile",
+    }));
+  };
+
   return (
     <nav className="safe-area-pb sticky bottom-0 z-20 border-t border-border bg-surface">
       <ul className="flex h-18 items-center">
@@ -47,6 +58,7 @@ export default function BottomNav() {
             <li key={item.href} className="flex flex-1 justify-center">
               <Link
                 href={item.href}
+                onClick={(event) => handleDesktopPanelNav(event, item.href)}
                 className="flex h-full w-full flex-col items-center justify-center gap-1 transition-all duration-200"
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}

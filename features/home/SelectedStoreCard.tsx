@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { CloseIcon } from "@/components/ui/icons";
 import type { Store } from "@/types/database";
@@ -12,9 +12,10 @@ interface SelectedStoreCardProps {
   store: Store;
   rank: number;
   onClose: () => void;
+  desktopSidebarOpen?: boolean;
 }
 
-export default function SelectedStoreCard({ store, rank, onClose }: SelectedStoreCardProps) {
+export default function SelectedStoreCard({ store, rank, onClose, desktopSidebarOpen = true }: SelectedStoreCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const address = store.road_address ?? store.address;
@@ -47,8 +48,13 @@ export default function SelectedStoreCard({ store, rank, onClose }: SelectedStor
 
   return (
     <div
-      className="absolute left-3 right-3 z-40 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.16)] p-4"
-      style={{ bottom: `${CARD_BOTTOM_PX}px` }}
+      className="desktop-store-card absolute left-3 right-3 z-40 rounded-2xl bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.16)]"
+      style={{
+        bottom: `${CARD_BOTTOM_PX}px`,
+        "--desktop-card-left": desktopSidebarOpen
+          ? "calc(var(--home-sidebar-width) + (100vw - var(--home-sidebar-width)) / 2)"
+          : "calc(var(--home-nav-width) + (100vw - var(--home-nav-width)) / 2)",
+      } as CSSProperties}
     >
       {/* 1행: 순위 배지 + 카테고리 배지 + 닫기 */}
       <div className="mb-2 flex items-center gap-1.5">

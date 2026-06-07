@@ -21,6 +21,7 @@ interface ProfileViewProps {
   profile: Profile;
   stats: RecordStats;
   providers: string[];
+  onNavigate?: (href: string) => void;
 }
 
 // 소셜 아이콘 매핑
@@ -35,7 +36,7 @@ function SocialIcons({ providers }: { providers: string[] }) {
   );
 }
 
-export default function ProfileView({ profile, stats, providers }: ProfileViewProps) {
+export default function ProfileView({ profile, stats, providers, onNavigate }: ProfileViewProps) {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -103,7 +104,7 @@ export default function ProfileView({ profile, stats, providers }: ProfileViewPr
         </p>
       </Modal>
 
-      <div className="flex flex-1 flex-col">
+      <div className="app-content-readable flex flex-1 flex-col">
         {/* 프로필 헤더 */}
         <div className="px-6 pb-6 pt-8 text-center">
           {/* 아바타 + 수정 버튼 */}
@@ -123,6 +124,11 @@ export default function ProfileView({ profile, stats, providers }: ProfileViewPr
               )}
               <Link
                 href="/profile/edit"
+                onClick={(event) => {
+                  if (!onNavigate) return;
+                  event.preventDefault();
+                  onNavigate("/profile/edit");
+                }}
                 className="absolute bottom-0 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-[0_2px_8px_rgba(17,24,39,0.10)] transition-opacity active:opacity-70"
                 aria-label="프로필 수정"
               >
@@ -177,7 +183,7 @@ export default function ProfileView({ profile, stats, providers }: ProfileViewPr
                 {section.title}
               </p>
               {section.items.map((item) => (
-                <MenuRow key={item.label} item={item} />
+                <MenuRow key={item.label} item={item} onNavigate={onNavigate} />
               ))}
             </div>
           ))}
@@ -203,7 +209,7 @@ interface MenuItem {
   onPress?: () => void;
 }
 
-function MenuRow({ item }: { item: MenuItem }) {
+function MenuRow({ item, onNavigate }: { item: MenuItem; onNavigate?: (href: string) => void }) {
   const content = (
     <div className="flex items-center justify-between py-4">
       <span className={`text-[15px] tracking-tight ${item.isDestructive ? "text-primary" : "text-text-primary"}`}>
@@ -230,7 +236,15 @@ function MenuRow({ item }: { item: MenuItem }) {
   // 내부 링크
   if (item.href) {
     return (
-      <Link href={item.href} className="block border-b border-border transition-colors active:bg-bg">
+      <Link
+        href={item.href}
+        onClick={(event) => {
+          if (!onNavigate || !item.href) return;
+          event.preventDefault();
+          onNavigate(item.href);
+        }}
+        className="block border-b border-border transition-colors active:bg-bg"
+      >
         {content}
       </Link>
     );

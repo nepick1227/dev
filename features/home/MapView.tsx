@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState, useEffect, type CSSProperties } from "react";
 import KakaoMap from "@/components/map/KakaoMap";
 import RankingSheet, { type RankingSheetHandle } from "./RankingSheet";
 import MapOverlay from "./MapOverlay";
+import HomePanelContent, { type PanelView } from "./HomePanelContent";
 import SelectedStoreCard, { CARD_BOTTOM_PX, CARD_HEIGHT_PX } from "./SelectedStoreCard";
+import StoreCard from "./StoreCard";
 import Spinner from "@/components/ui/Spinner";
-import { useMapStores, type MapBounds } from "@/hooks/use-map-stores";
+import { DESKTOP_FETCH_SIZE, useMapStores, type MapBounds } from "@/hooks/use-map-stores";
 import { getCurrentPosition } from "@/lib/kakao/map";
 import { createClient } from "@/lib/supabase/client";
 import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
@@ -74,6 +76,33 @@ const CLUSTER_SPIRAL: [number, number][] = [
   [-CLUSTER_OFFSET * 1.73, 0],
 ];
 
+const RESTAURANT_SUBCATEGORIES = [
+  "전체",
+  "간식",
+  "분식",
+  "뷔페",
+  "술집",
+  "아시아음식",
+  "양식",
+  "일식",
+  "중식",
+  "패스트푸드",
+  "패밀리레스토랑",
+  "피자",
+  "치킨",
+  "한식",
+] as const;
+
+const ALWAYS_SHOW_RANK_COUNT = 10;
+const DESKTOP_RANKING_LIMIT = 60;
+const DESKTOP_NAV_WIDTH = 64;
+const DESKTOP_MARKER_SAFE_GAP = 48;
+
+function getDesktopPanelWidth(): number {
+  if (typeof window === "undefined") return 430;
+  return Math.min(430, Math.max(300, window.innerWidth * 0.32));
+}
+
 function spreadOverlappingMarkers(
   stores: Store[]
 ): Array<{ store: Store; displayLat: number; displayLng: number }> {
@@ -108,6 +137,41 @@ function spreadOverlappingMarkers(
   return result;
 }
 
+function isInsideBounds(store: Store, bounds: MapBounds): boolean {
+  return store.lat >= bounds.sw.lat &&
+    store.lat <= bounds.ne.lat &&
+    store.lng >= bounds.sw.lng &&
+    store.lng <= bounds.ne.lng;
+}
+
+function selectDesktopMarkerStores(stores: Store[], bounds: MapBounds): Store[] {
+  const latRange = Math.max(bounds.ne.lat - bounds.sw.lat, 0.000001);
+  const lngRange = Math.max(bounds.ne.lng - bounds.sw.lng, 0.000001);
+  const occupied = new Set<string>();
+  const selected = new Map<number, Store>();
+
+  stores.forEach((store, idx) => {
+    if (!isInsideBounds(store, bounds)) return;
+
+    const isHighRank = idx < ALWAYS_SHOW_RANK_COUNT;
+    const col = Math.floor(((store.lng - bounds.sw.lng) / lngRange) * 10);
+    const row = Math.floor(((store.lat - bounds.sw.lat) / latRange) * 7);
+    const key = `${col}:${row}`;
+
+    if (isHighRank || !occupied.has(key)) {
+      selected.set(store.id, store);
+      occupied.add(key);
+    }
+  });
+
+  return Array.from(selected.values());
+}
+
+function matchesRestaurantSubcategory(store: Store, subcategory: string): boolean {
+  if (subcategory === "전체" || store.category !== "restaurant") return true;
+  return (store.subcategory ?? "").includes(subcategory);
+}
+
 // ── 현재 위치 파란 점 ────────────────────────────────────
 
 function createLocationDot(map: kakao.maps.Map, lat: number, lng: number): kakao.maps.CustomOverlay {
@@ -135,13 +199,20 @@ export default function MapView() {
   const snapRef = useRef<"collapsed" | "half" | "full">("half");
   const cardOpenedRef = useRef(false);
   const accumulatedStoresRef = useRef<Store[]>([]);
+  const myPickModeRef = useRef(false);
 
   const [category, setCategory] = useState<Category>("all");
+  const [restaurantSubcategory, setRestaurantSubcategory] = useState<(typeof RESTAURANT_SUBCATEGORIES)[number]>("전체");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedRank, setSelectedRank] = useState<number>(0);
   const [regionName, setRegionName] = useState<string>("");
   const [isLocating, setIsLocating] = useState(false);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+  const [panelView, setPanelView] = useState<PanelView>("ranking");
+  const [isMyPickMapMode, setIsMyPickMapMode] = useState(false);
+  const [myPickStores, setMyPickStores] = useState<Store[]>([]);
+  const [isMyPickLoading, setIsMyPickLoading] = useState(false);
   // tapMode: 지도 배경 탭으로 가게 선택 시 랭킹 마커 숨기고 단일 핀만 표시
   const [tapMode, setTapMode] = useState(false);
 
@@ -150,6 +221,11 @@ export default function MapView() {
   const { accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage } = useMapStores();
 
   const hasMore = totalPages > 1 && page < totalPages - 1;
+  const visibleStores = category === "restaurant"
+    ? accumulatedStores.filter((store) => matchesRestaurantSubcategory(store, restaurantSubcategory))
+    : accumulatedStores;
+  const panelStores = isMyPickMapMode ? myPickStores : visibleStores;
+  const panelLoading = isMyPickMapMode ? isMyPickLoading : isLoading;
 
   // accumulatedStores 변경 시 ref 동기화 (이벤트 클로저에서 최신값 접근용)
   useEffect(() => {
@@ -157,18 +233,74 @@ export default function MapView() {
   }, [accumulatedStores]);
 
   useEffect(() => {
+    myPickModeRef.current = isMyPickMapMode;
+  }, [isMyPickMapMode]);
+
+  useEffect(() => {
     snapRef.current = snap;
   }, [snap]);
 
+  const isDesktopLayout = useCallback(() => {
+    return typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
+  }, []);
+
+  useEffect(() => {
+    if (isDesktopLayout()) {
+      setIsDesktopSidebarOpen(true);
+    }
+  }, [isDesktopLayout]);
+
+  useEffect(() => {
+    const handlePanelView = (event: Event) => {
+      const nextView = (event as CustomEvent<PanelView>).detail;
+      if (!["ranking", "mypick", "profile"].includes(nextView)) return;
+      setPanelView(nextView);
+      setIsDesktopSidebarOpen(true);
+    };
+
+    window.addEventListener("nepick:home-panel", handlePanelView);
+    return () => window.removeEventListener("nepick:home-panel", handlePanelView);
+  }, []);
+
+  const getDesktopInsets = useCallback((sidebarOpen = isDesktopSidebarOpen) => {
+    const panelWidth = getDesktopPanelWidth();
+    const visibleLeft = sidebarOpen ? DESKTOP_NAV_WIDTH + panelWidth : DESKTOP_NAV_WIDTH;
+    return {
+      left: visibleLeft + DESKTOP_MARKER_SAFE_GAP,
+      right: 88,
+      top: !isMyPickMapMode && categoryRef.current === "restaurant" ? 128 : 88,
+      bottom: 88,
+    };
+  }, [isDesktopSidebarOpen, isMyPickMapMode]);
+
+
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
-  // 상단: 검색/필터 오버레이 ~20%, 하단: 바텀시트+버튼 높이를 모드별로 계산해 inset 적용
-  const getBounds = useCallback((map: kakao.maps.Map): MapBounds => {
+  // 모바일: 바텀시트 가시 영역 기준 / 데스크톱: 좌측 패널과 상단 플로팅을 제외한 실제 지도 영역 기준
+  const getBounds = useCallback((map: kakao.maps.Map, sidebarOpen = isDesktopSidebarOpen): MapBounds => {
     const bounds = map.getBounds();
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
 
     const latRange = ne.getLat() - sw.getLat();
     const lngRange = ne.getLng() - sw.getLng();
+
+    if (isDesktopLayout()) {
+      const width = Math.max(window.innerWidth, 1);
+      const height = Math.max(window.innerHeight, 1);
+      const insets = getDesktopInsets(sidebarOpen);
+
+      return {
+        sw: {
+          lat: sw.getLat() + latRange * (insets.bottom / height),
+          lng: sw.getLng() + lngRange * (insets.left / width),
+        },
+        ne: {
+          lat: ne.getLat() - latRange * (insets.top / height),
+          lng: ne.getLng() - lngRange * (insets.right / width),
+        },
+      };
+    }
+
     const latPadTop = latRange * 0.20;  // 검색바+필터(~17%) + 여유(3%)
     const lngPad = lngRange * 0.05;
 
@@ -187,7 +319,7 @@ export default function MapView() {
       sw: { lat: sw.getLat() + latRange * 0.20, lng: sw.getLng() + lngPad },
       ne: { lat: ne.getLat() - latPadTop, lng: ne.getLng() - lngPad },
     };
-  }, []);
+  }, [getDesktopInsets, isDesktopLayout, isDesktopSidebarOpen]);
 
   const fetchRegion = useCallback(() => {
     const map = mapRef.current;
@@ -221,6 +353,17 @@ export default function MapView() {
   const panToVisible = useCallback((map: kakao.maps.Map, lat: number, lng: number) => {
     const bounds = map.getBounds();
     const latRange = bounds.getNorthEast().getLat() - bounds.getSouthWest().getLat();
+    const lngRange = bounds.getNorthEast().getLng() - bounds.getSouthWest().getLng();
+
+    if (isDesktopLayout()) {
+      const width = Math.max(window.innerWidth, 1);
+      const height = Math.max(window.innerHeight, 1);
+      const insets = getDesktopInsets();
+      const centerLat = lat + latRange * ((insets.top - insets.bottom) / (2 * height));
+      const centerLng = lng - lngRange * ((insets.left - insets.right) / (2 * width));
+      map.panTo(new kakao.maps.LatLng(centerLat, centerLng));
+      return;
+    }
 
     if (snapRef.current === "half") {
       // 가시 영역 = 지도 DOM 상단 50% → 가시 중앙 = 지도 중심 기준 25% 위
@@ -229,7 +372,79 @@ export default function MapView() {
       // 가게 카드(~130px)가 하단을 가리므로 핀이 카드 위 가시 영역 중앙에 오도록 조정
       map.panTo(new kakao.maps.LatLng(lat - latRange * 0.09, lng));
     }
+  }, [getDesktopInsets, isDesktopLayout]);
+
+  const fitStoresToVisibleMap = useCallback((map: kakao.maps.Map, stores: Store[]) => {
+    if (stores.length === 0) return;
+
+    if (stores.length === 1) {
+      map.setLevel(Math.min(map.getLevel(), 5));
+      panToVisible(map, stores[0].lat, stores[0].lng);
+      return;
+    }
+
+    const bounds = new kakao.maps.LatLngBounds();
+    const extendBounds = bounds as kakao.maps.LatLngBounds & {
+      extend: (latlng: kakao.maps.LatLng) => void;
+    };
+    stores.forEach((store) => {
+      extendBounds.extend(new kakao.maps.LatLng(store.lat, store.lng));
+    });
+    (map as kakao.maps.Map & { setBounds: (bounds: kakao.maps.LatLngBounds) => void }).setBounds(bounds);
+
+    window.setTimeout(() => {
+      const fitted = map.getBounds();
+      const sw = fitted.getSouthWest();
+      const ne = fitted.getNorthEast();
+      panToVisible(map, (sw.getLat() + ne.getLat()) / 2, (sw.getLng() + ne.getLng()) / 2);
+    }, 120);
+  }, [panToVisible]);
+
+  const loadMyPickStores = useCallback(async () => {
+    setIsMyPickLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("records")
+        .select("stores(*)")
+        .eq("user_id", user.id)
+        .order("visited_at", { ascending: false });
+
+      if (error) throw error;
+
+      const uniqueStores = new Map<number, Store>();
+      type MyPickStoreRow = { stores: Store | Store[] | null };
+      ((data ?? []) as unknown as MyPickStoreRow[]).forEach((record) => {
+        const store = Array.isArray(record.stores) ? record.stores[0] : record.stores;
+        if (store) uniqueStores.set(store.id, store);
+      });
+
+      const stores = Array.from(uniqueStores.values());
+      setMyPickStores(stores);
+      return stores;
+    } catch {
+      setMyPickStores([]);
+      return [];
+    } finally {
+      setIsMyPickLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const handleMyPickUpdated = async () => {
+      const stores = await loadMyPickStores();
+      const map = mapRef.current;
+      if (map && myPickModeRef.current) {
+        fitStoresToVisibleMap(map, stores);
+      }
+    };
+
+    window.addEventListener("nepick:mypick-updated", handleMyPickUpdated);
+    return () => window.removeEventListener("nepick:mypick-updated", handleMyPickUpdated);
+  }, [fitStoresToVisibleMap, loadMyPickStores]);
 
   // 마커 렌더링 (tapMode일 때는 선택된 가게 마커 1개만 표시)
   useEffect(() => {
@@ -248,8 +463,13 @@ export default function MapView() {
       return;
     }
 
+    const markerSourceStores = isMyPickMapMode ? myPickStores : visibleStores;
+    const storesForMarkers = isDesktopLayout() && !isMyPickMapMode
+      ? selectDesktopMarkerStores(markerSourceStores, getBounds(map, isDesktopSidebarOpen))
+      : markerSourceStores;
+
     // 겹치는 마커 나선형 오프셋 적용 후 랭킹 마커 렌더링
-    const displayStores = spreadOverlappingMarkers(accumulatedStores);
+    const displayStores = spreadOverlappingMarkers(storesForMarkers);
     displayStores.forEach(({ store, displayLat, displayLng }, idx) => {
       const rank = idx + 1;
       const dimmed = selectedStore !== null && selectedStore.id !== store.id;
@@ -268,7 +488,18 @@ export default function MapView() {
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
     };
-  }, [accumulatedStores, selectedStore, selectedRank, panToVisible, tapMode]);
+  }, [
+    getBounds,
+    isDesktopLayout,
+    isDesktopSidebarOpen,
+    isMyPickMapMode,
+    myPickStores,
+    selectedStore,
+    selectedRank,
+    panToVisible,
+    tapMode,
+    visibleStores,
+  ]);
 
   const handleMapReady = useCallback(async (map: kakao.maps.Map) => {
     if (isInitializedRef.current) return;
@@ -280,9 +511,13 @@ export default function MapView() {
     geocoderRef.current = new kakao.maps.services.Geocoder();
 
     const refetch = () => {
+      if (myPickModeRef.current) {
+        fetchRegion();
+        return;
+      }
       setSelectedStore(null);
       setTapMode(false);
-      fetchStores(getBounds(map), categoryRef.current, 0);
+      fetchStores(getBounds(map), categoryRef.current, 0, isDesktopLayout() ? DESKTOP_FETCH_SIZE : undefined);
       fetchRegion();
     };
     kakao.maps.event.addListener(map, "zoom_changed", refetch);
@@ -313,17 +548,19 @@ export default function MapView() {
     //   } catch { /* 조회 실패 시 무시 */ }
     // });
 
-    fetchStores(getBounds(map), categoryRef.current, 0);
+    fetchStores(getBounds(map), categoryRef.current, 0, isDesktopLayout() ? DESKTOP_FETCH_SIZE : undefined);
     fetchRegion();
-  }, [fetchStores, getBounds, fetchRegion]);
+  }, [fetchStores, getBounds, fetchRegion, isDesktopLayout]);
 
   const handleCategoryChange = useCallback((cat: Category) => {
     categoryRef.current = cat;
     setCategory(cat);
+    setIsMyPickMapMode(false);
+    if (cat !== "restaurant") setRestaurantSubcategory("전체");
     if (mapRef.current) {
-      fetchStores(getBounds(mapRef.current), cat, 0);
+      fetchStores(getBounds(mapRef.current), cat, 0, isDesktopLayout() ? DESKTOP_FETCH_SIZE : undefined);
     }
-  }, [fetchStores, getBounds]);
+  }, [fetchStores, getBounds, isDesktopLayout]);
 
   // 검색으로 가게 선택: 가시 중앙 이동 + DB 조회 후 카드 표시
   const handlePlaceSelect = useCallback(async (
@@ -386,8 +623,9 @@ export default function MapView() {
 
   // 랭킹 시트에서 가게 클릭
   const handleStoreClick = useCallback((storeId: number) => {
-    const idx = accumulatedStores.findIndex((s) => s.id === storeId);
-    const store = accumulatedStores[idx];
+    const sourceStores = isMyPickMapMode ? myPickStores : accumulatedStores;
+    const idx = sourceStores.findIndex((s) => s.id === storeId);
+    const store = sourceStores[idx];
     if (store && mapRef.current) {
       setTapMode(false);
       cardOpenedRef.current = true;
@@ -395,7 +633,7 @@ export default function MapView() {
       setSelectedRank(idx + 1);
       panToVisible(mapRef.current, store.lat, store.lng);
     }
-  }, [accumulatedStores, panToVisible]);
+  }, [accumulatedStores, isMyPickMapMode, myPickStores, panToVisible]);
 
   const handleCurrentLocation = useCallback(async () => {
     const map = mapRef.current;
@@ -408,7 +646,8 @@ export default function MapView() {
       map.setCenter(new kakao.maps.LatLng(pos.lat, pos.lng));
       setSelectedStore(null);
       setTapMode(false);
-      fetchStores(getBounds(map), categoryRef.current, 0);
+      setIsMyPickMapMode(false);
+      fetchStores(getBounds(map), categoryRef.current, 0, isDesktopLayout() ? DESKTOP_FETCH_SIZE : undefined);
       fetchRegion();
       rankingRef.current?.open();
     } catch {
@@ -416,7 +655,7 @@ export default function MapView() {
     } finally {
       setIsLocating(false);
     }
-  }, [isLocating, fetchStores, getBounds, fetchRegion]);
+  }, [isLocating, fetchStores, getBounds, fetchRegion, isDesktopLayout]);
 
   const handleCloseCard = useCallback(() => {
     setSelectedStore(null);
@@ -435,6 +674,75 @@ export default function MapView() {
     rankingRef.current?.open();
   }, []);
 
+  const handleMyPickMapToggle = useCallback(async () => {
+    const map = mapRef.current;
+    setSelectedStore(null);
+    setTapMode(false);
+
+    if (isMyPickMapMode) {
+      setIsMyPickMapMode(false);
+      if (map) {
+        fetchStores(getBounds(map), categoryRef.current, 0, isDesktopLayout() ? DESKTOP_FETCH_SIZE : undefined);
+        fetchRegion();
+      }
+      return;
+    }
+
+    const stores = myPickStores.length > 0 ? myPickStores : await loadMyPickStores();
+    setIsMyPickMapMode(true);
+    if (map) {
+      window.setTimeout(() => fitStoresToVisibleMap(map, stores), 0);
+    }
+  }, [
+    fetchRegion,
+    fetchStores,
+    fitStoresToVisibleMap,
+    getBounds,
+    isDesktopLayout,
+    isMyPickMapMode,
+    loadMyPickStores,
+    myPickStores,
+  ]);
+
+  const handleDesktopSidebarToggle = useCallback(() => {
+    const nextOpen = !isDesktopSidebarOpen;
+    setIsDesktopSidebarOpen(nextOpen);
+  }, [isDesktopSidebarOpen]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isDesktopLayout()) return;
+
+    const timer = window.setTimeout(() => {
+      (map as kakao.maps.Map & { relayout?: () => void }).relayout?.();
+      if (isMyPickMapMode) {
+        fitStoresToVisibleMap(map, myPickStores);
+        fetchRegion();
+        return;
+      }
+      fetchStores(getBounds(map, isDesktopSidebarOpen), categoryRef.current, 0, DESKTOP_FETCH_SIZE);
+      fetchRegion();
+    }, 320);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    fetchRegion,
+    fetchStores,
+    fitStoresToVisibleMap,
+    getBounds,
+    isDesktopLayout,
+    isDesktopSidebarOpen,
+    isMyPickMapMode,
+    myPickStores,
+  ]);
+
+  const desktopFloatingLeft = isDesktopSidebarOpen
+    ? "calc(var(--home-sidebar-width) + 16px)"
+    : "calc(var(--home-nav-width) + 16px)";
+  const desktopFloatingMaxWidth = isDesktopSidebarOpen
+    ? "calc(100vw - var(--home-sidebar-width) - 40px)"
+    : "calc(100vw - var(--home-nav-width) - 40px)";
+
   // 플로팅 버튼 위치: 카드 열림 → 카드 위, collapsed → 시트(88px)+gap(8px) 위
   const floatingButtonBottom = selectedStore
     ? `${CARD_BOTTOM_PX + CARD_HEIGHT_PX}px`
@@ -448,23 +756,162 @@ export default function MapView() {
         category={category}
         onCategoryChange={handleCategoryChange}
         onPlaceSelect={handlePlaceSelect}
+        desktopSidebarOpen={isDesktopSidebarOpen}
+        desktopVisible={panelView === "ranking"}
       />
+
+      <div
+        className={[
+          "home-desktop-panel absolute bottom-0 top-0 z-10 hidden flex-col border-r border-border bg-surface shadow-[4px_0_24px_rgba(0,0,0,0.08)] transition-transform duration-300 md:flex",
+          isDesktopSidebarOpen ? "" : "is-closed",
+        ].join(" ")}
+        style={{
+          "--desktop-panel-transform": isDesktopSidebarOpen
+            ? "translateX(0)"
+            : "translateX(calc(-1 * var(--home-panel-width)))",
+        } as CSSProperties}
+      >
+        {panelView === "ranking" ? (
+          <>
+            <div className="px-5 pb-4 pt-24">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium tracking-tight text-text-secondary">
+                    {isMyPickMapMode ? "내 픽 지도" : "맛집 랭킹"}
+                  </p>
+                  <p className="mt-0.5 text-[18px] font-extrabold leading-snug tracking-tight text-text-primary">
+                    {isMyPickMapMode ? "내가 기록한 맛집" : regionName || "불러오는 중..."}
+                  </p>
+                </div>
+                <button
+                  onClick={handleMyPickMapToggle}
+                  disabled={isMyPickLoading}
+                  className={[
+                    "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-bold tracking-tight transition-colors disabled:opacity-60",
+                    isMyPickMapMode
+                      ? "border-primary bg-primary text-white"
+                      : "border-primary bg-white text-primary hover:bg-primary-soft",
+                  ].join(" ")}
+                >
+                  {isMyPickMapMode ? "랭킹 보기" : "내 픽만 보기"}
+                </button>
+              </div>
+            </div>
+
+            <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
+              {panelLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Spinner size={28} />
+                </div>
+              ) : panelStores.length === 0 ? (
+                <div className="nepick-fade-in flex flex-col items-center justify-center px-5 py-16 text-text-secondary">
+                  <p className="text-[15px]">
+                    {isMyPickMapMode ? "아직 내가 픽한 맛집이 없어요" : "이 지역에 기록된 가게가 없어요"}
+                  </p>
+                  <p className="mt-1 text-[13px]">
+                    {isMyPickMapMode ? "내 픽을 추가하면 지도에 표시됩니다" : "지도를 이동하거나 첫 기록을 남겨보세요!"}
+                  </p>
+                </div>
+              ) : (
+                <ul className="nepick-fade-in divide-y divide-border pb-6">
+                  {panelStores.slice(0, isMyPickMapMode ? panelStores.length : DESKTOP_RANKING_LIMIT).map((store, idx) => (
+                    <li key={store.id}>
+                      <StoreCard store={store} rank={idx + 1} onClick={handleStoreClick} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        ) : (
+          <HomePanelContent key={panelView} view={panelView} />
+        )}
+      </div>
+
+      <button
+        onClick={handleDesktopSidebarToggle}
+        className={[
+          "home-sidebar-toggle absolute top-1/2 z-40 hidden h-11 -translate-y-1/2 items-center justify-center gap-1 rounded-r-full border border-l-0 border-border bg-surface px-3 text-[12px] font-bold text-text-secondary shadow-lg transition-[left,colors] duration-300 hover:text-primary md:flex",
+          isDesktopSidebarOpen ? "" : "is-closed",
+        ].join(" ")}
+        style={{
+          left: isDesktopSidebarOpen ? "var(--home-sidebar-width)" : "var(--home-nav-width)",
+        }}
+        aria-label={isDesktopSidebarOpen ? "목록 숨기기" : "목록 보기"}
+      >
+        <span>{isDesktopSidebarOpen ? "<" : ">"}</span>
+      </button>
+
+      {!isMyPickMapMode && (
+        <div
+          className="pointer-events-auto absolute top-5 z-30 hidden items-center gap-2 transition-[left] duration-300 md:flex"
+          style={{
+            left: desktopFloatingLeft,
+            maxWidth: desktopFloatingMaxWidth,
+          }}
+        >
+          {[
+            { key: "restaurant" as const, label: "음식점" },
+            { key: "cafe" as const, label: "카페" },
+          ].map((item) => (
+            <button
+              key={item.key}
+              onClick={() => handleCategoryChange(item.key)}
+              className={[
+                "rounded-full border px-4 py-2 text-[13px] font-semibold shadow-md transition-colors",
+                category === item.key
+                  ? "border-primary bg-primary text-white"
+                  : "border-primary bg-surface text-primary hover:bg-primary-soft",
+              ].join(" ")}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!isMyPickMapMode && category === "restaurant" && (
+        <div
+          className="pointer-events-auto absolute top-[68px] z-30 hidden gap-2 overflow-x-auto whitespace-nowrap pb-2 transition-[left] duration-300 md:flex"
+          style={{
+            left: desktopFloatingLeft,
+            maxWidth: desktopFloatingMaxWidth,
+          }}
+        >
+          {RESTAURANT_SUBCATEGORIES.map((item) => (
+            <button
+              key={item}
+              onClick={() => setRestaurantSubcategory(item)}
+              className={[
+                "shrink-0 rounded-full border px-3.5 py-2 text-[12px] font-semibold shadow-md transition-colors",
+                restaurantSubcategory === item
+                  ? "border-primary bg-primary text-white"
+                  : "border-border bg-surface text-text-primary hover:border-primary",
+              ].join(" ")}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* 랭킹 시트: 가게 카드가 없을 때만 표시 */}
       {!selectedStore && (
-        <RankingSheet
-          ref={rankingRef}
-          stores={accumulatedStores}
-          isLoading={isLoading}
-          page={page}
-          totalPages={totalPages}
-          hasMore={hasMore}
-          onLoadMore={() => goToPage(page + 1)}
-          onStoreClick={handleStoreClick}
-          onSnapChange={setSnap}
-          defaultSnap={sheetDefaultSnap}
-          regionName={regionName}
-        />
+        <div className="md:hidden">
+          <RankingSheet
+            ref={rankingRef}
+            stores={accumulatedStores}
+            isLoading={isLoading}
+            page={page}
+            totalPages={totalPages}
+            hasMore={hasMore}
+            onLoadMore={() => goToPage(page + 1)}
+            onStoreClick={handleStoreClick}
+            onSnapChange={setSnap}
+            defaultSnap={sheetDefaultSnap}
+            regionName={regionName}
+          />
+        </div>
       )}
 
       {/* 플로팅 버튼 — 항상 표시, 상태에 따라 내용/위치 변경 */}
@@ -472,7 +919,7 @@ export default function MapView() {
         // 지도보기 or 카드 열림 → 랭킹보기
         <button
           onClick={handleRankingToggle}
-          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg md:hidden"
           style={{ bottom: floatingButtonBottom, transition: "bottom 0.3s ease-out" }}
         >
           <span>🏆</span>
@@ -482,7 +929,7 @@ export default function MapView() {
         // half / full 랭킹 상태 → 지도보기 (시트 위 플로팅)
         <button
           onClick={handleCollapse}
-          className="absolute left-1/2 z-40 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg"
+          className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg md:hidden"
           style={{
             bottom: snap === "full" ? "32px" : "calc(50vh + 8px)",
             transition: "bottom 0.3s ease-out",
@@ -498,13 +945,13 @@ export default function MapView() {
         <button
           onClick={handleCurrentLocation}
           disabled={isLocating}
-          className="absolute right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white shadow-lg transition-opacity disabled:opacity-50"
+          className="map-location-button absolute right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-primary bg-white shadow-lg transition-opacity disabled:opacity-50"
           style={{
-            bottom: isMapFull || !!selectedStore
+            "--mobile-location-bottom": isMapFull || !!selectedStore
               ? floatingButtonBottom
               : "calc(50vh + 8px)",
             transition: "bottom 0.3s ease-out",
-          }}
+          } as CSSProperties}
           aria-label="현재 위치로 이동"
         >
           {isLocating ? (
@@ -528,6 +975,7 @@ export default function MapView() {
           store={selectedStore}
           rank={selectedRank}
           onClose={handleCloseCard}
+          desktopSidebarOpen={isDesktopSidebarOpen}
         />
       )}
     </div>

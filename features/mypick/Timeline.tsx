@@ -15,6 +15,8 @@ type ViewMode = "timeline" | "monthly";
 
 interface TimelineProps {
   initialRecords?: RecordWithStore[];
+  onCreateRecord?: () => void;
+  onEditRecord?: (recordId: number) => void;
 }
 
 // 날짜 문자열(YYYY-MM-DD) 기준으로 기록 그룹핑, 최신순 정렬
@@ -34,7 +36,7 @@ function groupByDate(records: RecordWithStore[]): [string, RecordWithStore[]][] 
  * 내 픽 타임라인 컴포넌트
  * 타임라인(전체) / 월별 뷰 토글, 날짜별 그룹핑
  */
-export default function Timeline({ initialRecords }: TimelineProps) {
+export default function Timeline({ initialRecords, onCreateRecord, onEditRecord }: TimelineProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -92,7 +94,7 @@ export default function Timeline({ initialRecords }: TimelineProps) {
       <Toast message={toast.message} visible={toast.visible} />
 
       {/* 상단 헤더 */}
-      <div className={`shrink-0 bg-surface px-5 pt-3 ${viewMode === "monthly" ? "pb-1" : "pb-3"}`}>
+      <div className={`app-content-readable shrink-0 bg-surface px-5 pt-3 ${viewMode === "monthly" ? "pb-1" : "pb-3"}`}>
         {/* 타임라인 / 월별 세그먼트 토글 + 추가 버튼 */}
         <div className="flex items-center justify-between">
           <div className="flex rounded-full border border-border bg-surface p-0.5">
@@ -118,7 +120,13 @@ export default function Timeline({ initialRecords }: TimelineProps) {
             </button>
           </div>
           <button
-            onClick={() => router.push("/record")}
+            onClick={() => {
+              if (onCreateRecord) {
+                onCreateRecord();
+              } else {
+                router.push("/record");
+              }
+            }}
             className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-white"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -156,7 +164,13 @@ export default function Timeline({ initialRecords }: TimelineProps) {
               </div>
               {viewMode === "timeline" && (
                 <button
-                  onClick={() => router.push("/record")}
+                  onClick={() => {
+                    if (onCreateRecord) {
+                      onCreateRecord();
+                    } else {
+                      router.push("/record");
+                    }
+                  }}
                   className="mt-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-bold tracking-tight text-white"
                 >
                   첫 맛집 픽하기
@@ -166,7 +180,7 @@ export default function Timeline({ initialRecords }: TimelineProps) {
           ) : (
             <>
               {grouped.map(([date, dayRecords]) => (
-                <div key={date} className="px-5 pt-4">
+                <div key={date} className="app-content-readable px-5 pt-4">
                   <div className="mb-3">
                     <span className="text-[15px] font-bold tracking-tight text-text-primary">
                       {formatDateGroupLabel(date)}
@@ -179,6 +193,7 @@ export default function Timeline({ initialRecords }: TimelineProps) {
                       isLast={idx === dayRecords.length - 1}
                       onShowToast={showToast}
                       onDelete={() => fetchRecords(viewMode, currentMonth)}
+                      onEdit={onEditRecord}
                     />
                   ))}
                 </div>

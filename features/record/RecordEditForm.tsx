@@ -20,9 +20,14 @@ const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "n
 interface RecordEditFormProps {
   record: RecordWithStore;
   onHasChanges?: (hasChanges: boolean) => void;
+  onSaved?: () => void;
 }
 
-export default function RecordEditForm({ record, onHasChanges }: RecordEditFormProps) {
+/**
+ * 기록 수정 폼 컴포넌트
+ * 가게 정보는 수정 불가, 방문일시/추천도/코멘트/이미지만 수정 가능
+ */
+export default function RecordEditForm({ record, onHasChanges, onSaved }: RecordEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -145,13 +150,32 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
       if (error) throw error;
 
       showToast("기록을 수정했어요!");
-      setTimeout(() => router.push("/mypick"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/mypick");
+        }
+      }, 800);
     } catch {
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [canSubmit, visitedAt, visitedTime, recommendation, comment, newImageFile, removeImage, record.id, record.image_url, router, showToast]);
+  }, [
+    canSubmit,
+    visitedAt,
+    visitedTime,
+    recommendation,
+    comment,
+    newImageFile,
+    removeImage,
+    record.id,
+    record.image_url,
+    onSaved,
+    router,
+    showToast,
+  ]);
 
   const handleDelete = useCallback(async () => {
     if (isDeleting) return;
@@ -171,13 +195,19 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
       if (error) throw error;
 
       showToast("기록이 삭제되었습니다");
-      setTimeout(() => router.push("/mypick"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/mypick");
+        }
+      }, 800);
     } catch {
       showToast("삭제에 실패했습니다. 다시 시도해 주세요.");
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
-  }, [isDeleting, record.id, router, showToast]);
+  }, [isDeleting, record.id, onSaved, router, showToast]);
 
   return (
     <>
@@ -228,7 +258,7 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
           className="hidden"
         />
 
-        <div className="px-5 pt-6">
+        <div className="app-content-narrow px-5 pt-6">
           {/* 이미지 */}
           <section className="mb-6">
             {previewUrl ? (
@@ -341,7 +371,7 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
       </div>
 
       {/* 저장/삭제 버튼 */}
-      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
         <div className="flex gap-2.5">
           <button
             onClick={() => setShowDeleteModal(true)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle, type CSSProperties } from "react";
 
 type SnapPoint = "collapsed" | "half" | "full";
 
@@ -13,6 +13,7 @@ interface BottomSheetProps {
   footer?: React.ReactNode;
   onSnapChange?: (snap: SnapPoint) => void;
   showClose?: boolean;
+  desktopSide?: boolean;
 }
 
 const SNAP_HEIGHTS: Record<SnapPoint, string> = {
@@ -33,6 +34,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
   footer,
   onSnapChange,
   showClose = false,
+  desktopSide = false,
 }, ref) {
   const [snap, setSnap] = useState<SnapPoint>(defaultSnap);
 
@@ -102,8 +104,11 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(function Bot
   return (
     <div
       ref={sheetRef}
-      className="absolute bottom-0 left-0 right-0 z-30 flex flex-col rounded-t-3xl bg-surface shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out"
-      style={{ height: SNAP_HEIGHTS[snap] }}
+      className={[
+        "absolute bottom-0 left-0 right-0 z-30 flex h-[var(--sheet-height)] flex-col rounded-t-3xl bg-surface shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out",
+        desktopSide ? "lg:bottom-0 lg:left-16 lg:right-auto lg:top-32 lg:h-auto lg:w-[430px] lg:rounded-none lg:border-r lg:border-border lg:shadow-[4px_0_24px_rgba(0,0,0,0.10)]" : "",
+      ].filter(Boolean).join(" ")}
+      style={{ "--sheet-height": SNAP_HEIGHTS[snap] } as CSSProperties}
     >
       {/* 드래그 영역: 핸들 + 헤더 통합 */}
       <div

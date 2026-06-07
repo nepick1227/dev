@@ -186,7 +186,7 @@ function SignupContent() {
     <div className="page-container">
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto px-6 pt-6">
+      <div className="app-content-narrow hide-scrollbar flex-1 overflow-y-auto px-6 pt-6">
         {/* 타이틀 */}
         <div className="nepick-fade-in mb-7">
           <h2 className="mb-1.5 text-[22px] font-extrabold tracking-tight text-text-primary">
@@ -284,7 +284,7 @@ function SignupContent() {
       </div>
 
       {/* ── CTA ── */}
-      <div className="nepick-fade-in safe-area-pb-lg border-t border-border bg-surface px-6 pt-3 [animation-delay:250ms]">
+      <div className="app-content-narrow nepick-fade-in safe-area-pb-lg border-t border-border bg-surface px-6 pt-3 [animation-delay:250ms]">
         <div className="mb-2.5">
           <Button fullWidth onClick={handleSubmit} disabled={!canSubmit} isLoading={isSaving}>
             시작하기

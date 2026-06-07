@@ -14,6 +14,7 @@ import type { Profile, ProfileUpdate } from "@/types/database";
 
 interface ProfileEditFormProps {
   profile: Profile;
+  onSaved?: () => void;
 }
 
 type NicknameStatus = "idle" | "checking" | "available" | "taken";
@@ -24,7 +25,7 @@ const GENDER_OPTIONS: { value: "male" | "female" | "unknown"; label: string }[] 
   { value: "unknown", label: "선택 안 함" },
 ];
 
-export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
+export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -173,7 +174,13 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
       if (error) throw error;
 
       showToast("프로필이 업데이트되었습니다");
-      setTimeout(() => router.push("/profile"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/profile");
+        }
+      }, 800);
     } catch {
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
@@ -190,6 +197,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     isPublic,
     profile.id,
     profile.profile_image,
+    onSaved,
     router,
     showToast,
   ]);
@@ -198,7 +206,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto px-5 pb-32 pt-6">
+      <div className="app-content-narrow hide-scrollbar flex-1 overflow-y-auto px-5 pb-32 pt-6">
         {/* 프로필 이미지 편집 */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="relative">
@@ -350,7 +358,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
       </div>
 
       {/* 저장 버튼 */}
-      <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
         <Button
           fullWidth
           isLoading={isSubmitting}
