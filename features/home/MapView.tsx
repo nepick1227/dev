@@ -240,23 +240,6 @@ export default function MapView() {
     snapRef.current = snap;
   }, [snap]);
 
-  const fetchRegion = useCallback(() => {
-    const map = mapRef.current;
-    const geocoder = geocoderRef.current;
-    if (!map || !geocoder) return;
-    const center = map.getCenter();
-    geocoder.coord2RegionCode(center.getLng(), center.getLat(), (result, status) => {
-      if (status !== "OK") return;
-      const b = result.find((r) => r.region_type === "B");
-      const h = result.find((r) => r.region_type === "H");
-      const base = b ?? h;
-      if (!base) return;
-      const dong = h?.region_3depth_name || base.region_3depth_name;
-      const parts = [base.region_1depth_name, base.region_2depth_name, dong].filter(Boolean);
-      setRegionName(parts.join(" "));
-    });
-  }, []);
-
   const isDesktopLayout = useCallback(() => {
     return typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
   }, []);
