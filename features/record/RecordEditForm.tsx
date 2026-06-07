@@ -9,6 +9,8 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Textarea from "@/components/ui/Textarea";
 import { MapPinIcon, CameraIcon, TrashIcon, EditIcon } from "@/components/ui/icons";
+import DatePicker from "@/components/ui/DatePicker";
+import TimePicker from "@/components/ui/TimePicker";
 import { validateImageFile, validateComment } from "@/utils/validation";
 import { recommendationLabels, recommendationEmojis, type RecommendationType } from "@/styles/tokens";
 import type { RecordWithStore } from "@/types/database";
@@ -36,9 +38,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
     const m = String(d.getMinutes()).padStart(2, "0");
     return `${h}:${m}`;
   });
-  const [recommendation, setRecommendation] = useState<RecommendationType>(
-    record.recommendation
-  );
+  const [recommendation, setRecommendation] = useState<RecommendationType>(record.recommendation);
   const [comment, setComment] = useState(record.comment);
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
@@ -48,7 +48,6 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
   const [showImageDeleteModal, setShowImageDeleteModal] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // 이미지 미리보기 URL
   const previewUrl = useMemo(() => {
     if (newImageFile) return URL.createObjectURL(newImageFile);
     if (removeImage) return null;
@@ -210,7 +209,6 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
     }
   }, [isDeleting, record.id, onSaved, router, showToast]);
 
-
   return (
     <>
       <Toast message={toast.message} visible={toast.visible} />
@@ -266,11 +264,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
             {previewUrl ? (
               <div className="relative overflow-hidden rounded-xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewUrl}
-                  alt="이미지 미리보기"
-                  className="h-52.5 w-full object-cover"
-                />
+                <img src={previewUrl} alt="이미지 미리보기" className="h-52.5 w-full object-cover" />
                 <div className="absolute right-3 top-3 flex flex-col gap-2">
                   <button
                     onClick={() => imageInputRef.current?.click()}
@@ -294,12 +288,8 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
                 className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-border py-8 transition-colors active:bg-bg"
               >
                 <CameraIcon size={28} color="var(--color-text-tertiary)" />
-                <span className="text-[13px] tracking-tight text-text-secondary">
-                  사진을 추가해 보세요
-                </span>
-                <span className="text-[11px] text-text-secondary opacity-70">
-                  JPG, PNG, WebP, HEIC · 최대 5MB
-                </span>
+                <span className="text-[13px] tracking-tight text-text-secondary">사진을 추가해 보세요</span>
+                <span className="text-[11px] text-text-secondary opacity-70">JPG, PNG, WebP, HEIC · 최대 5MB</span>
               </button>
             )}
           </section>
@@ -323,20 +313,16 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
               방문일시
             </label>
             <div className="flex gap-2">
-              <input
-                type="date"
-                value={visitedAt}
-                onChange={(e) => setVisitedAt(e.target.value)}
-                max={new Date().toISOString().split("T")[0]}
-                className="flex-3 min-w-0 h-14 rounded-2xl border-[1.5px] border-border bg-surface px-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-              />
-              <input
-                type="time"
-                value={visitedTime}
-                onChange={(e) => setVisitedTime(e.target.value)}
-                step="600"
-                className="flex-2 min-w-0 h-14 rounded-2xl border-[1.5px] border-border bg-surface px-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-              />
+              <div className="flex-1 min-w-0">
+                <DatePicker
+                  value={visitedAt}
+                  onChange={setVisitedAt}
+                  max={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <TimePicker value={visitedTime} onChange={setVisitedTime} />
+              </div>
             </div>
           </section>
 
