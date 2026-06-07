@@ -13,6 +13,7 @@ import type { Profile, ProfileUpdate } from "@/types/database";
 
 interface ProfileEditFormProps {
   profile: Profile;
+  onSaved?: () => void;
 }
 
 type NicknameStatus = "idle" | "checking" | "available" | "taken";
@@ -23,7 +24,7 @@ const GENDER_OPTIONS: { value: "male" | "female" | "unknown"; label: string }[] 
   { value: "unknown", label: "선택 안 함" },
 ];
 
-export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
+export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -172,7 +173,13 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
       if (error) throw error;
 
       showToast("프로필이 업데이트되었습니다");
-      setTimeout(() => router.push("/profile"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/profile");
+        }
+      }, 800);
     } catch {
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
@@ -189,6 +196,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     isPublic,
     profile.id,
     profile.profile_image,
+    onSaved,
     router,
     showToast,
   ]);

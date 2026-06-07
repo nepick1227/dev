@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, type CSSProperties } from "react";
 import { SearchIcon, CloseIcon, MapPinIcon } from "@/components/ui/icons";
 import Spinner from "@/components/ui/Spinner";
 import Chip from "@/components/ui/Chip";
@@ -16,6 +16,8 @@ interface MapOverlayProps {
   category: Category;
   onCategoryChange: (cat: Category) => void;
   onPlaceSelect: (place: PlaceResult) => void;
+  desktopSidebarOpen?: boolean;
+  desktopVisible?: boolean;
 }
 
 const FILTER_TABS: { key: Category; label: string }[] = [
@@ -24,7 +26,13 @@ const FILTER_TABS: { key: Category; label: string }[] = [
   { key: "cafe", label: "카페" },
 ];
 
-export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }: MapOverlayProps) {
+export default function MapOverlay({
+  category,
+  onCategoryChange,
+  onPlaceSelect,
+  desktopSidebarOpen = true,
+  desktopVisible = true,
+}: MapOverlayProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { results, isLoading, searchDebounced, clear } = useKakaoSearch();
@@ -60,7 +68,19 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
   );
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-4 pt-6 md:left-1/2 md:right-auto md:w-full md:max-w-xl md:-translate-x-1/2">
+    <div
+      className={[
+        "pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-4 pt-6 transition-transform duration-300",
+        "home-desktop-search md:inset-x-auto md:max-w-none md:pt-5",
+        desktopVisible ? "md:flex" : "md:hidden",
+        desktopSidebarOpen ? "" : "is-closed",
+      ].join(" ")}
+      style={{
+        "--desktop-search-transform": desktopSidebarOpen
+          ? "translateX(0)"
+          : "translateX(calc(-1 * var(--home-panel-width)))",
+      } as CSSProperties}
+    >
       {/* 검색바 */}
       <div className="pointer-events-auto relative">
         <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -118,7 +138,7 @@ export default function MapOverlay({ category, onCategoryChange, onPlaceSelect }
       </div>
 
       {/* 카테고리 필터 */}
-      <div className="pointer-events-auto flex gap-2">
+      <div className="pointer-events-auto flex gap-2 md:hidden">
         {FILTER_TABS.map((tab) => (
           <Chip
             key={tab.key}

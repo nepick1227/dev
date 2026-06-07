@@ -24,9 +24,10 @@ const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "n
 interface RecordFormProps {
   onContentChange?: (hasContent: boolean) => void;
   initialPlace?: KakaoPlace | null;
+  onSaved?: () => void;
 }
 
-export default function RecordForm({ onContentChange, initialPlace }: RecordFormProps) {
+export default function RecordForm({ onContentChange, initialPlace, onSaved }: RecordFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -128,7 +129,13 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
       if (recordError) throw recordError;
 
       showToast("기록이 저장되었습니다 🎉");
-      setTimeout(() => router.push("/mypick"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/mypick");
+        }
+      }, 800);
     } catch {
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
@@ -142,6 +149,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
     visitedTime,
     imageFile,
     isSubmitting,
+    onSaved,
     router,
     showToast,
   ]);

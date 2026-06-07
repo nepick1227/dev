@@ -15,6 +15,8 @@ type ViewMode = "timeline" | "monthly";
 
 interface TimelineProps {
   initialRecords?: RecordWithStore[];
+  onCreateRecord?: () => void;
+  onEditRecord?: (recordId: number) => void;
 }
 
 // 날짜 문자열(YYYY-MM-DD) 기준으로 기록 그룹핑, 최신순 정렬
@@ -34,7 +36,7 @@ function groupByDate(records: RecordWithStore[]): [string, RecordWithStore[]][] 
  * 내 픽 타임라인 컴포넌트
  * 타임라인(전체) / 월별 뷰 토글, 날짜별 그룹핑
  */
-export default function Timeline({ initialRecords }: TimelineProps) {
+export default function Timeline({ initialRecords, onCreateRecord, onEditRecord }: TimelineProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -118,7 +120,13 @@ export default function Timeline({ initialRecords }: TimelineProps) {
             </button>
           </div>
           <button
-            onClick={() => router.push("/record")}
+            onClick={() => {
+              if (onCreateRecord) {
+                onCreateRecord();
+              } else {
+                router.push("/record");
+              }
+            }}
             className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-white"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -156,7 +164,13 @@ export default function Timeline({ initialRecords }: TimelineProps) {
               </div>
               {viewMode === "timeline" && (
                 <button
-                  onClick={() => router.push("/record")}
+                  onClick={() => {
+                    if (onCreateRecord) {
+                      onCreateRecord();
+                    } else {
+                      router.push("/record");
+                    }
+                  }}
                   className="mt-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-bold tracking-tight text-white"
                 >
                   첫 맛집 픽하기
@@ -179,6 +193,7 @@ export default function Timeline({ initialRecords }: TimelineProps) {
                       isLast={idx === dayRecords.length - 1}
                       onShowToast={showToast}
                       onDelete={() => fetchRecords(viewMode, currentMonth)}
+                      onEdit={onEditRecord}
                     />
                   ))}
                 </div>

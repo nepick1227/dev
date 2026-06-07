@@ -17,7 +17,11 @@ const REASONS = [
   "기타",
 ];
 
-export default function WithdrawalView() {
+interface WithdrawalViewProps {
+  onCancel?: () => void;
+}
+
+export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
   const [reason, setReason] = useState<string | null>(null);
@@ -28,6 +32,14 @@ export default function WithdrawalView() {
 
   const canProceed =
     reason !== null && (reason !== "기타" || customText.trim().length > 0);
+
+  const handleCancel = useCallback(() => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
+    router.push("/home");
+  }, [onCancel, router]);
 
   const handleOpenConfirm = useCallback(() => {
     setAgreed(false);
@@ -70,12 +82,12 @@ export default function WithdrawalView() {
       {/* 최종 확인 팝업 */}
       <Modal
         isOpen={showConfirm}
-        onClose={() => { if (!isSubmitting) { setShowConfirm(false); router.push("/home"); } }}
+        onClose={() => { if (!isSubmitting) { setShowConfirm(false); handleCancel(); } }}
         variant="dialog"
         title="정말 탈퇴하시겠어요?"
         footer={
           <div className="flex gap-2.5">
-            <Button variant="secondary" fullWidth onClick={() => { setShowConfirm(false); router.push("/home"); }} disabled={isSubmitting}>
+            <Button variant="secondary" fullWidth onClick={() => { setShowConfirm(false); handleCancel(); }} disabled={isSubmitting}>
               취소
             </Button>
             <Button variant="danger" fullWidth onClick={handleConfirm} disabled={!agreed || isSubmitting} isLoading={isSubmitting}>
@@ -150,7 +162,7 @@ export default function WithdrawalView() {
 
       {/* 하단 버튼 */}
       <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 flex -translate-x-1/2 gap-2.5 border-t border-border bg-surface px-5 pt-3">
-        <Button variant="secondary" fullWidth onClick={() => router.push("/home")}>
+        <Button variant="secondary" fullWidth onClick={handleCancel}>
           이전
         </Button>
         <Button variant="danger" fullWidth onClick={handleOpenConfirm} disabled={!canProceed}>

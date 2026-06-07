@@ -18,13 +18,14 @@ const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "n
 interface RecordEditFormProps {
   record: RecordWithStore;
   onHasChanges?: (hasChanges: boolean) => void;
+  onSaved?: () => void;
 }
 
 /**
  * 기록 수정 폼 컴포넌트
  * 가게 정보는 수정 불가, 방문일시/추천도/코멘트/이미지만 수정 가능
  */
-export default function RecordEditForm({ record, onHasChanges }: RecordEditFormProps) {
+export default function RecordEditForm({ record, onHasChanges, onSaved }: RecordEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -150,7 +151,13 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
       if (error) throw error;
 
       showToast("기록을 수정했어요!");
-      setTimeout(() => router.push("/mypick"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/mypick");
+        }
+      }, 800);
     } catch {
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
@@ -166,6 +173,7 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
     removeImage,
     record.id,
     record.image_url,
+    onSaved,
     router,
     showToast,
   ]);
@@ -188,13 +196,19 @@ export default function RecordEditForm({ record, onHasChanges }: RecordEditFormP
       if (error) throw error;
 
       showToast("기록이 삭제되었습니다");
-      setTimeout(() => router.push("/mypick"), 800);
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else {
+          router.push("/mypick");
+        }
+      }, 800);
     } catch {
       showToast("삭제에 실패했습니다. 다시 시도해 주세요.");
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
-  }, [isDeleting, record.id, router, showToast]);
+  }, [isDeleting, record.id, onSaved, router, showToast]);
 
 
   return (

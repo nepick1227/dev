@@ -11,6 +11,7 @@ export interface MapBounds {
 }
 
 const PAGE_SIZE = 20;
+const DESKTOP_FETCH_SIZE = 500;
 const MAX_PAGES = 3;
 
 export function useMapStores() {
@@ -25,7 +26,8 @@ export function useMapStores() {
   const fetchStores = useCallback(async (
     bounds: MapBounds,
     category: Category,
-    pageNum: number = 0
+    pageNum: number = 0,
+    pageSize: number = PAGE_SIZE
   ) => {
     lastBounds.current = bounds;
     lastCategory.current = category;
@@ -41,7 +43,7 @@ export function useMapStores() {
         .gte("lng", bounds.sw.lng)
         .lte("lng", bounds.ne.lng)
         .order("score", { ascending: false })
-        .range(pageNum * PAGE_SIZE, pageNum * PAGE_SIZE + PAGE_SIZE - 1);
+        .range(pageNum * pageSize, pageNum * pageSize + pageSize - 1);
 
       if (category !== "all") {
         query = query.eq("category", category);
@@ -59,7 +61,9 @@ export function useMapStores() {
       } else {
         setAccumulatedStores((prev) => [...prev, ...newStores]);
       }
-      const total = Math.min(Math.ceil((count ?? 0) / PAGE_SIZE), MAX_PAGES);
+      const total = pageSize === DESKTOP_FETCH_SIZE
+        ? 1
+        : Math.min(Math.ceil((count ?? 0) / PAGE_SIZE), MAX_PAGES);
       setTotalPages(Math.max(total, 1));
     } catch {
       setStores([]);
@@ -77,3 +81,5 @@ export function useMapStores() {
 
   return { stores, accumulatedStores, isLoading, page, totalPages, fetchStores, goToPage };
 }
+
+export { DESKTOP_FETCH_SIZE };

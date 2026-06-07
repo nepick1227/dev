@@ -71,7 +71,7 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
   );
 
   return (
-    <BottomSheet ref={sheetRef} defaultSnap={defaultSnap} onSnapChange={onSnapChange} showClose header={header}>
+    <BottomSheet ref={sheetRef} defaultSnap={defaultSnap} onSnapChange={onSnapChange} showClose header={header} desktopSide>
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Spinner size={28} />
