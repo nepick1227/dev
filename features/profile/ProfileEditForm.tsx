@@ -8,6 +8,7 @@ import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Textarea from "@/components/ui/Textarea";
 import { UserIcon, CameraIcon } from "@/components/ui/icons";
+import DatePicker from "@/components/ui/DatePicker";
 import { validateNickname, validateIntro, validateImageFile } from "@/utils/validation";
 import type { Profile, ProfileUpdate } from "@/types/database";
 
@@ -288,12 +289,11 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
             생년월일{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </label>
-          <input
-            type="date"
+          <DatePicker
             value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
+            onChange={setBirthDate}
             max={new Date().toISOString().split("T")[0]}
-            className="h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface px-5 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
+            placeholder="생년월일 선택"
           />
         </div>
 

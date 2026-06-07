@@ -10,6 +10,7 @@ import Spinner from "@/components/ui/Spinner";
 import Button from "@/components/ui/Button";
 import Textarea from "@/components/ui/Textarea";
 import { validateNickname } from "@/utils/validation";
+import DatePicker from "@/components/ui/DatePicker";
 
 // ── 타입 ─────────────────────────────────────────────
 type Gender = "male" | "female" | "unknown";
@@ -244,15 +245,11 @@ function SignupContent() {
             생년월일{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </label>
-          <input
-            type="date"
+          <DatePicker
             value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
+            onChange={setBirthDate}
             max={new Date().toISOString().split("T")[0]}
-            className={[
-              "h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface px-5 text-[16px] tracking-tight outline-none transition-colors duration-200 focus:border-primary",
-              birthDate ? "text-text-primary" : "text-text-tertiary",
-            ].join(" ")}
+            placeholder="생년월일 선택"
           />
         </div>
 

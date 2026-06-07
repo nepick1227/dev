@@ -24,9 +24,12 @@ function createRankMarker(
   lat: number,
   lng: number
 ): kakao.maps.Marker {
-  const label = rank > 0 ? String(rank) : "+";
-  const fontSize = rank > 9 ? 9 : rank > 0 ? 11 : 14;
+  const fontSize = rank > 9 ? 9 : 11;
   const opacity = dimmed ? 0.5 : 1;
+  const innerIcon =
+    rank > 0
+      ? `<text x="16" y="18" text-anchor="middle" font-size="${fontSize}" font-weight="bold" font-family="sans-serif" fill="#D32F2F">${rank}</text>`
+      : `<polyline points="12,14 14.5,17 19.5,10.5" fill="none" stroke="#D32F2F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42" opacity="${opacity}">
     <defs>
       <radialGradient id="g" cx="40%" cy="30%" r="65%">
@@ -40,7 +43,7 @@ function createRankMarker(
     <path d="M16 2C9.4 2 4 7.4 4 14C4 23 16 40 16 40C16 40 28 23 28 14C28 7.4 22.6 2 16 2Z" fill="url(#g)" filter="url(#s)"/>
     <ellipse cx="11.5" cy="8.5" rx="3.5" ry="2.5" fill="white" opacity="0.25"/>
     <circle cx="16" cy="14" r="8" fill="white" opacity="0.92"/>
-    <text x="16" y="18" text-anchor="middle" font-size="${fontSize}" font-weight="bold" font-family="sans-serif" fill="#D32F2F">${label}</text>
+    ${innerIcon}
   </svg>`;
   const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   const image = new kakao.maps.MarkerImage(url, new kakao.maps.Size(32, 40), {
@@ -157,23 +160,6 @@ export default function MapView() {
     snapRef.current = snap;
   }, [snap]);
 
-  const fetchRegion = useCallback(() => {
-    const map = mapRef.current;
-    const geocoder = geocoderRef.current;
-    if (!map || !geocoder) return;
-    const center = map.getCenter();
-    geocoder.coord2RegionCode(center.getLng(), center.getLat(), (result, status) => {
-      if (status !== "OK") return;
-      const b = result.find((r) => r.region_type === "B");
-      const h = result.find((r) => r.region_type === "H");
-      const base = b ?? h;
-      if (!base) return;
-      const dong = h?.region_3depth_name || base.region_3depth_name;
-      const parts = [base.region_1depth_name, base.region_2depth_name, dong].filter(Boolean);
-      setRegionName(parts.join(" "));
-    });
-  }, []);
-
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
   // 상단: 검색/필터 오버레이 ~20%, 하단: 바텀시트+버튼 높이를 모드별로 계산해 inset 적용
   const getBounds = useCallback((map: kakao.maps.Map): MapBounds => {
@@ -202,6 +188,34 @@ export default function MapView() {
       ne: { lat: ne.getLat() - latPadTop, lng: ne.getLng() - lngPad },
     };
   }, []);
+
+  const fetchRegion = useCallback(() => {
+    const map = mapRef.current;
+    const geocoder = geocoderRef.current;
+    if (!map || !geocoder) return;
+    const level = map.getLevel();
+    const bounds = getBounds(map);
+    const visibleCenterLat = (bounds.sw.lat + bounds.ne.lat) / 2;
+    const visibleCenterLng = (bounds.sw.lng + bounds.ne.lng) / 2;
+    geocoder.coord2RegionCode(visibleCenterLng, visibleCenterLat, (result, status) => {
+      if (status !== "OK") return;
+      const b = result.find((r) => r.region_type === "B");
+      const h = result.find((r) => r.region_type === "H");
+      const base = b ?? h;
+      if (!base) return;
+      const dong = h?.region_3depth_name || base.region_3depth_name;
+
+      let parts: string[];
+      if (level <= 5) {
+        parts = [base.region_1depth_name, base.region_2depth_name, dong].filter(Boolean);
+      } else if (level <= 9) {
+        parts = [base.region_1depth_name, base.region_2depth_name].filter(Boolean);
+      } else {
+        parts = [base.region_1depth_name].filter(Boolean);
+      }
+      setRegionName(parts.join(" "));
+    });
+  }, [getBounds]);
 
   // 선택한 장소가 사용자에게 보이는 영역의 정중앙에 오도록 panTo 오프셋 적용
   const panToVisible = useCallback((map: kakao.maps.Map, lat: number, lng: number) => {

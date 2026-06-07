@@ -64,9 +64,10 @@ export default function ProfileView({ profile, stats, providers }: ProfileViewPr
     {
       title: "약관",
       items: [
-        { label: "이용약관", externalUrl: "#" },
-        { label: "개인정보 수집·이용 동의", externalUrl: "#" },
-        { label: "위치기반 서비스 이용약관", externalUrl: "#" },
+        { label: "이용약관", href: "/profile/terms/service" },
+        { label: "개인정보 수집·이용 동의", href: "/profile/terms/privacy" },
+        { label: "위치기반 서비스 이용약관", href: "/profile/terms/location" },
+        { label: "마케팅 정보 수신 동의", href: "/profile/terms/marketing" },
       ],
     },
     {

@@ -9,6 +9,8 @@ import Button from "@/components/ui/Button";
 import Textarea from "@/components/ui/Textarea";
 import StoreSearch, { type KakaoPlace } from "./StoreSearch";
 import ImageUpload from "./ImageUpload";
+import DatePicker from "@/components/ui/DatePicker";
+import TimePicker from "@/components/ui/TimePicker";
 import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
 import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
 import { validateComment } from "@/utils/validation";
@@ -30,10 +32,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
   const router = useRouter();
   const { toast, showToast } = useToast();
 
-  // 선택된 가게 (지도 기록+ 버튼으로 진입 시 initialPlace로 초기화)
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(initialPlace ?? null);
-
-  // 기록 폼 상태
   const [visitedAt, setVisitedAt] = useState(() => new Date().toISOString().split("T")[0]);
   const [visitedTime, setVisitedTime] = useState(() => {
     const now = new Date();
@@ -52,12 +51,8 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
     onContentChange?.(hasContent);
   }, [hasContent, onContentChange]);
 
-  const commentError =
-    comment.length > 0 ? validateComment(comment).message : "";
-  const canSubmit =
-    selectedPlace !== null &&
-    validateComment(comment).isValid &&
-    !isSubmitting;
+  const commentError = comment.length > 0 ? validateComment(comment).message : "";
+  const canSubmit = selectedPlace !== null && validateComment(comment).isValid && !isSubmitting;
 
   const handlePlaceSelect = useCallback((place: KakaoPlace) => {
     setSelectedPlace(place);
@@ -73,12 +68,9 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
 
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      // 1. 이미지 업로드
       let imageUrl: string | null = null;
       if (imageFile) {
         const ext = imageFile.name.split(".").pop() ?? "jpg";
@@ -94,7 +86,6 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
         imageUrl = urlData.publicUrl;
       }
 
-      // 2. 가게 upsert (kakao_id 기준)
       const storeData: StoreInsert = {
         kakao_id: selectedPlace.id,
         name: selectedPlace.place_name,
@@ -114,7 +105,6 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
         .single();
       if (storeError) throw storeError;
 
-      // 3. 기록 저장
       const recordData: RecordInsert = {
         user_id: user.id,
         store_id: storeResult.id,
@@ -134,18 +124,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    selectedPlace,
-    recommendation,
-    comment,
-    visitedAt,
-    visitedTime,
-    imageFile,
-    isSubmitting,
-    router,
-    showToast,
-  ]);
-
+  }, [selectedPlace, recommendation, comment, visitedAt, visitedTime, imageFile, isSubmitting, router, showToast]);
 
   return (
     <>
@@ -176,11 +155,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
                     {selectedPlace.road_address_name || selectedPlace.address_name}
                   </p>
                 </div>
-                <button
-                  onClick={handleClearPlace}
-                  className="shrink-0"
-                  aria-label="가게 선택 취소"
-                >
+                <button onClick={handleClearPlace} className="shrink-0" aria-label="가게 선택 취소">
                   <CloseIcon size={18} color="var(--color-text-tertiary)" />
                 </button>
               </div>
@@ -196,20 +171,16 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
               <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
             </label>
             <div className="flex gap-2">
-              <input
-                type="date"
-                value={visitedAt}
-                onChange={(e) => setVisitedAt(e.target.value)}
-                max={new Date().toISOString().split("T")[0]}
-                className="flex-3 min-w-0 h-14 rounded-2xl border-[1.5px] border-border bg-surface px-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-              />
-              <input
-                type="time"
-                value={visitedTime}
-                onChange={(e) => setVisitedTime(e.target.value)}
-                step="600"
-                className="flex-2 min-w-0 h-14 rounded-2xl border-[1.5px] border-border bg-surface px-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary"
-              />
+              <div className="flex-1 min-w-0">
+                <DatePicker
+                  value={visitedAt}
+                  onChange={setVisitedAt}
+                  max={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <TimePicker value={visitedTime} onChange={setVisitedTime} />
+              </div>
             </div>
           </section>
 
@@ -261,12 +232,7 @@ export default function RecordForm({ onContentChange, initialPlace }: RecordForm
 
       {/* 저장 버튼 */}
       <div className="safe-area-pb-lg fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
-        <Button
-          fullWidth
-          isLoading={isSubmitting}
-          disabled={!canSubmit}
-          onClick={handleSubmit}
-        >
+        <Button fullWidth isLoading={isSubmitting} disabled={!canSubmit} onClick={handleSubmit}>
           저장하기
         </Button>
       </div>

@@ -1,27 +1,6 @@
-# NePick 프로젝트 — Claude 코드 규칙
+# NePick 프로젝트 — Codex 코드 규칙
 
-> Claude Code가 이 프로젝트에서 코드를 생성할 때 자동으로 참조하는 규칙 파일입니다.
-
-## 팀 구성
-
-- **2인 팀**으로 개발 중 (팀원 각자 feature 브랜치에서 작업 후 PR)
-- Claude Code는 팀원 중 한 명처럼 동작 — `develop` 기반 feature 브랜치에서만 작업
-- 코드 리뷰는 PR을 통해 진행
-
-## Git 브랜치 규칙 (필수)
-
-- **절대 `main` 브랜치에서 작업 시작 금지** — `main`은 배포 전용, 직접 commit/push 불가
-- 모든 작업은 `develop` 브랜치 또는 `develop`에서 분기한 feature 브랜치에서 시작
-- feature 브랜치 네이밍: `feat/<기능명>`, `fix/<버그명>`, `refactor/<대상>`
-- PR은 항상 `feature → develop` 방향으로 생성, `develop → main`은 팀원이 직접 진행
-- 현재 브랜치가 `main`이면 즉시 `develop`으로 switch 후 작업
-
-```bash
-# 작업 시작 전 항상 확인
-git checkout develop
-git pull origin develop
-git checkout -b feat/<기능명>
-```
+> Codex가 이 프로젝트에서 코드를 생성할 때 자동으로 참조하는 규칙 파일입니다.
 
 ## 프로젝트 개요
 
@@ -261,21 +240,3 @@ chore: Supabase SDK 버전 업데이트
 
 - 상세 작업 리스트 및 전체 가이드: `NePick_작업리스트_코드규칙가이드.md`
 - DB 스키마 / 정책정의서: `NePick_정책정의서_v0.2.2.xlsx`
-
-
-## Git 브랜치 규칙 (필수)
-
-이 프로젝트는 **nepick1227/dev** 저장소이며 2인 팀으로 개발 중입니다.
-
-- **절대 `main` 브랜치에서 직접 작업 금지** — `main`은 배포 전용
-- 모든 작업은 `develop` 브랜치 또는 `develop`에서 분기한 feature 브랜치에서 시작
-- feature 브랜치 네이밍: `feat/<기능명>`, `fix/<버그명>`, `refactor/<대상>`
-- PR은 항상 `feature → develop` 방향으로 생성
-- `develop → main` 머지는 팀원과 합의 후 진행
-- 현재 브랜치가 `main`이면 즉시 `develop`으로 switch 후 작업
-
-```bash
-# 작업 시작 전 항상 실행
-git checkout develop
-git pull origin develop
-git checkout -b feat/<기능명>
