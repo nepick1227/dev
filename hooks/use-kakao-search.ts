@@ -12,6 +12,7 @@ export interface KakaoSearchResult {
   phone: string;
   x: string;
   y: string;
+  distance?: string;
 }
 
 export function useKakaoSearch() {
@@ -20,7 +21,7 @@ export function useKakaoSearch() {
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const search = useCallback(async (keyword: string) => {
+  const search = useCallback(async (keyword: string, position?: { lat: number; lng: number }) => {
     if (!keyword.trim()) {
       setResults([]);
       return;
@@ -31,7 +32,12 @@ export function useKakaoSearch() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/kakao-search?query=${encodeURIComponent(keyword)}`, {
+      const params = new URLSearchParams({ query: keyword });
+      if (position) {
+        params.set("x", String(position.lng));
+        params.set("y", String(position.lat));
+      }
+      const res = await fetch(`/api/kakao-search?${params.toString()}`, {
         signal: abortRef.current.signal,
       });
       if (!res.ok) throw new Error("검색 실패");
@@ -48,9 +54,9 @@ export function useKakaoSearch() {
   }, []);
 
   const searchDebounced = useCallback(
-    (keyword: string, delay = 400) => {
+    (keyword: string, delay = 400, position?: { lat: number; lng: number }) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => search(keyword), delay);
+      debounceRef.current = setTimeout(() => search(keyword, position), delay);
     },
     [search]
   );
