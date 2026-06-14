@@ -7,15 +7,24 @@ import Chip from "@/components/ui/Chip";
 import { useKakaoSearch, type KakaoSearchResult } from "@/hooks/use-kakao-search";
 import type { Category } from "./types";
 
+function formatDistance(meters: string | undefined): string | null {
+  const m = Number(meters);
+  if (!meters || isNaN(m)) return null;
+  return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
+}
+
 type PlaceResult = Pick<
   KakaoSearchResult,
-  "id" | "place_name" | "category_name" | "category_group_code" | "road_address_name" | "address_name" | "phone" | "x" | "y"
+  "id" | "place_name" | "category_name" | "category_group_code" | "road_address_name" | "address_name" | "phone" | "x" | "y" | "distance"
 >;
 
 interface MapOverlayProps {
   category: Category;
   onCategoryChange: (cat: Category) => void;
   onPlaceSelect: (place: PlaceResult) => void;
+  searchPosition?: { lat: number; lng: number };
+  onSearchOpen?: () => void;
+  onSearchClose?: () => void;
   desktopSidebarOpen?: boolean;
   desktopVisible?: boolean;
 }
@@ -30,6 +39,9 @@ export default function MapOverlay({
   category,
   onCategoryChange,
   onPlaceSelect,
+  searchPosition,
+  onSearchOpen,
+  onSearchClose,
   desktopSidebarOpen = true,
   desktopVisible = true,
 }: MapOverlayProps) {
@@ -37,40 +49,61 @@ export default function MapOverlay({
   const [isOpen, setIsOpen] = useState(false);
   const { results, isLoading, searchDebounced, clear } = useKakaoSearch();
 
+  const openDropdown = useCallback(() => {
+    if (!isOpen) onSearchOpen?.();
+    setIsOpen(true);
+  }, [isOpen, onSearchOpen]);
+
+  const closeDropdown = useCallback(() => {
+    setIsOpen(false);
+    onSearchClose?.();
+  }, [onSearchClose]);
+
   const handleChange = useCallback(
     (value: string) => {
       setQuery(value);
       if (!value.trim()) {
         clear();
-        setIsOpen(false);
+        closeDropdown();
         return;
       }
-      setIsOpen(true);
-      searchDebounced(value);
+      openDropdown();
+      searchDebounced(value, 400, searchPosition);
     },
-    [searchDebounced, clear]
+    [searchDebounced, clear, searchPosition, openDropdown, closeDropdown]
   );
+
+  const handleFocus = useCallback(() => {
+    if (!query.trim()) return;
+    if (results.length > 0) {
+      openDropdown();
+    } else {
+      openDropdown();
+      searchDebounced(query, 0, searchPosition);
+    }
+  }, [query, results.length, searchDebounced, searchPosition, openDropdown]);
 
   const handleClear = useCallback(() => {
     setQuery("");
     clear();
-    setIsOpen(false);
-  }, [clear]);
+    closeDropdown();
+  }, [clear, closeDropdown]);
 
   const handleSelect = useCallback(
     (place: PlaceResult) => {
       onPlaceSelect(place);
       setQuery(place.place_name);
       clear();
-      setIsOpen(false);
+      closeDropdown();
     },
-    [onPlaceSelect, clear]
+    [onPlaceSelect, clear, closeDropdown]
   );
 
   return (
     <div
       className={[
-        "pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-4 pt-6 transition-transform duration-300",
+        "pointer-events-none absolute inset-x-0 top-0 flex flex-col gap-2 px-4 pt-6 transition-transform duration-300",
+        isOpen ? "z-50" : "z-20",
         "home-desktop-search md:inset-x-auto md:max-w-none md:pt-5",
         desktopVisible ? "md:flex" : "md:hidden",
         desktopSidebarOpen ? "" : "is-closed",
@@ -90,6 +123,7 @@ export default function MapOverlay({
           type="text"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
+          onFocus={handleFocus}
           placeholder="장소 검색"
           className="w-full rounded-[18px] border border-border bg-surface py-3 pl-10 pr-10 text-[14px] tracking-tight text-text-primary shadow-md outline-none placeholder:text-text-tertiary focus:border-primary"
           autoComplete="off"
@@ -122,12 +156,17 @@ export default function MapOverlay({
                       className="flex w-full items-start gap-3 px-4 py-3 text-left active:bg-bg"
                     >
                       <MapPinIcon size={14} color="var(--color-primary)" className="mt-0.5 shrink-0" />
-                      <div className="overflow-hidden">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="truncate text-[13px] font-semibold text-text-primary">{place.place_name}</p>
                         <p className="truncate text-[11px] text-text-secondary">
                           {place.road_address_name || place.address_name}
                         </p>
                       </div>
+                      {formatDistance(place.distance) && (
+                        <span className="shrink-0 text-[11px] text-text-tertiary">
+                          {formatDistance(place.distance)}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}

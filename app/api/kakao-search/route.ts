@@ -10,6 +10,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const query = searchParams.get("query");
   const categoryGroupCode = searchParams.get("category_group_code") ?? "";
+  const x = searchParams.get("x");
+  const y = searchParams.get("y");
 
   if (!query || query.trim() === "") {
     return NextResponse.json({ error: "검색어를 입력하세요." }, { status: 400 });
@@ -24,6 +26,11 @@ export async function GET(req: NextRequest) {
   });
   if (categoryGroupCode) {
     params.set("category_group_code", categoryGroupCode);
+  }
+  if (x && y) {
+    params.set("x", x);
+    params.set("y", y);
+    params.set("sort", "distance");
   }
 
   const kakaoRes = await fetch(

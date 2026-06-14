@@ -213,6 +213,7 @@ export default function MapView() {
   const [isMyPickMapMode, setIsMyPickMapMode] = useState(false);
   const [myPickStores, setMyPickStores] = useState<Store[]>([]);
   const [isMyPickLoading, setIsMyPickLoading] = useState(false);
+  const [searchPosition, setSearchPosition] = useState<{ lat: number; lng: number } | undefined>(undefined);
   // tapMode: 지도 배경 탭으로 가게 선택 시 랭킹 마커 숨기고 단일 핀만 표시
   const [tapMode, setTapMode] = useState(false);
 
@@ -508,6 +509,7 @@ export default function MapView() {
 
     const pos = await getCurrentPosition();
     locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
+    setSearchPosition({ lat: pos.lat, lng: pos.lng });
     geocoderRef.current = new kakao.maps.services.Geocoder();
 
     const refetch = () => {
@@ -517,6 +519,8 @@ export default function MapView() {
       }
       setSelectedStore(null);
       setTapMode(false);
+      const center = map.getCenter();
+      setSearchPosition({ lat: center.getLat(), lng: center.getLng() });
       fetchStores(getBounds(map), categoryRef.current, 0, isDesktopLayout() ? DESKTOP_FETCH_SIZE : undefined);
       fetchRegion();
     };
@@ -552,6 +556,21 @@ export default function MapView() {
     fetchRegion();
   }, [fetchStores, getBounds, fetchRegion, isDesktopLayout]);
 
+  const sheetWasOpenRef = useRef(false);
+
+  const handleSearchOpen = useCallback(() => {
+    if (!isDesktopLayout()) {
+      sheetWasOpenRef.current = snapRef.current !== "collapsed";
+      rankingRef.current?.collapse();
+    }
+  }, [isDesktopLayout]);
+
+  const handleSearchClose = useCallback(() => {
+    if (!isDesktopLayout() && sheetWasOpenRef.current) {
+      rankingRef.current?.open();
+    }
+  }, [isDesktopLayout]);
+
   const handleCategoryChange = useCallback((cat: Category) => {
     categoryRef.current = cat;
     setCategory(cat);
@@ -566,7 +585,7 @@ export default function MapView() {
   const handlePlaceSelect = useCallback(async (
     place: Pick<
       KakaoSearchResult,
-      "id" | "place_name" | "category_name" | "category_group_code" | "road_address_name" | "address_name" | "phone" | "x" | "y"
+      "id" | "place_name" | "category_name" | "category_group_code" | "road_address_name" | "address_name" | "phone" | "x" | "y" | "distance"
     >
   ) => {
     const map = mapRef.current;
@@ -643,6 +662,7 @@ export default function MapView() {
       const pos = await getCurrentPosition();
       locationDotRef.current?.setMap(null);
       locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
+      setSearchPosition({ lat: pos.lat, lng: pos.lng });
       map.setCenter(new kakao.maps.LatLng(pos.lat, pos.lng));
       setSelectedStore(null);
       setTapMode(false);
@@ -756,6 +776,9 @@ export default function MapView() {
         category={category}
         onCategoryChange={handleCategoryChange}
         onPlaceSelect={handlePlaceSelect}
+        searchPosition={searchPosition}
+        onSearchOpen={handleSearchOpen}
+        onSearchClose={handleSearchClose}
         desktopSidebarOpen={isDesktopSidebarOpen}
         desktopVisible={panelView === "ranking"}
       />
