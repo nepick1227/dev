@@ -4,12 +4,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/ui/Spinner";
 import Timeline from "@/features/mypick/Timeline";
+import MonthlyMenuEvent from "@/features/monthly-menu/MonthlyMenuEvent";
 import ProfileView from "@/features/profile/ProfileView";
 import ProfileEditForm from "@/features/profile/ProfileEditForm";
 import PermissionsView from "@/features/profile/PermissionsView";
 import WithdrawalView from "@/features/profile/WithdrawalView";
 import RecordForm from "@/features/record/RecordForm";
 import RecordEditForm from "@/features/record/RecordEditForm";
+import MyPickMapToggle from "./MyPickMapToggle";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, RecordWithStore } from "@/types/database";
 
@@ -17,6 +19,9 @@ type PanelView = "ranking" | "mypick" | "profile";
 
 interface HomePanelContentProps {
   view: PanelView;
+  isMyPickMapMode?: boolean;
+  onMyPickMapToggle?: () => void;
+  isMyPickLoading?: boolean;
 }
 
 interface RecordStats {
@@ -28,7 +33,12 @@ interface RecordStats {
 
 export type { PanelView };
 
-export default function HomePanelContent({ view }: HomePanelContentProps) {
+export default function HomePanelContent({
+  view,
+  isMyPickMapMode = false,
+  onMyPickMapToggle,
+  isMyPickLoading = false,
+}: HomePanelContentProps) {
   const [subview, setSubview] = useState<string>("main");
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -55,6 +65,9 @@ export default function HomePanelContent({ view }: HomePanelContentProps) {
         key={reloadKey}
         onCreateRecord={() => setSubview("record-new")}
         onEditRecord={(recordId) => setSubview(`record-edit:${recordId}`)}
+        isMyPickMapMode={isMyPickMapMode}
+        onMyPickMapToggle={onMyPickMapToggle}
+        isMyPickLoading={isMyPickLoading}
       />
     );
   }
@@ -89,9 +102,15 @@ export default function HomePanelContent({ view }: HomePanelContentProps) {
 function MypickPanel({
   onCreateRecord,
   onEditRecord,
+  isMyPickMapMode,
+  onMyPickMapToggle,
+  isMyPickLoading,
 }: {
   onCreateRecord: () => void;
   onEditRecord: (recordId: number) => void;
+  isMyPickMapMode: boolean;
+  onMyPickMapToggle?: () => void;
+  isMyPickLoading: boolean;
 }) {
   const [records, setRecords] = useState<RecordWithStore[] | null>(null);
 
@@ -127,10 +146,18 @@ function MypickPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="shrink-0 border-b border-border px-5 pb-4 pt-6">
-        <p className="text-[11px] font-medium tracking-tight text-text-secondary">내 기록</p>
-        <h2 className="mt-0.5 text-[20px] font-extrabold tracking-tight text-text-primary">내 픽</h2>
+      <div className="flex shrink-0 items-end justify-between gap-3 border-b border-border px-5 pb-4 pt-6">
+        <div>
+          <p className="text-[11px] font-medium tracking-tight text-text-secondary">내 기록</p>
+          <h2 className="mt-0.5 text-[20px] font-extrabold tracking-tight text-text-primary">내 픽</h2>
+        </div>
+        <MyPickMapToggle
+          checked={isMyPickMapMode}
+          onChange={() => onMyPickMapToggle?.()}
+          disabled={isMyPickLoading}
+        />
       </div>
+      <MonthlyMenuEvent showLauncher />
       <Timeline initialRecords={records} onCreateRecord={onCreateRecord} onEditRecord={onEditRecord} />
     </div>
   );

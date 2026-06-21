@@ -16,8 +16,8 @@ export function parseKakaoCategory(categoryGroupCode: string): "restaurant" | "c
 }
 
 /**
- * 카카오 category_name → 세부 카테고리
- * "음식점 > 한식 > 냉면집" → "냉면집"
+ * 카카오 category_name → 지도 필터용 음식 대분류
+ * "음식점 > 한식 > 냉면집" → "한식"
  * "카페 > 커피전문점" → "커피전문점"
  * "음식점" → null (상위 분류만 있는 경우)
  */
@@ -25,7 +25,7 @@ export function parseKakaoSubcategory(categoryName: string): string | null {
   if (!categoryName) return null;
   const parts = categoryName.split(" > ");
   if (parts.length < 2) return null;
-  return parts[parts.length - 1];
+  return parts[1];
 }
 
 /**
@@ -51,4 +51,3 @@ export function formatDateGroupLabel(date: Date | string): string {
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
   return `${y}.${m}.${day} (${weekdays[d.getDay()]})`;
 }
-

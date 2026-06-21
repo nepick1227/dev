@@ -1,5 +1,5 @@
 /**
- * 기존 stores의 subcategory 일괄 채우기
+ * 기존 stores의 subcategory를 지도 필터용 대분류로 일괄 갱신
  * 사용법:
  *   KAKAO_REST_API_KEY=<key> SUPABASE_URL=<url> SUPABASE_SERVICE_KEY=<key> node scripts/backfill-subcategory.mjs
  *   DRY_RUN=1 LIMIT=10 ... node scripts/backfill-subcategory.mjs
@@ -21,7 +21,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY || !KAKAO_KEY) {
 function parseSubcategory(categoryName) {
   if (!categoryName) return null;
   const parts = categoryName.split(" > ");
-  return parts.length >= 2 ? parts[parts.length - 1] : null;
+  return parts.length >= 2 ? parts[1] : null;
 }
 
 async function getStores() {
@@ -30,7 +30,6 @@ async function getStores() {
 
   while (true) {
     const url = new URL("/rest/v1/stores", SUPABASE_URL);
-    url.searchParams.set("subcategory", "is.null");
     url.searchParams.set("select", "id,kakao_id,name,lat,lng");
     url.searchParams.set("order", "id.asc");
     url.searchParams.set("limit", String(PAGE_SIZE));
@@ -100,7 +99,7 @@ async function updateStore(id, subcategory) {
 
 async function main() {
   const stores = await getStores();
-  console.log(`subcategory 없는 가게: ${stores.length}개\n`);
+  console.log(`subcategory 재분류 대상: ${stores.length}개\n`);
 
   let updated = 0;
   let skipped = 0;

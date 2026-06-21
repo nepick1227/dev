@@ -48,7 +48,7 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
 
   return (
     <div
-      className="desktop-store-card absolute left-3 right-3 z-40 rounded-2xl bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.16)]"
+      className="desktop-store-card fixed left-3 right-3 z-40 rounded-2xl bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.16)]"
       style={{
         bottom: `${CARD_BOTTOM_PX}px`,
         "--desktop-card-left": desktopSidebarOpen
