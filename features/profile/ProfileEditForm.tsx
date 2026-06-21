@@ -141,6 +141,8 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
 
     try {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
 
       let profileImageUrl: string | null = profile.profile_image;
 
@@ -181,7 +183,8 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
           router.push("/profile");
         }
       }, 800);
-    } catch {
+    } catch (err) {
+      console.error("[ProfileEdit]", err);
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);

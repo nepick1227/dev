@@ -135,7 +135,8 @@ function SignupContent() {
 
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);
-    } catch {
+    } catch (err) {
+      console.error("[Signup]", err);
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSaving(false);
@@ -160,7 +161,8 @@ function SignupContent() {
 
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);
-    } catch {
+    } catch (err) {
+      console.error("[SignupSkip]", err);
       showToast("오류가 발생했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSaving(false);
