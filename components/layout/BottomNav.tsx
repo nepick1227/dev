@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
@@ -37,12 +37,14 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [desktopActiveHref, setDesktopActiveHref] = useState("/home");
 
   const handleDesktopPanelNav = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (typeof window === "undefined" || !window.matchMedia("(min-width: 768px)").matches) return;
     if (!pathname.startsWith("/home")) return;
 
     event.preventDefault();
+    setDesktopActiveHref(href);
     window.dispatchEvent(new CustomEvent("nepick:home-panel", {
       detail: href === "/home" ? "ranking" : href === "/mypick" ? "mypick" : "profile",
     }));
@@ -52,7 +54,12 @@ export default function BottomNav() {
     <nav className="safe-area-pb sticky bottom-0 z-20 border-t border-border bg-surface">
       <ul className="flex h-18 items-center">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isDesktopHome = pathname.startsWith("/home") &&
+            typeof window !== "undefined" &&
+            window.matchMedia("(min-width: 768px)").matches;
+          const isActive = isDesktopHome
+            ? desktopActiveHref === item.href
+            : pathname.startsWith(item.href);
 
           return (
             <li key={item.href} className="flex flex-1 justify-center">

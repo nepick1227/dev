@@ -128,12 +128,12 @@ body {
 
   .desktop-store-card {
     right: auto;
-    bottom: auto !important;
-    top: 50%;
+    top: auto;
+    bottom: 28px !important;
     left: var(--desktop-card-left);
     width: 420px;
     max-width: calc(100vw - 96px);
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
   }
 
   .home-desktop-panel,
