@@ -168,11 +168,11 @@ function upsertStores(rows) {
   });
 }
 
-/** 카카오 category_name → 세부 카테고리 ("음식점 > 한식 > 냉면" → "냉면") */
+/** 카카오 category_name → 지도 필터용 대분류 ("음식점 > 한식 > 냉면" → "한식") */
 function parseSubcategory(categoryName) {
   if (!categoryName) return null;
   const parts = categoryName.split(" > ");
-  return parts.length >= 2 ? parts[parts.length - 1] : null;
+  return parts.length >= 2 ? parts[1] : null;
 }
 
 /** 카카오 PlaceResult → stores row 변환 */

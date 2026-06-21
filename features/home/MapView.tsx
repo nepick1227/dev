@@ -1,13 +1,17 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import KakaoMap from "@/components/map/KakaoMap";
 import RankingSheet, { type RankingSheetHandle } from "./RankingSheet";
 import MapOverlay from "./MapOverlay";
 import HomePanelContent, { type PanelView } from "./HomePanelContent";
+import MyPickMapToggle from "./MyPickMapToggle";
 import SelectedStoreCard, { CARD_BOTTOM_PX, CARD_HEIGHT_PX } from "./SelectedStoreCard";
 import StoreCard from "./StoreCard";
 import Spinner from "@/components/ui/Spinner";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import { DESKTOP_FETCH_SIZE, useMapStores, type MapBounds } from "@/hooks/use-map-stores";
 import { getCurrentPosition } from "@/lib/kakao/map";
 import { createClient } from "@/lib/supabase/client";
@@ -93,7 +97,6 @@ const RESTAURANT_SUBCATEGORIES = [
   "한식",
 ] as const;
 
-const ALWAYS_SHOW_RANK_COUNT = 10;
 const DESKTOP_RANKING_LIMIT = 60;
 const DESKTOP_NAV_WIDTH = 64;
 const DESKTOP_MARKER_SAFE_GAP = 48;
@@ -137,35 +140,7 @@ function spreadOverlappingMarkers(
   return result;
 }
 
-function isInsideBounds(store: Store, bounds: MapBounds): boolean {
-  return store.lat >= bounds.sw.lat &&
-    store.lat <= bounds.ne.lat &&
-    store.lng >= bounds.sw.lng &&
-    store.lng <= bounds.ne.lng;
-}
 
-function selectDesktopMarkerStores(stores: Store[], bounds: MapBounds): Store[] {
-  const latRange = Math.max(bounds.ne.lat - bounds.sw.lat, 0.000001);
-  const lngRange = Math.max(bounds.ne.lng - bounds.sw.lng, 0.000001);
-  const occupied = new Set<string>();
-  const selected = new Map<number, Store>();
-
-  stores.forEach((store, idx) => {
-    if (!isInsideBounds(store, bounds)) return;
-
-    const isHighRank = idx < ALWAYS_SHOW_RANK_COUNT;
-    const col = Math.floor(((store.lng - bounds.sw.lng) / lngRange) * 10);
-    const row = Math.floor(((store.lat - bounds.sw.lat) / latRange) * 7);
-    const key = `${col}:${row}`;
-
-    if (isHighRank || !occupied.has(key)) {
-      selected.set(store.id, store);
-      occupied.add(key);
-    }
-  });
-
-  return Array.from(selected.values());
-}
 
 function matchesRestaurantSubcategory(store: Store, subcategory: string): boolean {
   if (subcategory === "전체" || store.category !== "restaurant") return true;
@@ -211,6 +186,8 @@ export default function MapView() {
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [panelView, setPanelView] = useState<PanelView>("ranking");
   const [isMyPickMapMode, setIsMyPickMapMode] = useState(false);
+  const [showNoPickModal, setShowNoPickModal] = useState(false);
+  const router = useRouter();
   const [myPickStores, setMyPickStores] = useState<Store[]>([]);
   const [isMyPickLoading, setIsMyPickLoading] = useState(false);
   const [searchPosition, setSearchPosition] = useState<{ lat: number; lng: number } | undefined>(undefined);
@@ -225,8 +202,9 @@ export default function MapView() {
   const visibleStores = category === "restaurant"
     ? accumulatedStores.filter((store) => matchesRestaurantSubcategory(store, restaurantSubcategory))
     : accumulatedStores;
-  const panelStores = isMyPickMapMode ? myPickStores : visibleStores;
-  const panelLoading = isMyPickMapMode ? isMyPickLoading : isLoading;
+  const isMyPickOnlyView = isMyPickMapMode;
+  const panelStores = isMyPickOnlyView ? myPickStores : visibleStores;
+  const panelLoading = isMyPickOnlyView ? isMyPickLoading : isLoading;
 
   // accumulatedStores 변경 시 ref 동기화 (이벤트 클로저에서 최신값 접근용)
   useEffect(() => {
@@ -234,8 +212,8 @@ export default function MapView() {
   }, [accumulatedStores]);
 
   useEffect(() => {
-    myPickModeRef.current = isMyPickMapMode;
-  }, [isMyPickMapMode]);
+    myPickModeRef.current = isMyPickOnlyView;
+  }, [isMyPickOnlyView]);
 
   useEffect(() => {
     snapRef.current = snap;
@@ -256,6 +234,7 @@ export default function MapView() {
       const nextView = (event as CustomEvent<PanelView>).detail;
       if (!["ranking", "mypick", "profile"].includes(nextView)) return;
       setPanelView(nextView);
+      setIsMyPickMapMode(nextView === "mypick");
       setIsDesktopSidebarOpen(true);
     };
 
@@ -269,10 +248,10 @@ export default function MapView() {
     return {
       left: visibleLeft + DESKTOP_MARKER_SAFE_GAP,
       right: 88,
-      top: !isMyPickMapMode && categoryRef.current === "restaurant" ? 128 : 88,
+      top: !isMyPickOnlyView && categoryRef.current === "restaurant" ? 128 : 88,
       bottom: 88,
     };
-  }, [isDesktopSidebarOpen, isMyPickMapMode]);
+  }, [isDesktopSidebarOpen, isMyPickOnlyView]);
 
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
@@ -435,6 +414,17 @@ export default function MapView() {
   }, []);
 
   useEffect(() => {
+    if (panelView !== "mypick" || !isDesktopLayout()) return;
+    const map = mapRef.current;
+
+    void loadMyPickStores().then((stores) => {
+      if (map && stores.length > 0) {
+        window.setTimeout(() => fitStoresToVisibleMap(map, stores), 0);
+      }
+    });
+  }, [fitStoresToVisibleMap, isDesktopLayout, loadMyPickStores, panelView]);
+
+  useEffect(() => {
     const handleMyPickUpdated = async () => {
       const stores = await loadMyPickStores();
       const map = mapRef.current;
@@ -464,9 +454,9 @@ export default function MapView() {
       return;
     }
 
-    const markerSourceStores = isMyPickMapMode ? myPickStores : visibleStores;
-    const storesForMarkers = isDesktopLayout() && !isMyPickMapMode
-      ? selectDesktopMarkerStores(markerSourceStores, getBounds(map, isDesktopSidebarOpen))
+    const markerSourceStores = isMyPickOnlyView ? myPickStores : visibleStores;
+    const storesForMarkers = isDesktopLayout() && !isMyPickOnlyView
+      ? markerSourceStores.slice(0, DESKTOP_RANKING_LIMIT)
       : markerSourceStores;
 
     // 겹치는 마커 나선형 오프셋 적용 후 랭킹 마커 렌더링
@@ -493,7 +483,7 @@ export default function MapView() {
     getBounds,
     isDesktopLayout,
     isDesktopSidebarOpen,
-    isMyPickMapMode,
+    isMyPickOnlyView,
     myPickStores,
     selectedStore,
     selectedRank,
@@ -642,7 +632,7 @@ export default function MapView() {
 
   // 랭킹 시트에서 가게 클릭
   const handleStoreClick = useCallback((storeId: number) => {
-    const sourceStores = isMyPickMapMode ? myPickStores : accumulatedStores;
+    const sourceStores = isMyPickOnlyView ? myPickStores : accumulatedStores;
     const idx = sourceStores.findIndex((s) => s.id === storeId);
     const store = sourceStores[idx];
     if (store && mapRef.current) {
@@ -652,7 +642,7 @@ export default function MapView() {
       setSelectedRank(idx + 1);
       panToVisible(mapRef.current, store.lat, store.lng);
     }
-  }, [accumulatedStores, isMyPickMapMode, myPickStores, panToVisible]);
+  }, [accumulatedStores, isMyPickOnlyView, myPickStores, panToVisible]);
 
   const handleCurrentLocation = useCallback(async () => {
     const map = mapRef.current;
@@ -709,6 +699,10 @@ export default function MapView() {
     }
 
     const stores = myPickStores.length > 0 ? myPickStores : await loadMyPickStores();
+    if (stores.length === 0) {
+      setShowNoPickModal(true);
+      return;
+    }
     setIsMyPickMapMode(true);
     if (map) {
       window.setTimeout(() => fitStoresToVisibleMap(map, stores), 0);
@@ -735,7 +729,7 @@ export default function MapView() {
 
     const timer = window.setTimeout(() => {
       (map as kakao.maps.Map & { relayout?: () => void }).relayout?.();
-      if (isMyPickMapMode) {
+      if (isMyPickOnlyView) {
         fitStoresToVisibleMap(map, myPickStores);
         fetchRegion();
         return;
@@ -752,7 +746,7 @@ export default function MapView() {
     getBounds,
     isDesktopLayout,
     isDesktopSidebarOpen,
-    isMyPickMapMode,
+    isMyPickOnlyView,
     myPickStores,
   ]);
 
@@ -769,6 +763,7 @@ export default function MapView() {
     : "96px";
 
   return (
+    <>
     <div className="relative flex-1 overflow-hidden">
       <KakaoMap className="h-full w-full" onReady={handleMapReady} />
 
@@ -800,24 +795,17 @@ export default function MapView() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium tracking-tight text-text-secondary">
-                    {isMyPickMapMode ? "내 픽 지도" : "맛집 랭킹"}
+                    {isMyPickOnlyView ? "내 픽 지도" : "맛집 랭킹"}
                   </p>
                   <p className="mt-0.5 text-[18px] font-extrabold leading-snug tracking-tight text-text-primary">
-                    {isMyPickMapMode ? "내가 기록한 맛집" : regionName || "불러오는 중..."}
+                    {isMyPickOnlyView ? "내가 기록한 맛집" : regionName || "불러오는 중..."}
                   </p>
                 </div>
-                <button
-                  onClick={handleMyPickMapToggle}
+                <MyPickMapToggle
+                  checked={isMyPickOnlyView}
+                  onChange={handleMyPickMapToggle}
                   disabled={isMyPickLoading}
-                  className={[
-                    "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-bold tracking-tight transition-colors disabled:opacity-60",
-                    isMyPickMapMode
-                      ? "border-primary bg-primary text-white"
-                      : "border-primary bg-white text-primary hover:bg-primary-soft",
-                  ].join(" ")}
-                >
-                  {isMyPickMapMode ? "랭킹 보기" : "내 픽만 보기"}
-                </button>
+                />
               </div>
             </div>
 
@@ -829,15 +817,15 @@ export default function MapView() {
               ) : panelStores.length === 0 ? (
                 <div className="nepick-fade-in flex flex-col items-center justify-center px-5 py-16 text-text-secondary">
                   <p className="text-[15px]">
-                    {isMyPickMapMode ? "아직 내가 픽한 맛집이 없어요" : "이 지역에 기록된 가게가 없어요"}
+                    {isMyPickOnlyView ? "아직 내가 픽한 맛집이 없어요" : "이 지역에 기록된 가게가 없어요"}
                   </p>
                   <p className="mt-1 text-[13px]">
-                    {isMyPickMapMode ? "내 픽을 추가하면 지도에 표시됩니다" : "지도를 이동하거나 첫 기록을 남겨보세요!"}
+                    {isMyPickOnlyView ? "내 픽을 추가하면 지도에 표시됩니다" : "지도를 이동하거나 첫 기록을 남겨보세요!"}
                   </p>
                 </div>
               ) : (
                 <ul className="nepick-fade-in divide-y divide-border pb-6">
-                  {panelStores.slice(0, isMyPickMapMode ? panelStores.length : DESKTOP_RANKING_LIMIT).map((store, idx) => (
+                  {panelStores.slice(0, isMyPickOnlyView ? panelStores.length : DESKTOP_RANKING_LIMIT).map((store, idx) => (
                     <li key={store.id}>
                       <StoreCard store={store} rank={idx + 1} onClick={handleStoreClick} />
                     </li>
@@ -847,7 +835,13 @@ export default function MapView() {
             </div>
           </>
         ) : (
-          <HomePanelContent key={panelView} view={panelView} />
+          <HomePanelContent
+            key={panelView}
+            view={panelView}
+            isMyPickMapMode={isMyPickOnlyView}
+            onMyPickMapToggle={handleMyPickMapToggle}
+            isMyPickLoading={isMyPickLoading}
+          />
         )}
       </div>
 
@@ -865,7 +859,7 @@ export default function MapView() {
         <span>{isDesktopSidebarOpen ? "<" : ">"}</span>
       </button>
 
-      {!isMyPickMapMode && (
+      {!isMyPickOnlyView && (
         <div
           className="pointer-events-auto absolute top-5 z-30 hidden items-center gap-2 transition-[left] duration-300 md:flex"
           style={{
@@ -893,7 +887,7 @@ export default function MapView() {
         </div>
       )}
 
-      {!isMyPickMapMode && category === "restaurant" && (
+      {!isMyPickOnlyView && category === "restaurant" && (
         <div
           className="pointer-events-auto absolute top-[68px] z-30 hidden gap-2 overflow-x-auto whitespace-nowrap pb-2 transition-[left] duration-300 md:flex"
           style={{
@@ -923,8 +917,8 @@ export default function MapView() {
         <div className="md:hidden">
           <RankingSheet
             ref={rankingRef}
-            stores={accumulatedStores}
-            isLoading={isLoading}
+            stores={panelStores}
+            isLoading={panelLoading}
             page={page}
             totalPages={totalPages}
             hasMore={hasMore}
@@ -933,13 +927,17 @@ export default function MapView() {
             onSnapChange={setSnap}
             defaultSnap={sheetDefaultSnap}
             regionName={regionName}
+            isMyPickMode={isMyPickOnlyView}
+            onMyPickToggle={handleMyPickMapToggle}
           />
         </div>
       )}
 
-      {/* 플로팅 버튼 — 항상 표시, 상태에 따라 내용/위치 변경 */}
-      {isMapFull || !!selectedStore ? (
-        // 지도보기 or 카드 열림 → 랭킹보기
+      {/* 플로팅 버튼 */}
+
+
+      {/* 중앙 버튼 — 지도보기/카드 열림 시 랭킹보기 / 시트 열림 시 지도보기 */}
+      {(isMapFull || !!selectedStore) && !isMyPickOnlyView ? (
         <button
           onClick={handleRankingToggle}
           className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg md:hidden"
@@ -948,8 +946,7 @@ export default function MapView() {
           <span>🏆</span>
           <span>랭킹보기</span>
         </button>
-      ) : (
-        // half / full 랭킹 상태 → 지도보기 (시트 위 플로팅)
+      ) : !isMapFull && !isMyPickOnlyView && (
         <button
           onClick={handleCollapse}
           className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg md:hidden"
@@ -992,7 +989,9 @@ export default function MapView() {
         </button>
       )}
 
-      {/* 선택된 가게 카드 */}
+    </div>
+
+      {/* 선택된 가게 카드 — 지도 컨테이너 밖에서 렌더링하여 마커 위에 표시 */}
       {selectedStore && (
         <SelectedStoreCard
           store={selectedStore}
@@ -1001,6 +1000,25 @@ export default function MapView() {
           desktopSidebarOpen={isDesktopSidebarOpen}
         />
       )}
-    </div>
+
+      <Modal
+        isOpen={showNoPickModal}
+        onClose={() => setShowNoPickModal(false)}
+        variant="dialog"
+        title="아직 내 픽이 없어요!"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="secondary" size="md" fullWidth onClick={() => setShowNoPickModal(false)}>
+              취소
+            </Button>
+            <Button size="md" fullWidth onClick={() => { setShowNoPickModal(false); router.push("/record"); }}>
+              내 픽 기록하기
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[14px] text-text-secondary">내 픽을 기록하러 가볼까요?</p>
+      </Modal>
+    </>
   );
 }
