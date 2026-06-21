@@ -43,6 +43,7 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [records, setRecords] = useState<RecordWithStore[]>(initialRecords ?? []);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(!initialRecords);
   // 서버에서 초기 데이터를 받은 경우, 첫 번째 timeline 모드 fetch는 스킵
   const skipInitialFetch = useRef(!!initialRecords);
@@ -87,14 +88,24 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
     fetchRecords(viewMode, currentMonth);
   }, [viewMode, currentMonth, fetchRecords]);
 
-  const grouped = groupByDate(records);
+  const filteredRecords = searchQuery
+    ? records.filter((r) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          r.stores.name.toLowerCase().includes(q) ||
+          (r.comment && r.comment.toLowerCase().includes(q))
+        );
+      })
+    : records;
+
+  const grouped = groupByDate(filteredRecords);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <Toast message={toast.message} visible={toast.visible} />
 
       {/* 상단 헤더 */}
-      <div className={`app-content-readable shrink-0 bg-surface px-5 pt-3 ${viewMode === "monthly" ? "pb-1" : "pb-3"}`}>
+      <div className={`app-content-readable shrink-0 bg-surface px-5 pt-3 pb-3`}>
         {/* 타임라인 / 월별 세그먼트 토글 + 추가 버튼 */}
         <div className="flex items-center justify-between">
           <div className="flex rounded-full border border-border bg-surface p-0.5">
@@ -136,6 +147,35 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
           </button>
         </div>
 
+        {/* 검색 */}
+        <div className="relative mt-3">
+          <svg
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary"
+            width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"
+          >
+            <circle cx="7" cy="7" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="맛집 이름, 후기 검색"
+            className="h-10 w-full rounded-xl border border-border bg-bg pl-10 pr-9 text-[14px] tracking-tight text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="7" fill="var(--color-border)" />
+                <path d="M5.5 5.5L10.5 10.5M10.5 5.5L5.5 10.5" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+        </div>
+
         {/* 월별 모드일 때 월 필터 */}
         {viewMode === "monthly" && (
           <div className="mt-3 flex justify-center">
@@ -151,18 +191,26 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
         </div>
       ) : (
         <div className="hide-scrollbar flex-1 overflow-y-auto">
-          {records.length === 0 ? (
+          {filteredRecords.length === 0 ? (
             <div className="nepick-fade-in flex flex-col items-center justify-center gap-3 px-5 py-16">
-              <p className="text-[40px]">🗺️</p>
+              <p className="text-[40px]">{searchQuery ? "🔍" : "🗺️"}</p>
               <div className="text-center">
                 <p className="text-[15px] font-semibold tracking-tight text-text-primary">
-                  {viewMode === "monthly" ? "이 달의 기록이 없어요" : "아직 내가 픽한 맛집이 없어요!"}
+                  {searchQuery
+                    ? "검색 결과가 없어요"
+                    : viewMode === "monthly"
+                      ? "이 달의 기록이 없어요"
+                      : "아직 내가 픽한 맛집이 없어요!"}
                 </p>
                 <p className="mt-1 text-[13px] tracking-tight text-text-secondary">
-                  {viewMode === "monthly" ? "다른 달을 선택하거나 새로 픽해 보세요" : "나만의 맛집을 내 픽에 담아볼까요?"}
+                  {searchQuery
+                    ? "다른 키워드로 검색해 보세요"
+                    : viewMode === "monthly"
+                      ? "다른 달을 선택하거나 새로 픽해 보세요"
+                      : "나만의 맛집을 내 픽에 담아볼까요?"}
                 </p>
               </div>
-              {viewMode === "timeline" && (
+              {viewMode === "timeline" && !searchQuery && (
                 <button
                   onClick={() => {
                     if (onCreateRecord) {

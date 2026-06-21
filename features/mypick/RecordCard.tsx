@@ -88,7 +88,8 @@ export default function RecordCard({
       await supabase.from("records").delete().eq("id", record.id);
       onDelete?.();
       onShowToast?.("기록이 삭제되었어요");
-    } catch {
+    } catch (err) {
+      console.error("[RecordCardDelete]", err);
       onShowToast?.("삭제에 실패했습니다");
     } finally {
       setConfirmDelete(false);

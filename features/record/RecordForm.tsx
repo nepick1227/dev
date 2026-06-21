@@ -126,7 +126,8 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
           router.push("/mypick");
         }
       }, 800);
-    } catch {
+    } catch (err) {
+      console.error("[RecordCreate]", err);
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);

@@ -139,7 +139,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
       const { error } = await supabase
         .from("records")
         .update({
-          visited_at: new Date(`${visitedAt}T${visitedTime}`).toISOString(),
+          visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
           recommendation,
           comment,
           image_url: imageUrl,
@@ -157,7 +157,8 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
           router.push("/mypick");
         }
       }, 800);
-    } catch {
+    } catch (err) {
+      console.error("[RecordEdit]", err);
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);
@@ -202,7 +203,8 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
           router.push("/mypick");
         }
       }, 800);
-    } catch {
+    } catch (err) {
+      console.error("[RecordDelete]", err);
       showToast("삭제에 실패했습니다. 다시 시도해 주세요.");
       setIsDeleting(false);
       setShowDeleteModal(false);
