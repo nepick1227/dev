@@ -160,7 +160,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
         }
       }, 800);
     } catch (err) {
-      console.error("[RecordEdit]", err);
+      console.error("[RecordEdit]", err instanceof Error ? err.message : "unknown error");
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);
@@ -206,7 +206,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
         }
       }, 800);
     } catch (err) {
-      console.error("[RecordDelete]", err);
+      console.error("[RecordDelete]", err instanceof Error ? err.message : "unknown error");
       showToast("삭제에 실패했습니다. 다시 시도해 주세요.");
       setIsDeleting(false);
       setShowDeleteModal(false);

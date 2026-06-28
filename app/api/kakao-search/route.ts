@@ -88,6 +88,7 @@ export async function GET(req: NextRequest) {
         Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
       },
       next: { revalidate: 0 },
+      signal: AbortSignal.timeout(5000),
     }
   );
 
