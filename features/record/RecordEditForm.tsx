@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -47,12 +48,16 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showImageDeleteModal, setShowImageDeleteModal] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const signedRecordImageUrl = useSignedImageUrl(
+    "record-images",
+    newImageFile || removeImage ? null : record.image_url
+  );
 
   const previewUrl = useMemo(() => {
     if (newImageFile) return URL.createObjectURL(newImageFile);
     if (removeImage) return null;
-    return record.image_url;
-  }, [newImageFile, removeImage, record.image_url]);
+    return signedRecordImageUrl;
+  }, [newImageFile, removeImage, signedRecordImageUrl]);
 
   useEffect(() => {
     return () => {
@@ -128,10 +133,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
           .upload(filePath, newImageFile, { upsert: false });
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("record-images")
-          .getPublicUrl(filePath);
-        imageUrl = urlData.publicUrl;
+        imageUrl = filePath;
       } else if (removeImage) {
         imageUrl = null;
       }

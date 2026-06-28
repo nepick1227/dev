@@ -12,14 +12,13 @@ import ImageUpload from "./ImageUpload";
 import DatePicker from "@/components/ui/DatePicker";
 import TimePicker from "@/components/ui/TimePicker";
 import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
-import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
 import { validateComment } from "@/utils/validation";
 import {
   recommendationLabels,
   recommendationEmojis,
   type RecommendationType,
 } from "@/styles/tokens";
-import type { StoreInsert, RecordInsert } from "@/types/database";
+import type { RecordInsert } from "@/types/database";
 
 const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
 
@@ -27,6 +26,30 @@ interface RecordFormProps {
   onContentChange?: (hasContent: boolean) => void;
   initialPlace?: KakaoPlace | null;
   onSaved?: () => void;
+}
+
+async function resolveStoreId(place: KakaoPlace) {
+  const response = await fetch("/api/stores/resolve", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      kakaoId: place.id,
+      query: place.place_name,
+      x: place.x,
+      y: place.y,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("store_resolve_failed");
+  }
+
+  const data = await response.json() as { storeId?: number };
+  if (typeof data.storeId !== "number") {
+    throw new Error("store_resolve_invalid_response");
+  }
+
+  return data.storeId;
 }
 
 export default function RecordForm({ onContentChange, initialPlace, onSaved }: RecordFormProps) {
@@ -72,7 +95,7 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      let imageUrl: string | null = null;
+      let imagePath: string | null = null;
       if (imageFile) {
         const ext = imageFile.name.split(".").pop() ?? "jpg";
         const filePath = `${user.id}/${Date.now()}.${ext}`;
@@ -81,38 +104,18 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
           .upload(filePath, imageFile, { upsert: false });
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("record-images")
-          .getPublicUrl(filePath);
-        imageUrl = urlData.publicUrl;
+        imagePath = filePath;
       }
 
-      const storeData: StoreInsert = {
-        kakao_id: selectedPlace.id,
-        name: selectedPlace.place_name,
-        category: parseKakaoCategory(selectedPlace.category_group_code),
-        subcategory: parseKakaoSubcategory(selectedPlace.category_name),
-        address: selectedPlace.address_name,
-        road_address: selectedPlace.road_address_name || null,
-        lat: parseFloat(selectedPlace.y),
-        lng: parseFloat(selectedPlace.x),
-        phone: selectedPlace.phone || null,
-      };
-
-      const { data: storeResult, error: storeError } = await supabase
-        .from("stores")
-        .upsert(storeData, { onConflict: "kakao_id" })
-        .select("id")
-        .single();
-      if (storeError) throw storeError;
+      const storeId = await resolveStoreId(selectedPlace);
 
       const recordData: RecordInsert = {
         user_id: user.id,
-        store_id: storeResult.id,
+        store_id: storeId,
         visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
         recommendation,
         comment,
-        image_url: imageUrl,
+        image_url: imagePath,
       };
 
       const { error: recordError } = await supabase.from("records").insert(recordData);

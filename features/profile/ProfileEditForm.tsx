@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Textarea from "@/components/ui/Textarea";
@@ -17,7 +18,7 @@ interface ProfileEditFormProps {
   onSaved?: () => void;
 }
 
-type NicknameStatus = "idle" | "checking" | "available" | "taken";
+type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
 
 const GENDER_OPTIONS: { value: "male" | "female" | "unknown"; label: string }[] = [
   { value: "male", label: "남성" },
@@ -46,6 +47,10 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
 
   // ── 닉네임 중복 확인 ───────────────────────────────────
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
+  const signedProfileImageUrl = useSignedImageUrl(
+    "profile-images",
+    imageFile || removeImage ? null : profile.profile_image
+  );
 
   useEffect(() => {
     const trimmed = nickname.trim();
@@ -66,13 +71,16 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
 
     const timer = setTimeout(async () => {
       const supabase = createClient();
-      const { data } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("nickname", trimmed)
-        .maybeSingle();
+      const { data: isAvailable, error } = await supabase.rpc(
+        "is_active_nickname_available",
+        { p_nickname: trimmed }
+      );
 
-      setNicknameStatus(data ? "taken" : "available");
+      if (error) {
+        setNicknameStatus("error");
+      } else {
+        setNicknameStatus(isAvailable ? "available" : "taken");
+      }
     }, 500);
 
     return () => clearTimeout(timer);
@@ -83,8 +91,8 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
   const previewUrl = useMemo(() => {
     if (imageFile) return URL.createObjectURL(imageFile);
     if (removeImage) return null;
-    return profile.profile_image;
-  }, [imageFile, removeImage, profile.profile_image]);
+    return signedProfileImageUrl;
+  }, [imageFile, removeImage, signedProfileImageUrl]);
 
   useEffect(() => {
     return () => {
@@ -99,7 +107,8 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
   const isNicknameOk =
     nicknameValidation.isValid &&
     nicknameStatus !== "taken" &&
-    nicknameStatus !== "checking";
+    nicknameStatus !== "checking" &&
+    nicknameStatus !== "error";
 
   const hasChanges =
     nickname.trim() !== (profile.nickname ?? "").trim() ||
@@ -153,8 +162,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
           .from("profile-images")
           .upload(filePath, imageFile, { upsert: true });
         if (uploadError) throw new Error("이미지 업로드에 실패했습니다. 다시 시도해 주세요.");
-        const { data } = supabase.storage.from("profile-images").getPublicUrl(filePath);
-        profileImageUrl = data.publicUrl;
+        profileImageUrl = filePath;
       } else if (removeImage) {
         profileImageUrl = null;
       }
@@ -173,7 +181,14 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
         .update(updateData)
         .eq("id", profile.id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          setNicknameStatus("taken");
+          showToast("이미 사용 중인 닉네임이에요");
+          return;
+        }
+        throw error;
+      }
 
       showToast("프로필이 업데이트되었습니다");
       setTimeout(() => {
@@ -417,6 +432,13 @@ function NicknameHint({ nickname, formatResult, status, isOriginal }: NicknameHi
     return (
       <p className="mt-1.5 text-[12px] tracking-tight text-success-text">
         사용 가능한 닉네임이에요
+      </p>
+    );
+  }
+  if (status === "error") {
+    return (
+      <p className="mt-1.5 text-[12px] tracking-tight text-primary">
+        닉네임 확인에 실패했습니다. 다시 시도해 주세요.
       </p>
     );
   }

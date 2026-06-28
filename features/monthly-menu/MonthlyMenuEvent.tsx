@@ -185,7 +185,7 @@ export default function MonthlyMenuEvent({
                 />
               ) : (
                 <p className="py-16 text-center text-[14px] text-text-secondary">
-                  전월 기록을 불러오지 못했습니다.
+                  전월 기록을 불러오지 못했어요. 잠시 후 화면을 새로고침해 주세요.
                 </p>
               )}
 

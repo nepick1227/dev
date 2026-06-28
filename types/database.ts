@@ -12,7 +12,7 @@ export interface Profile {
   birth_date: string | null; // ISO date string (YYYY-MM-DD)
   gender: "male" | "female" | "unknown";
   intro: string | null;
-  profile_image: string | null; // Supabase Storage public URL
+  profile_image: string | null; // Supabase Storage path or legacy image URL
   is_public: boolean;
   marketing_agree: boolean;
   deleted_at: string | null;     // 탈퇴 요청 시각 (null = 정상 계정)
@@ -44,7 +44,7 @@ export interface Record {
   visited_at: string; // ISO timestamp
   recommendation: "recommend" | "neutral" | "not_recommend";
   comment: string;
-  image_url: string | null; // Supabase Storage public URL
+  image_url: string | null; // Supabase Storage path or legacy image URL
   created_at: string;
   updated_at: string;
 }

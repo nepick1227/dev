@@ -227,8 +227,9 @@ function ProfilePanel({ onNavigate }: { onNavigate: (href: string) => void }) {
           <ProfileView profile={profile} stats={stats} providers={providers} onNavigate={onNavigate} />
         </div>
       ) : (
-        <div className="flex flex-1 items-center justify-center text-text-secondary">
-          <p className="text-[14px]">프로필을 불러올 수 없습니다.</p>
+        <div className="flex flex-1 flex-col items-center justify-center px-5 text-center text-text-secondary">
+          <p className="text-[14px] font-semibold text-text-primary">프로필을 불러오지 못했어요.</p>
+          <p className="mt-1 text-[13px]">잠시 후 화면을 새로고침해 주세요.</p>
         </div>
       )}
     </div>

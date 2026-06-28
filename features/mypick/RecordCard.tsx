@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import { formatTime } from "@/utils/format";
 import { CopyIcon, ShareIcon, EditIcon, TrashIcon, ChevronDownIcon, CafeIcon, RestaurantIcon } from "@/components/ui/icons";
 import { RecommendationBadge } from "@/components/ui/Badge";
@@ -29,6 +30,7 @@ export default function RecordCard({
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const recordImageUrl = useSignedImageUrl("record-images", record.image_url);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -85,7 +87,9 @@ export default function RecordCard({
   const handleDelete = useCallback(async () => {
     try {
       const supabase = createClient();
-      await supabase.from("records").delete().eq("id", record.id);
+      const { error } = await supabase.from("records").delete().eq("id", record.id);
+      if (error) throw error;
+
       onDelete?.();
       onShowToast?.("기록이 삭제되었어요");
     } catch (err) {
@@ -218,10 +222,10 @@ export default function RecordCard({
                   )}
                 </div>
               </div>
-              {record.image_url && (
+              {recordImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={record.image_url}
+                  src={recordImageUrl}
                   alt={record.stores.name}
                   className="h-16 w-16 shrink-0 self-start rounded-[10px] object-cover"
                   loading="lazy"

@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { checkRateLimit } from "@/lib/security/http";
 
 /**
  * 네이버 OAuth 로그인 시작
  * 로그인 버튼 클릭 → 이 Route로 이동 → 네이버 로그인 페이지로 리다이렉트
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, "naver-auth-start", {
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (rateLimited) return rateLimited;
+
   const origin = new URL(request.url).origin;
   const state = crypto.randomUUID(); // CSRF 방지
 
@@ -23,6 +31,7 @@ export async function GET(request: Request) {
   response.cookies.set("naver_oauth_state", state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: 60 * 10, // 10분
     path: "/",
   });

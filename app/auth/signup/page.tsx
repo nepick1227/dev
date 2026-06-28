@@ -81,12 +81,15 @@ function SignupContent() {
     setNicknameMessage("중복 확인 중");
 
     const supabase = createClient();
-    const { count } = await supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("nickname", value);
+    const { data: isAvailable, error } = await supabase.rpc(
+      "is_active_nickname_available",
+      { p_nickname: value.trim() }
+    );
 
-    if ((count ?? 0) > 0) {
+    if (error) {
+      setNicknameStatus("error");
+      setNicknameMessage("닉네임 확인에 실패했습니다. 다시 시도해 주세요.");
+    } else if (!isAvailable) {
       setNicknameStatus("taken");
       setNicknameMessage("이미 사용 중인 닉네임이에요");
     } else {
@@ -131,7 +134,15 @@ function SignupContent() {
         marketing_agree: marketingAgree,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          setNicknameStatus("taken");
+          setNicknameMessage("이미 사용 중인 닉네임이에요");
+          showToast("이미 사용 중인 닉네임이에요");
+          return;
+        }
+        throw error;
+      }
 
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);
@@ -157,7 +168,19 @@ function SignupContent() {
       const rawName = (user.user_metadata?.full_name as string | undefined) ?? "";
       const cleanName = rawName.replace(/[^가-힣a-zA-Z0-9]/g, "").slice(0, 12);
       const defaultNickname = cleanName.length >= 2 ? cleanName : `유저${user.id.slice(-4)}`;
-      await supabase.from("profiles").upsert({ id: user.id, nickname: defaultNickname, gender: "unknown", marketing_agree: marketingAgree });
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        nickname: defaultNickname,
+        gender: "unknown",
+        marketing_agree: marketingAgree,
+      });
+      if (error) {
+        if (error.code === "23505") {
+          showToast("기본 닉네임이 이미 사용 중입니다. 닉네임을 직접 입력해 주세요.");
+          return;
+        }
+        throw error;
+      }
 
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);

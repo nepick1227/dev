@@ -236,7 +236,27 @@ chore: Supabase SDK 버전 업데이트
 - `KAKAO_REST_API_KEY`는 Edge Function 환경변수로만 설정
 - 이미지 업로드 시 MIME 타입 검사 + 5MB 이하 제한
 
+## 보안 / QA 필수 가드레일
+
+이 프로젝트를 이어받는 사람과 AI 모델은 작업 전 `docs/security-qa-handoff.md`를 먼저 확인합니다.
+
+- OWASP Top 10 관점으로 접근권한, 인증, 입력 검증, 공급망, 로깅, 보안 설정을 매 변경마다 재점검합니다.
+- 프론트 번들/F12 Network에 `SUPABASE_SERVICE_ROLE_KEY`, `NAVER_CLIENT_SECRET`, `KAKAO_REST_API_KEY`, `GEMINI_API_KEY`가 노출되면 안 됩니다.
+- `NEXT_PUBLIC_` 값은 공개되어도 되는 값만 사용합니다. 비밀키를 `NEXT_PUBLIC_`로 만들지 않습니다.
+- Supabase RLS 변경은 기존 적용 가능성이 있는 migration을 수정하지 말고 새 migration으로 추가합니다.
+- exposed schema의 table/view는 RLS와 정책을 먼저 확인합니다. view는 가능하면 `security_invoker = true`로 만듭니다.
+- `SECURITY DEFINER` 함수는 정말 필요한 경우에만 사용하고, 함수 내부에서 `auth.uid()` 검사를 수행한 뒤 `REVOKE ALL FROM PUBLIC`과 필요한 role `GRANT`를 명시합니다.
+- 사용자의 개인 기록과 이미지 저장소는 개인 데이터입니다. 이미지는 기본 private bucket + signed URL로 다룹니다.
+- 공용 가게 데이터는 브라우저에서 직접 `stores.insert/update`하지 않습니다. 카카오 REST API로 서버에서 검증한 뒤 저장합니다.
+- 기록 데이터는 개인 `records`에 쌓이며, 한 사용자가 같은 가게에 여러 기록을 남길 수 있습니다.
+- 탈퇴 계정의 닉네임은 재사용 가능해야 합니다. 활성 계정끼리만 닉네임 중복을 막습니다.
+- 외부 API/Gemini/카카오/인증 route는 입력 크기 제한, 값 검증, 요청 제한을 고려합니다.
+- 새 dependency를 추가하거나 버전을 바꾸면 `npm audit`, `npm run lint`, `npm run build`를 실행하고 결과를 PR/커밋 설명에 남깁니다.
+- 보안 헤더/CSP를 바꾸면 카카오맵, Supabase 이미지 signed URL, 폰트, 로그인 흐름이 깨지지 않는지 브라우저 Console/Network로 확인합니다.
+- 운영 DB 적용은 Supabase migration 적용 여부를 확인한 뒤 진행합니다. 적용 전에는 로컬 코드가 통과해도 운영 보안이 완성된 것으로 보지 않습니다.
+
 ## 참고 문서
 
 - 상세 작업 리스트 및 전체 가이드: `NePick_작업리스트_코드규칙가이드.md`
 - DB 스키마 / 정책정의서: `NePick_정책정의서_v0.2.2.xlsx`
+- 보안/QA 인수인계 체크리스트: `docs/security-qa-handoff.md`
