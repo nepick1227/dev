@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/security/http";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, "auth-callback", {
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (rateLimited) return rateLimited;
+
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/home";

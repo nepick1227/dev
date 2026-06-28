@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { UserIcon, ChevronRightIcon, KakaoIcon, NaverIcon, GoogleIcon, EditIcon } from "@/components/ui/icons";
@@ -39,6 +40,7 @@ function SocialIcons({ providers }: { providers: string[] }) {
 export default function ProfileView({ profile, stats, providers, onNavigate }: ProfileViewProps) {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const profileImageUrl = useSignedImageUrl("profile-images", profile.profile_image);
 
   const handleLogout = useCallback(async () => {
     const supabase = createClient();
@@ -110,10 +112,10 @@ export default function ProfileView({ profile, stats, providers, onNavigate }: P
           {/* 아바타 + 수정 버튼 */}
           <div className="mb-4 flex justify-center">
             <div className="relative inline-block">
-              {profile.profile_image ? (
+              {profileImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={profile.profile_image}
+                  src={profileImageUrl}
                   alt={profile.nickname ?? "프로필"}
                   className="h-19 w-19 rounded-full object-cover ring-2 ring-border"
                 />

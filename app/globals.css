@@ -70,7 +70,7 @@ body {
   width: 100%;
   max-width: var(--app-max-width);
   margin: 0 auto;
-  height: 100dvh;
+  min-height: 100dvh;
   background: var(--color-surface);
   display: flex;
   flex-direction: column;

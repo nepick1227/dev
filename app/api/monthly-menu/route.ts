@@ -4,6 +4,8 @@ import {
   getPreviousMonthWindow,
   type MonthlyMenuRecord,
 } from "@/lib/monthly-menu";
+import { checkRateLimit, readJsonBody } from "@/lib/security/http";
+import { createSignedImageUrl } from "@/lib/supabase/storage";
 
 const MAX_GENERATIONS = 2;
 const IS_UNLIMITED_DEV = process.env.NODE_ENV === "development";
@@ -16,18 +18,25 @@ interface RecordRow {
   stores: { name: string } | { name: string }[] | null;
 }
 
-function toMonthlyMenuRecords(rows: RecordRow[]): MonthlyMenuRecord[] {
-  return rows.flatMap((row) => {
+async function toMonthlyMenuRecords(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rows: RecordRow[]
+): Promise<MonthlyMenuRecord[]> {
+  const records = await Promise.all(rows.flatMap(async (row) => {
     const store = Array.isArray(row.stores) ? row.stores[0] : row.stores;
     if (!store || !row.image_url) return [];
+    const imageUrl = await createSignedImageUrl(supabase, "record-images", row.image_url);
+    if (!imageUrl) return [];
     return [{
       id: row.id,
       visitedAt: row.visited_at,
       comment: row.comment,
-      imageUrl: row.image_url,
+      imageUrl,
       storeName: store.name,
     }];
-  });
+  }));
+
+  return records.flat();
 }
 
 async function getAuthenticatedContext() {
@@ -36,7 +45,13 @@ async function getAuthenticatedContext() {
   return { supabase, user };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rateLimited = checkRateLimit(req, "monthly-menu-status", {
+    limit: 120,
+    windowMs: 60_000,
+  });
+  if (rateLimited) return rateLimited;
+
   const { supabase, user } = await getAuthenticatedContext();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
@@ -65,7 +80,7 @@ export async function GET() {
     return NextResponse.json({ error: "전월 기록을 불러오지 못했습니다." }, { status: 500 });
   }
 
-  const records = toMonthlyMenuRecords((recordRows ?? []) as unknown as RecordRow[]);
+  const records = await toMonthlyMenuRecords(supabase, (recordRows ?? []) as unknown as RecordRow[]);
   const generationCount = usage?.generation_count ?? 0;
   const afterFifth = month.currentDay >= 5;
   const hasEnoughRecords = records.length >= 3;
@@ -90,12 +105,20 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  const rateLimited = checkRateLimit(req, "monthly-menu-seen", {
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (rateLimited) return rateLimited;
+
   const { supabase, user } = await getAuthenticatedContext();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as { action?: string } | null;
+  const { data: body, error: bodyError } = await readJsonBody<{ action?: string }>(req, 1024);
+  if (bodyError) return bodyError;
+
   if (body?.action !== "seen") {
     return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
   }

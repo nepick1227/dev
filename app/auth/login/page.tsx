@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Spinner from "@/components/ui/Spinner";
 import { NepickLogo } from "@/components/ui/icons";
-import { getCurrentPosition } from "@/lib/kakao/map";
 
 const LAST_PROVIDER_KEY = "nepick_last_provider";
 
@@ -170,8 +169,6 @@ function LoginContent() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setLastProviderState(getLastProvider());
-      // 로그인 중 백그라운드에서 GPS 워밍업 → 홈 진입 시 캐시 활용
-      getCurrentPosition();
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
@@ -187,8 +184,12 @@ function LoginContent() {
   const errorMessage =
     errorParam === "account_deleted"
       ? "탈퇴 후 30일 이내에는 동일 계정으로 재가입이 불가합니다."
+      : errorParam === "provider_conflict"
+      ? "이미 다른 로그인 방식으로 가입된 이메일입니다. 기존 로그인 방식으로 로그인해 주세요."
       : errorParam === "login_failed"
       ? "로그인에 실패했습니다. 다시 시도해 주세요."
+      : errorParam === "auth_failed"
+      ? "로그인 인증에 실패했습니다. 다시 시도해 주세요."
       : null;
 
   const handleOAuthLogin = useCallback(async (provider: "kakao" | "google") => {
