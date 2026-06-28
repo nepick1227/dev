@@ -199,7 +199,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
         }
       }, 800);
     } catch (err) {
-      console.error("[ProfileEdit]", err);
+      console.error("[ProfileEdit]", err instanceof Error ? err.message : "unknown error");
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);

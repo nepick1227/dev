@@ -56,6 +56,7 @@ async function searchKakaoPlaces(body: ResolveStoreBody, includeCoordinates: boo
         Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
       },
       cache: "no-store",
+      signal: AbortSignal.timeout(5000),
     }
   );
 

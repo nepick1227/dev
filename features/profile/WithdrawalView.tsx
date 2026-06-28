@@ -70,7 +70,7 @@ export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
       // signOut은 done 페이지에서 처리 — 여기서 하면 auth 상태 변경 이벤트가 가로챔
       window.location.replace("/profile/withdrawal/done");
     } catch (err) {
-      console.error("[Withdrawal]", err);
+      console.error("[Withdrawal]", err instanceof Error ? err.message : "unknown error");
       showToast("탈퇴 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
       setIsSubmitting(false);
     }
