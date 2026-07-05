@@ -65,8 +65,6 @@ const nextConfig: NextConfig = {
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com",
           "https://analytics.google.com",
-          "ws:",
-          "wss:",
         ].join(" "),
       ].join("; ");
 
