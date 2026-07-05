@@ -1,7 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const PUBLIC_ASSET_PATHS = new Set([
+  "/robots.txt",
+  "/sitemap.xml",
+  "/site.webmanifest",
+  "/favicon.ico",
+  "/icon.png",
+  "/apple-icon.png",
+  "/og-image.png",
+]);
+
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (PUBLIC_ASSET_PATHS.has(pathname) || pathname.startsWith("/brand/")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -29,8 +45,6 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
-  const { pathname } = request.nextUrl;
-
   // /auth/*, /api/auth/*, /api/kakao-search 경로는 항상 허용
   if (
     pathname.startsWith("/auth") ||
@@ -54,6 +68,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

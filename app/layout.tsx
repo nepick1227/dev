@@ -3,17 +3,45 @@ import Script from "next/script";
 import "./globals.css";
 
 const GTM_ID = "GTM-PD37QHP2";
+const siteUrl = new URL("https://nepick.kr");
 
 export const metadata: Metadata = {
+  metadataBase: siteUrl,
   title: "NePick — 나만의 맛집 기록",
   description: "방문한 맛집과 카페를 기록하고, 내 취향에 맞는 맛집을 발견하세요.",
   keywords: ["맛집", "카페", "기록", "추천", "NePick", "네픽"],
+  alternates: {
+    canonical: "/",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+  },
+  manifest: "/site.webmanifest",
   openGraph: {
     title: "NePick — 나만의 맛집 기록",
     description: "방문한 맛집과 카페를 기록하고, 내 취향에 맞는 맛집을 발견하세요.",
+    url: "/",
     siteName: "NePick",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "NePick — 나만의 맛집 기록",
+      },
+    ],
     locale: "ko_KR",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NePick — 나만의 맛집 기록",
+    description: "방문한 맛집과 카페를 기록하고, 내 취향에 맞는 맛집을 발견하세요.",
+    images: ["/og-image.png"],
   },
 };
 
