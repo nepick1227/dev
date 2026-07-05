@@ -188,7 +188,7 @@ export function ShareIcon({ size = 12, color = "currentColor" }: { size?: number
 
 export function NepickLogo({ size = 80 }: { size?: number }) {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/logo.png" alt="네픽 로고" width={size} height={size} style={{ objectFit: "contain" }} />;
+  return <img src="/brand/nepick-logo.svg" alt="네픽 로고" width={size} height={size} style={{ objectFit: "contain" }} />;
 }
 
 export function CafeIcon({ size = 20, color = "currentColor", className }: IconProps) {
