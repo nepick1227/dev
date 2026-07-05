@@ -1,0 +1,24 @@
+{
+  "name": "NePick",
+  "short_name": "NePick",
+  "description": "방문한 맛집과 카페를 기록하고, 내 취향에 맞는 맛집을 발견하세요.",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAFAFA",
+  "theme_color": "#D32F2F",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/nepick-symbol-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
