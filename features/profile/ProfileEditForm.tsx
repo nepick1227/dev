@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 import Textarea from "@/components/ui/Textarea";
 import { UserIcon, CameraIcon } from "@/components/ui/icons";
 import DatePicker from "@/components/ui/DatePicker";
+import { getStorageImagePath } from "@/lib/supabase/storage";
 import { validateNickname, validateIntro, validateImageFile } from "@/utils/validation";
 import type { Profile, ProfileUpdate } from "@/types/database";
 
@@ -188,6 +189,15 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
           return;
         }
         throw error;
+      }
+
+      // 교체(확장자 변경)나 제거로 더 이상 참조되지 않는 기존 파일 정리 — 실패해도 저장은 유지
+      const previousPath = getStorageImagePath(profile.profile_image, "profile-images");
+      if (previousPath && previousPath !== profileImageUrl) {
+        const { error: cleanupError } = await supabase.storage
+          .from("profile-images")
+          .remove([previousPath]);
+        if (cleanupError) console.error("[ProfileImageCleanup]", cleanupError.message);
       }
 
       showToast("프로필이 업데이트되었습니다");

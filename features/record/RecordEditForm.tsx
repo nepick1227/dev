@@ -12,11 +12,23 @@ import Textarea from "@/components/ui/Textarea";
 import { MapPinIcon, CameraIcon, TrashIcon, EditIcon } from "@/components/ui/icons";
 import DatePicker from "@/components/ui/DatePicker";
 import TimePicker from "@/components/ui/TimePicker";
+import { getStorageImagePath } from "@/lib/supabase/storage";
 import { validateImageFile, validateComment } from "@/utils/validation";
 import { recommendationLabels, recommendationEmojis, type RecommendationType } from "@/styles/tokens";
 import type { RecordWithStore } from "@/types/database";
 
 const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
+
+// DB 반영이 끝난 뒤 고아가 된 파일만 지우므로 실패해도 사용자 작업에는 영향이 없다
+async function removeOrphanedRecordImage(
+  supabase: ReturnType<typeof createClient>,
+  imageUrl: string | null
+) {
+  const path = getStorageImagePath(imageUrl, "record-images");
+  if (!path) return;
+  const { error } = await supabase.storage.from("record-images").remove([path]);
+  if (error) console.error("[RecordImageCleanup]", error.message);
+}
 
 interface RecordEditFormProps {
   record: RecordWithStore;
@@ -151,6 +163,10 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
 
       if (error) throw error;
 
+      if ((newImageFile || removeImage) && record.image_url) {
+        await removeOrphanedRecordImage(supabase, record.image_url);
+      }
+
       showToast("기록을 수정했어요!");
       setTimeout(() => {
         if (onSaved) {
@@ -197,6 +213,8 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
 
       if (error) throw error;
 
+      await removeOrphanedRecordImage(supabase, record.image_url);
+
       showToast("기록이 삭제되었습니다");
       setTimeout(() => {
         if (onSaved) {
@@ -211,7 +229,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
-  }, [isDeleting, record.id, onSaved, router, showToast]);
+  }, [isDeleting, record.id, record.image_url, onSaved, router, showToast]);
 
   return (
     <>
