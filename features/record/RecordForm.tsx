@@ -130,7 +130,7 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
         }
       }, 800);
     } catch (err) {
-      console.error("[RecordCreate]", err);
+      console.error("[RecordCreate]", err instanceof Error ? err.message : "unknown error");
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);

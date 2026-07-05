@@ -87,13 +87,20 @@ export default function RecordCard({
   const handleDelete = useCallback(async () => {
     try {
       const supabase = createClient();
-      const { error } = await supabase.from("records").delete().eq("id", record.id);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("not_authenticated");
+
+      const { error } = await supabase
+        .from("records")
+        .delete()
+        .eq("id", record.id)
+        .eq("user_id", user.id);
       if (error) throw error;
 
       onDelete?.();
       onShowToast?.("기록이 삭제되었어요");
     } catch (err) {
-      console.error("[RecordCardDelete]", err);
+      console.error("[RecordCardDelete]", err instanceof Error ? err.message : "unknown error");
       onShowToast?.("삭제에 실패했습니다");
     } finally {
       setConfirmDelete(false);
