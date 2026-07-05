@@ -44,7 +44,6 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
   const [gender, setGender] = useState<"male" | "female" | "unknown">(
     profile.gender ?? "unknown"
   );
-  const [isPublic, setIsPublic] = useState(profile.is_public ?? true);
 
   // ── 닉네임 중복 확인 ───────────────────────────────────
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
@@ -116,7 +115,6 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
     intro !== (profile.intro ?? "") ||
     birthDate !== (profile.birth_date ?? "") ||
     gender !== (profile.gender ?? "unknown") ||
-    isPublic !== (profile.is_public ?? true) ||
     imageFile !== null ||
     removeImage;
 
@@ -174,7 +172,6 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
         profile_image: profileImageUrl,
         birth_date: birthDate || null,
         gender,
-        is_public: isPublic,
       };
 
       const { error } = await supabase
@@ -222,7 +219,6 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
     removeImage,
     birthDate,
     gender,
-    isPublic,
     profile.id,
     profile.profile_image,
     onSaved,
@@ -357,32 +353,8 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
           </div>
         </div>
 
-        {/* 프로필 공개 여부 */}
-        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-4">
-          <div>
-            <p className="text-[15px] font-semibold tracking-tight text-text-primary">
-              프로필 공개
-            </p>
-            <p className="mt-0.5 text-[12px] tracking-tight text-text-secondary">
-              {isPublic ? "다른 사용자에게 프로필이 공개됩니다" : "나만 볼 수 있습니다"}
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isPublic}
-            onClick={() => setIsPublic((prev) => !prev)}
-            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 ${
-              isPublic ? "bg-primary" : "bg-border"
-            }`}
-          >
-            <span
-              className={`absolute left-0 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                isPublic ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-        </div>
+        {/* 프로필 공개 토글은 현재 RLS 정책상 본인만 조회 가능해 효과가 없어 숨김.
+            공개 프로필 기능 도입 시 is_public 컬럼과 함께 복원한다. */}
       </div>
 
       {/* 저장 버튼 */}
