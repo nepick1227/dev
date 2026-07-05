@@ -467,7 +467,7 @@ export default function TermsPage() {
         {/* 로고 & 타이틀 */}
         <div className="nepick-fade-in px-6 pb-8 pt-16">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="네픽 로고" width={48} height={48} className="mb-4 object-contain" />
+          <img src="/icon.png" alt="네픽 로고" width={64} height={64} className="mb-4 object-contain" />
           <h1 className="mb-2 text-[26px] font-extrabold leading-tight tracking-tight text-text-primary">
             서비스 이용 동의
           </h1>

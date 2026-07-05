@@ -218,7 +218,7 @@ function LoginContent() {
       {/* 로고 & 타이틀 */}
       <div className="app-content-narrow nepick-fade-in relative flex flex-1 flex-col items-center justify-center px-6">
         <div className="mb-5">
-          <NepickLogo size={60} />
+          <NepickLogo size={112} />
         </div>
         <h1 className="mb-2.5 text-[32px] font-extrabold tracking-[-1px]">
           <span className="text-primary">Ne</span>
