@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/http";
 
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
@@ -47,6 +48,12 @@ export async function GET(req: NextRequest) {
 
   if (!KAKAO_REST_API_KEY) {
     return NextResponse.json({ error: "장소 검색을 사용할 수 없습니다." }, { status: 503 });
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
   const { searchParams } = req.nextUrl;
