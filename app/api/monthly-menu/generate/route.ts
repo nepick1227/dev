@@ -15,6 +15,8 @@ const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-2.5-flash-i
 const MAX_GENERATIONS = 2;
 const IS_UNLIMITED_DEV = process.env.NODE_ENV === "development";
 const GEMINI_TIMEOUT_MS = 180_000;
+const GEMINI_RATE_LIMIT_MESSAGE =
+  "이미지 생성 요청이 잠시 많아졌어요. 잠시 후 다시 시도해 주세요.";
 
 export const maxDuration = 300;
 
@@ -33,6 +35,12 @@ interface RecordRow {
 interface GeminiMenuResponse {
   subtitle?: string;
   captions?: string[];
+}
+
+function getErrorStatus(message: string, prefix: string) {
+  if (!message.startsWith(prefix)) return null;
+  const status = Number(message.split(":")[1]);
+  return Number.isSafeInteger(status) ? status : null;
 }
 
 async function toMonthlyMenuRecords(
@@ -391,15 +399,28 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       );
     }
-    if (message.startsWith("gemini_image_request_failed:")) {
-      const status = message.split(":")[1];
+    const geminiImageStatus = getErrorStatus(message, "gemini_image_request_failed:");
+    if (geminiImageStatus) {
+      if (geminiImageStatus === 429) {
+        return NextResponse.json(
+          { error: GEMINI_RATE_LIMIT_MESSAGE },
+          { status: 429 }
+        );
+      }
       return NextResponse.json(
         {
           error: IS_UNLIMITED_DEV
-            ? `색연필 이미지 생성 요청에 실패했습니다. Gemini 상태 코드: ${status}`
+            ? `색연필 이미지 생성 요청에 실패했습니다. Gemini 상태 코드: ${geminiImageStatus}`
             : "색연필 이미지 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
         },
         { status: 502 }
+      );
+    }
+    const geminiTextStatus = getErrorStatus(message, "gemini_request_failed:");
+    if (geminiTextStatus === 429) {
+      return NextResponse.json(
+        { error: GEMINI_RATE_LIMIT_MESSAGE },
+        { status: 429 }
       );
     }
     if (errorName === "TimeoutError" || message.includes("timed out")) {

@@ -14,10 +14,12 @@ export default function AuthErrorPage() {
   // 뒤로가기 → 로그인 페이지로 강제 이동
   useEffect(() => {
     window.history.pushState(null, "", window.location.href);
-    const handlePopState = () => router.replace("/auth/login");
+    const handlePopState = () => {
+      window.location.replace("/auth/signout?error=auth_failed");
+    };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [router]);
+  }, []);
 
   const handleRefresh = async () => {
     if (isRefreshing) return;

@@ -52,7 +52,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/kakao-search")
   ) {
     // 이미 로그인된 유저가 /auth/login 접근 시 홈으로
-    if (pathname === "/auth/login" && user) {
+    if (pathname === "/auth/login" && user && !request.nextUrl.searchParams.has("error")) {
       return NextResponse.redirect(new URL("/home", request.url));
     }
     return supabaseResponse;

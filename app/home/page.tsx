@@ -40,7 +40,7 @@ function ProfileGuard() {
         .select("nickname")
         .eq("id", user.id)
         .maybeSingle();
-      if (!profile?.nickname) router.replace("/auth/terms");
+      if (!profile?.nickname) router.replace("/auth/signout?error=auth_failed");
     });
   }, [router]);
 

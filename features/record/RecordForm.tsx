@@ -26,6 +26,7 @@ interface RecordFormProps {
   onContentChange?: (hasContent: boolean) => void;
   initialPlace?: KakaoPlace | null;
   onSaved?: () => void;
+  actionPlacement?: "fixed" | "contained";
 }
 
 async function resolveStoreId(place: KakaoPlace) {
@@ -41,7 +42,8 @@ async function resolveStoreId(place: KakaoPlace) {
   });
 
   if (!response.ok) {
-    throw new Error("store_resolve_failed");
+    const data = await response.json().catch(() => null) as { error?: string } | null;
+    throw new Error(data?.error ?? "가게 정보를 확인하지 못했습니다.");
   }
 
   const data = await response.json() as { storeId?: number };
@@ -52,7 +54,45 @@ async function resolveStoreId(place: KakaoPlace) {
   return data.storeId;
 }
 
-export default function RecordForm({ onContentChange, initialPlace, onSaved }: RecordFormProps) {
+function getRecordCreateErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+
+  if (message.includes("로그인이 필요")) {
+    return "로그인이 필요합니다. 다시 로그인해 주세요.";
+  }
+  if (
+    message.includes("가게") ||
+    message.includes("장소") ||
+    message.includes("카카오")
+  ) {
+    return message;
+  }
+  if (
+    message.includes("record-images") ||
+    message.includes("bucket") ||
+    message.includes("storage") ||
+    message.includes("mime") ||
+    message.includes("size")
+  ) {
+    return "사진 업로드에 실패했습니다. 이미지 형식과 용량을 확인해 주세요.";
+  }
+  if (
+    message.includes("row-level security") ||
+    message.includes("violates") ||
+    message.includes("permission")
+  ) {
+    return "기록 저장 권한을 확인하지 못했습니다. 다시 로그인해 주세요.";
+  }
+
+  return "저장에 실패했습니다. 다시 시도해 주세요.";
+}
+
+export default function RecordForm({
+  onContentChange,
+  initialPlace,
+  onSaved,
+  actionPlacement = "fixed",
+}: RecordFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -95,6 +135,8 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
+      const storeId = await resolveStoreId(selectedPlace);
+
       let imagePath: string | null = null;
       if (imageFile) {
         const ext = imageFile.name.split(".").pop() ?? "jpg";
@@ -106,8 +148,6 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
 
         imagePath = filePath;
       }
-
-      const storeId = await resolveStoreId(selectedPlace);
 
       const recordData: RecordInsert = {
         user_id: user.id,
@@ -131,7 +171,7 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
       }, 800);
     } catch (err) {
       console.error("[RecordCreate]", err instanceof Error ? err.message : "unknown error");
-      showToast("저장에 실패했습니다. 다시 시도해 주세요.");
+      showToast(getRecordCreateErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +193,7 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto pb-32">
+      <div className={`hide-scrollbar flex-1 overflow-y-auto ${actionPlacement === "fixed" ? "pb-32" : "pb-6"}`}>
         <div className="app-content-narrow px-5 pt-6">
           {/* 이미지 업로드 */}
           <section className="mb-6">
@@ -254,7 +294,14 @@ export default function RecordForm({ onContentChange, initialPlace, onSaved }: R
       </div>
 
       {/* 저장 버튼 */}
-      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div
+        className={[
+          "app-fixed-bar safe-area-pb-lg border-t border-border bg-surface px-5 pt-3",
+          actionPlacement === "fixed"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            : "relative shrink-0",
+        ].join(" ")}
+      >
         <Button
           fullWidth
           isLoading={isSubmitting}
