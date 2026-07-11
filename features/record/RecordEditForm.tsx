@@ -34,13 +34,19 @@ interface RecordEditFormProps {
   record: RecordWithStore;
   onHasChanges?: (hasChanges: boolean) => void;
   onSaved?: () => void;
+  actionPlacement?: "fixed" | "contained";
 }
 
 /**
  * 기록 수정 폼 컴포넌트
  * 가게 정보는 수정 불가, 방문일시/추천도/코멘트/이미지만 수정 가능
  */
-export default function RecordEditForm({ record, onHasChanges, onSaved }: RecordEditFormProps) {
+export default function RecordEditForm({
+  record,
+  onHasChanges,
+  onSaved,
+  actionPlacement = "fixed",
+}: RecordEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -271,7 +277,7 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
         </p>
       </Modal>
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto pb-32">
+      <div className={`hide-scrollbar flex-1 overflow-y-auto ${actionPlacement === "fixed" ? "pb-32" : "pb-6"}`}>
         <input
           ref={imageInputRef}
           type="file"
@@ -393,7 +399,14 @@ export default function RecordEditForm({ record, onHasChanges, onSaved }: Record
       </div>
 
       {/* 저장/삭제 버튼 */}
-      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div
+        className={[
+          "app-fixed-bar safe-area-pb-lg border-t border-border bg-surface px-5 pt-3",
+          actionPlacement === "fixed"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            : "relative shrink-0",
+        ].join(" ")}
+      >
         <div className="flex gap-2.5">
           <button
             onClick={() => setShowDeleteModal(true)}

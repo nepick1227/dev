@@ -12,17 +12,25 @@ export async function GET(request: NextRequest) {
 
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const providerError = searchParams.get("error");
   const next = searchParams.get("next") ?? "/home";
+  const supabase = await createClient();
 
-  if (!code) {
-    return NextResponse.redirect(`${origin}/auth/login?error=login_failed`);
+  if (providerError) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(`${origin}/auth/error`);
   }
 
-  const supabase = await createClient();
+  if (!code) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(`${origin}/auth/login`);
+  }
+
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.user) {
     console.error("[Auth Callback]", error?.message, error?.status);
+    await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/auth/login?error=login_failed`);
   }
 

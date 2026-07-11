@@ -6,6 +6,8 @@ import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
 import type { StoreInsert } from "@/types/database";
 
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 interface ResolveStoreBody {
   kakaoId?: string;
@@ -84,9 +86,13 @@ async function findVerifiedKakaoPlace(body: ResolveStoreBody) {
 }
 
 async function findOrCreateStoreId(storeData: StoreInsert) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("store_admin_config_missing");
+  }
+
   const adminClient = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY
   );
 
   const { data: existingStore, error: selectError } = await adminClient
@@ -129,6 +135,13 @@ export async function POST(req: NextRequest) {
 
   const query = body?.query?.trim() ?? "";
 
+  if (!KAKAO_REST_API_KEY) {
+    return NextResponse.json(
+      { error: "장소 검증 설정이 누락되었습니다." },
+      { status: 503 }
+    );
+  }
+
   if (
     !body?.kakaoId ||
     !/^\d{1,40}$/.test(body.kakaoId) ||
@@ -167,7 +180,20 @@ export async function POST(req: NextRequest) {
     const storeId = await findOrCreateStoreId(storeData);
     return NextResponse.json({ storeId });
   } catch (error) {
-    console.error("[StoreResolve]", error instanceof Error ? error.message : "unknown_error");
+    const message = error instanceof Error ? error.message : "unknown_error";
+    console.error("[StoreResolve]", message);
+    if (message === "store_admin_config_missing") {
+      return NextResponse.json(
+        { error: "가게 저장 설정이 누락되었습니다." },
+        { status: 503 }
+      );
+    }
+    if (message.startsWith("kakao_search_failed:429")) {
+      return NextResponse.json(
+        { error: "장소 확인 요청이 잠시 많아졌어요. 잠시 후 다시 시도해 주세요." },
+        { status: 429 }
+      );
+    }
     return NextResponse.json({ error: "가게 정보를 확인하지 못했습니다." }, { status: 500 });
   }
 }

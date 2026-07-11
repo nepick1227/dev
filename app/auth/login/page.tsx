@@ -175,10 +175,15 @@ function LoginContent() {
 
   useEffect(() => {
     const supabase = createClient();
+    if (errorParam) {
+      void supabase.auth.signOut();
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/home");
     });
-  }, [router]);
+  }, [errorParam, router]);
 
   // URL 에러 파라미터를 직접 메시지로 변환 (effect 불필요)
   const errorMessage =
@@ -217,15 +222,11 @@ function LoginContent() {
 
       {/* 로고 & 타이틀 */}
       <div className="app-content-narrow nepick-fade-in relative flex flex-1 flex-col items-center justify-center px-6">
-        <div className="mb-5">
+        <div className="mb-3">
           <NepickLogo size={112} />
         </div>
-        <h1 className="mb-2.5 text-[32px] font-extrabold tracking-[-1px]">
-          <span className="text-primary">Ne</span>
-          <span className="text-text-primary">Pick</span>
-        </h1>
-        <p className="mb-4 text-center text-[15px] tracking-tight text-text-primary">
-          내가 직접 남기는 믿을 만한{" "}
+        <p className="mb-3 text-center text-[15px] tracking-tight text-text-primary">
+          내가 직접 남기는 믿을만한{" "}
           <span className="font-bold text-primary">맛집 기록</span>
         </p>
         <div className="h-0.5 w-8 rounded-full bg-primary" />

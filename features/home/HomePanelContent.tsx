@@ -239,7 +239,7 @@ function ProfilePanel({ onNavigate }: { onNavigate: (href: string) => void }) {
 function RecordCreatePanel({ onBack, onSaved }: { onBack: () => void; onSaved: () => void }) {
   return (
     <PanelShell title="기록 추가" onBack={onBack}>
-      <RecordForm onSaved={onSaved} />
+      <RecordForm onSaved={onSaved} actionPlacement="contained" />
     </PanelShell>
   );
 }
@@ -293,7 +293,11 @@ function RecordEditPanel({
 
   return (
     <PanelShell title="기록 수정" onBack={onBack}>
-      {isLoading ? <PanelLoading /> : record ? <RecordEditForm record={record} onSaved={onSaved} /> : null}
+      {isLoading ? (
+        <PanelLoading />
+      ) : record ? (
+        <RecordEditForm record={record} onSaved={onSaved} actionPlacement="contained" />
+      ) : null}
     </PanelShell>
   );
 }

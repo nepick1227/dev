@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
+import { NepickLogo } from "@/components/ui/icons";
 
 // ── 약관 데이터 ──────────────────────────────────────
 const TERMS_CONTENT = {
@@ -430,6 +431,32 @@ export default function TermsPage() {
   const allRequired = requiredKeys.every((k) => agreements[k]);
   const allChecked = Object.values(agreements).every(Boolean);
 
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+
+    const abortTermsFlow = () => {
+      window.location.replace("/auth/signout?error=auth_failed");
+    };
+
+    const handlePopState = () => {
+      abortTermsFlow();
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      const [navigation] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+      if (event.persisted || navigation?.type === "back_forward") {
+        abortTermsFlow();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
+
   const handleAllToggle = useCallback(() => {
     const next = !allChecked;
     setAgreements({ service: next, privacy: next, location: next, marketing: next });
@@ -466,8 +493,9 @@ export default function TermsPage() {
       <div className="flex flex-1 flex-col">
         {/* 로고 & 타이틀 */}
         <div className="nepick-fade-in px-6 pb-8 pt-16">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.png" alt="네픽 로고" width={64} height={64} className="mb-4 object-contain" />
+          <div className="mb-4">
+            <NepickLogo size={88} />
+          </div>
           <h1 className="mb-2 text-[26px] font-extrabold leading-tight tracking-tight text-text-primary">
             서비스 이용 동의
           </h1>

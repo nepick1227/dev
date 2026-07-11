@@ -92,12 +92,24 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
+  const providerError = searchParams.get("error");
+  const supabase = await createServerSupabaseClient();
+
+  if (providerError) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(`${origin}/auth/error`);
+  }
+
+  if (!code) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(`${origin}/auth/login`);
+  }
 
   // CSRF 검증
   const cookieStore = await cookies();
   const savedState = cookieStore.get("naver_oauth_state")?.value;
 
-  if (!code || !state || state !== savedState) {
+  if (!state || state !== savedState) {
     return NextResponse.redirect(`${origin}/auth/error`);
   }
 
@@ -176,7 +188,6 @@ export async function GET(request: NextRequest) {
     if (linkError || !linkData) throw linkError;
 
     const tokenHash = linkData.properties.hashed_token;
-    const supabase = await createServerSupabaseClient();
     const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: "magiclink",
