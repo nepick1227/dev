@@ -45,8 +45,11 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
-  // /auth/*, /api/auth/*, /api/kakao-search 경로는 항상 허용
+  // "/", /auth/*, /api/auth/*, /api/kakao-search 경로는 항상 허용
+  // "/"는 서버에서 307로 리다이렉트하지 않고 200으로 응답해야
+  // AdSense 소유권 확인 등 외부 크롤러가 <head> 태그를 읽을 수 있음
   if (
+    pathname === "/" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/kakao-search")
