@@ -3,6 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 
 const GTM_ID = "GTM-PD37QHP2";
+const ADSENSE_CLIENT_ID = "ca-pub-6330960739849260";
 const siteUrl = new URL("https://nepick.kr");
 
 export const metadata: Metadata = {
@@ -62,6 +63,12 @@ export default function RootLayout({
   return (
     <html lang="ko" className="h-full">
       <body className="min-h-full bg-surface antialiased">
+        <Script
+          async
+          strategy="beforeInteractive"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+          crossOrigin="anonymous"
+        />
         <Script
           id="gtm-script"
           strategy="beforeInteractive"

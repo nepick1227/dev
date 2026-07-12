@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
           "https://dapi.kakao.com",
           "https://*.daumcdn.net",
           "https://www.googletagmanager.com",
+          "https://*.googlesyndication.com",
+          "https://*.doubleclick.net",
+          "https://*.google.com",
         ].join(" "),
         [
           "style-src",
@@ -51,6 +54,9 @@ const nextConfig: NextConfig = {
           "https://*.kakaocdn.net",
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com",
+          "https://*.googlesyndication.com",
+          "https://*.doubleclick.net",
+          "https://*.gstatic.com",
         ].join(" "),
         [
           "connect-src",
@@ -65,6 +71,15 @@ const nextConfig: NextConfig = {
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com",
           "https://analytics.google.com",
+          "https://*.googlesyndication.com",
+          "https://*.doubleclick.net",
+          "https://*.google.com",
+        ].join(" "),
+        [
+          "frame-src",
+          "https://*.googlesyndication.com",
+          "https://*.doubleclick.net",
+          "https://*.google.com",
         ].join(" "),
       ].join("; ");
 
