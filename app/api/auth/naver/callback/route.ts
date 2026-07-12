@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
 
   if (providerError) {
+    console.error(`[Auth] naver_callback_failed reason=provider_error provider_error=${providerError}`);
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/auth/error`);
   }
@@ -110,6 +111,7 @@ export async function GET(request: NextRequest) {
   const savedState = cookieStore.get("naver_oauth_state")?.value;
 
   if (!state || state !== savedState) {
+    console.error("[Auth] naver_callback_failed reason=state_mismatch");
     return NextResponse.redirect(`${origin}/auth/error`);
   }
 
@@ -174,6 +176,7 @@ export async function GET(request: NextRequest) {
         email
       );
       if (!isSameNaverUser(existingUser, naverUser.id)) {
+        console.error("[Auth] naver_login_rejected reason=provider_conflict");
         return redirectWithClearedState(`${origin}/auth/login?error=provider_conflict`);
       }
     }
@@ -217,7 +220,7 @@ export async function GET(request: NextRequest) {
     response.cookies.delete("naver_oauth_state");
     return response;
   } catch (error) {
-    console.error("[Naver Auth]", error instanceof Error ? error.message : "unknown_error");
+    console.error("[Auth] naver_callback_failed reason=exception", error instanceof Error ? error.message : "unknown_error");
     return NextResponse.redirect(`${origin}/auth/error`);
   }
 }

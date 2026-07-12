@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   if (providerError) {
+    console.error(`[Auth] oauth_callback_failed reason=provider_error provider_error=${providerError}`);
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/auth/error`);
   }
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.user) {
-    console.error("[Auth Callback]", error?.message, error?.status);
+    console.error("[Auth] login_failed reason=exchange_failed", error?.message, error?.status);
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/auth/login?error=login_failed`);
   }

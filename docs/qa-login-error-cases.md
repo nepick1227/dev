@@ -15,7 +15,11 @@ QA 01 로그인 시트의 에러 케이스(3-1 ~ 3-4, 2-7)를 재현하는 방�
 | 3-1 | `localhost:3000/auth/login?error=account_deleted` | 탈퇴 후 30일 이내에는 동일 계정으로 재가입이 불가합니다. |
 | 3-2 | `localhost:3000/auth/login?error=provider_conflict` | 이미 다른 로그인 방식으로 가입된 이메일입니다. 기존 로그인 방식으로 로그인해 주세요. |
 | 3-3 | `localhost:3000/auth/login?error=login_failed` | 로그인에 실패했습니다. 다시 시도해 주세요. |
-| 3-4 | `localhost:3000/auth/login?error=auth_failed` | 로그인 인증에 실패했습니다. 다시 시도해 주세요. |
+| 3-4 | `localhost:3000/auth/login?error=auth_failed` | 로그인에 실패했습니다. 다시 시도해 주세요. (3-3과 통합) |
+
+- 문구는 최초 진입 시 1회 표시되고, **에러 파라미터는 주소에서 즉시 제거**됩니다 (새로고침 시 재표시 안 됨 — 의도된 동작).
+- 세부 실패 사유는 서버 로그로 남습니다: Vercel → Functions 로그(또는 로컬 dev 터미널)에서 `[Auth]` 검색.
+  형식: `[Auth] login_failed reason=exchange_failed`, `[Auth] naver_callback_failed reason=state_mismatch` 등
 
 ## 실제 플로우로 재현 (E2E 검증용)
 

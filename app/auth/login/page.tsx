@@ -163,6 +163,8 @@ function LoginContent() {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [lastProvider, setLastProviderState] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  // URL 에러 파라미터는 최초 진입 시 1회만 읽음 (이후 주소에서 제거)
+  const [initialError] = useState<string | null>(errorParam);
 
   const isLoading = loadingProvider !== null;
 
@@ -175,26 +177,26 @@ function LoginContent() {
 
   useEffect(() => {
     const supabase = createClient();
-    if (errorParam) {
+    if (initialError) {
       void supabase.auth.signOut();
+      // 표시 후 주소에서 에러 파라미터 제거 — 새로고침·북마크 시 재표시/강제 로그아웃 방지
+      window.history.replaceState(null, "", window.location.pathname);
       return;
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/home");
     });
-  }, [errorParam, router]);
+  }, [initialError, router]);
 
   // URL 에러 파라미터를 직접 메시지로 변환 (effect 불필요)
   const errorMessage =
-    errorParam === "account_deleted"
+    initialError === "account_deleted"
       ? "탈퇴 후 30일 이내에는 동일 계정으로 재가입이 불가합니다."
-      : errorParam === "provider_conflict"
+      : initialError === "provider_conflict"
       ? "이미 다른 로그인 방식으로 가입된 이메일입니다. 기존 로그인 방식으로 로그인해 주세요."
-      : errorParam === "login_failed"
+      : initialError === "login_failed" || initialError === "auth_failed"
       ? "로그인에 실패했습니다. 다시 시도해 주세요."
-      : errorParam === "auth_failed"
-      ? "로그인 인증에 실패했습니다. 다시 시도해 주세요."
       : null;
 
   const handleOAuthLogin = useCallback(async (provider: "kakao" | "google") => {
