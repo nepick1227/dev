@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # NePick 프로젝트 — Claude 코드 규칙
 
 > Claude Code가 이 프로젝트에서 코드를 생성할 때 자동으로 참조하는 규칙 파일입니다.
