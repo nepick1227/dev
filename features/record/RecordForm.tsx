@@ -149,8 +149,12 @@ export default function RecordForm({
         imagePath = filePath;
       }
 
+      // 가게 검증·이미지 업로드 사이 세션이 만료됐을 수 있어 저장 직전 사용자를 다시 확인한다.
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error("로그인이 필요합니다");
+
       const recordData: RecordInsert = {
-        user_id: user.id,
+        user_id: currentUser.id,
         store_id: storeId,
         visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
         recommendation,
@@ -170,7 +174,12 @@ export default function RecordForm({
         }
       }, 800);
     } catch (err) {
-      console.error("[RecordCreate]", err instanceof Error ? err.message : "unknown error");
+      const code = err && typeof err === "object" && "code" in err ? err.code : undefined;
+      console.error(
+        "[RecordCreate]",
+        err instanceof Error ? err.message : "unknown error",
+        code ? `code=${code}` : ""
+      );
       showToast(getRecordCreateErrorMessage(err));
     } finally {
       setIsSubmitting(false);

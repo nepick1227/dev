@@ -54,7 +54,7 @@ export type RecommendationType = "recommend" | "neutral" | "not_recommend";
 
 // ── 카테고리 ───────────────────────────────────────────
 export const categoryLabels: Record<StoreCategory, string> = {
-  restaurant: "맛집",
+  restaurant: "음식점",
   cafe: "카페",
 };
 
