@@ -143,12 +143,9 @@ function LoginBackground() {
 }
 
 // ── 최근 로그인 뱃지 ─────────────────────────────────
-function RecentBadge({ borderColor, textColor }: { borderColor: string; textColor: string }) {
+function RecentBadge() {
   return (
-    <div
-      className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-tight"
-      style={{ borderColor, color: textColor }}
-    >
+    <div className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-tight text-text-secondary">
       ✦ 최근 로그인
     </div>
   );
@@ -226,10 +223,9 @@ function LoginContent() {
           <NepickLogo size={112} />
         </div>
         <p className="mb-3 text-center text-[15px] tracking-tight text-text-primary">
-          내가 직접 남기는 믿을만한{" "}
+          내가 직접 남기는 믿을 만한{" "}
           <span className="font-bold text-primary">맛집 기록</span>
         </p>
-        <div className="h-0.5 w-8 rounded-full bg-primary" />
       </div>
 
       {/* 로그인 버튼 영역 */}
@@ -242,7 +238,7 @@ function LoginContent() {
         {/* 카카오 */}
         <div className={`relative ${lastProvider === "kakao" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "kakao" && !isLoading && (
-            <RecentBadge borderColor="#B8860B" textColor="#B8860B" />
+            <RecentBadge />
           )}
           <button
             onClick={() => handleOAuthLogin("kakao")}
@@ -269,7 +265,7 @@ function LoginContent() {
         {/* 네이버 */}
         <div className={`relative ${lastProvider === "naver" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "naver" && !isLoading && (
-            <RecentBadge borderColor="#03C75A" textColor="#03C75A" />
+            <RecentBadge />
           )}
           <button
             onClick={() => {
@@ -297,7 +293,7 @@ function LoginContent() {
         {/* 구글 */}
         <div className={`relative ${lastProvider === "google" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "google" && !isLoading && (
-            <RecentBadge borderColor="#4285F4" textColor="#4285F4" />
+            <RecentBadge />
           )}
           <button
             onClick={() => handleOAuthLogin("google")}
