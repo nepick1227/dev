@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import Spinner from "@/components/ui/Spinner";
-import { NepickLogo } from "@/components/ui/icons";
+import { NepickLogo, MapPinIcon } from "@/components/ui/icons";
 
 const LAST_PROVIDER_KEY = "nepick_last_provider";
 
@@ -149,7 +149,7 @@ function RecentBadge({ color }: { color: string }) {
       className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-tight"
       style={{ borderColor: color, color }}
     >
-      ✦ 최근 로그인
+      <MapPinIcon size={11} /> 최근 로그인
     </div>
   );
 }
