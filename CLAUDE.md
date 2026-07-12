@@ -34,6 +34,27 @@ git checkout -b feat/<기능명>
 - **배포**: Vercel (nepick.kr)
 - **경로 별칭**: `@/*` → 프로젝트 루트 (`./`)
 
+## 개발 명령어
+
+```bash
+npm run dev      # 로컬 개발 서버 (localhost:3000)
+npm run build    # 프로덕션 빌드 (타입 체크 포함)
+npm run start    # 빌드 결과 실행
+npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
+```
+
+- 자동화된 테스트 스위트는 없습니다. 변경 후 최소 `npm run lint`와 `npm run build`로 검증합니다.
+- 의존성을 추가/변경했다면 `npm audit`도 함께 실행하고 결과를 커밋/PR 설명에 남깁니다 (`docs/security-qa-handoff.md` 참고).
+- 단일 페이지/기능만 확인하려면 `npm run dev` 후 해당 라우트를 직접 열어 QA 체크리스트(`docs/security-qa-handoff.md`의 "운영 QA 체크리스트")를 참고합니다.
+
+## 아키텍처 개요
+
+- **인증 게이트 (`proxy.ts`)**: Next.js 16의 `middleware.ts` 대체 파일로, 모든 요청이 이 파일을 거칩니다. Supabase 쿠키에서 세션을 읽어 `/auth/*`, `/api/auth/*`, `/api/kakao-search`를 제외한 모든 경로에서 비로그인 사용자를 `/auth/login`으로 리다이렉트합니다. 새 공개 라우트를 추가하면 `PUBLIC_ASSET_PATHS`나 경로 허용 목록도 함께 갱신해야 합니다.
+- **보안 헤더 (`next.config.ts`)**: 프로덕션 빌드에서만 CSP 등 보안 헤더를 주입합니다(`isDev`일 때는 미적용). 카카오맵/Supabase/GA 등 새 외부 도메인을 쓰면 이 파일의 CSP allowlist(`script-src`, `img-src`, `connect-src` 등)도 함께 수정해야 하며, 브라우저 Console/Network로 차단 여부를 확인합니다.
+- **API 라우트 (`app/api/`)**: `auth/naver`(OAuth 시작/콜백), `kakao-search`(카카오 장소 검색 프록시), `monthly-menu/generate`(Gemini 기반 월간 메뉴 생성), `stores/resolve`(카카오 place → `stores` 테이블 upsert). 비밀 API 키(`KAKAO_REST_API_KEY`, `NAVER_CLIENT_SECRET`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)는 이 서버 라우트들에서만 다루고 프론트로 내려보내지 않습니다.
+- **Supabase 스키마/RLS (`supabase/migrations/`)**: DB 스키마와 RLS 정책의 단일 소스입니다. 새 정책은 기존 migration을 수정하지 말고 새 파일을 추가합니다. `docs/security-qa-handoff.md`에 로컬 코드는 통과했지만 운영 DB에 아직 적용 안 됐을 수 있는 migration 목록이 있으니, 보안 관련 작업 전에 먼저 확인합니다.
+- **데이터/훅 레이어**: `features/*/api.ts`가 Supabase 쿼리를 감싸고(에러는 throw), `hooks/`(`use-kakao-map`, `use-kakao-search`, `use-map-stores`, `use-signed-image-url`, `use-toast`)가 지도·검색·서명 URL·토스트 등 여러 페이지에서 재사용하는 상태를 관리합니다.
+
 ## 디렉토리 구조
 
 ```
@@ -45,7 +66,9 @@ nepick/
 │   ├── api/
 │   │   ├── auth/naver/route.ts           # 네이버 OAuth 시작
 │   │   ├── auth/naver/callback/route.ts  # 네이버 OAuth 콜백
-│   │   └── kakao-search/route.ts         # 카카오 장소 검색 프록시
+│   │   ├── kakao-search/route.ts         # 카카오 장소 검색 프록시
+│   │   ├── monthly-menu/generate/route.ts # Gemini 기반 월간 메뉴 생성
+│   │   └── stores/resolve/route.ts       # 카카오 place → stores upsert
 │   ├── auth/
 │   │   ├── login/page.tsx
 │   │   ├── callback/route.ts
@@ -69,14 +92,17 @@ nepick/
 │   ├── layout/             # Header, BottomNav, PageContainer
 │   └── map/                # KakaoMap, MapMarker, BottomSheet
 ├── features/               # 페이지별 비즈니스 로직 + 전용 컴포넌트
-│   ├── auth/               # LoginForm, SignupForm, TermsAgreement
 │   ├── home/               # MapView, RankingSheet, StoreCard
 │   ├── record/             # RecordForm, StoreSearch, ImageUpload
 │   ├── mypick/             # Timeline, RecordCard, MonthFilter
+│   ├── monthly-menu/       # MonthlyMenuEvent
 │   └── profile/            # ProfileView, ProfileEditForm
 ├── hooks/                  # 커스텀 훅
-│   ├── use-kakao-map.ts    # 카카오맵 인스턴스
-│   └── use-toast.ts        # 토스트 메시지
+│   ├── use-kakao-map.ts        # 카카오맵 인스턴스
+│   ├── use-kakao-search.ts     # 카카오 장소 검색
+│   ├── use-map-stores.ts       # 지도에 표시할 가게 목록
+│   ├── use-signed-image-url.ts # private bucket signed URL
+│   └── use-toast.ts            # 토스트 메시지
 ├── lib/                    # 외부 서비스 클라이언트
 │   ├── supabase/
 │   │   ├── client.ts       # 브라우저용 (CSR)
@@ -284,21 +310,4 @@ chore: Supabase SDK 버전 업데이트
 
 - 상세 작업 리스트 및 전체 가이드: `NePick_작업리스트_코드규칙가이드.md`
 - DB 스키마 / 정책정의서: `NePick_정책정의서_v0.2.2.xlsx`
-
-
-## Git 브랜치 규칙 (필수)
-
-이 프로젝트는 **nepick1227/dev** 저장소이며 2인 팀으로 개발 중입니다.
-
-- **절대 `main` 브랜치에서 직접 작업 금지** — `main`은 배포 전용
-- 모든 작업은 `develop` 브랜치 또는 `develop`에서 분기한 feature 브랜치에서 시작
-- feature 브랜치 네이밍: `feat/<기능명>`, `fix/<버그명>`, `refactor/<대상>`
-- PR은 항상 `feature → develop` 방향으로 생성
-- `develop → main` 머지는 팀원과 합의 후 진행
-- 현재 브랜치가 `main`이면 즉시 `develop`으로 switch 후 작업
-
-```bash
-# 작업 시작 전 항상 실행
-git checkout develop
-git pull origin develop
-git checkout -b feat/<기능명>
+- 보안/QA 인수인계 체크리스트: `docs/security-qa-handoff.md`
