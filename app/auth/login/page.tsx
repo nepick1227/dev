@@ -143,9 +143,12 @@ function LoginBackground() {
 }
 
 // ── 최근 로그인 뱃지 ─────────────────────────────────
-function RecentBadge() {
+function RecentBadge({ color }: { color: string }) {
   return (
-    <div className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-tight text-text-secondary">
+    <div
+      className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-tight"
+      style={{ borderColor: color, color }}
+    >
       ✦ 최근 로그인
     </div>
   );
@@ -222,9 +225,8 @@ function LoginContent() {
         <div className="mb-3">
           <NepickLogo size={112} />
         </div>
-        <p className="mb-3 text-center text-[15px] tracking-tight text-text-primary">
-          내가 직접 남기는 믿을 만한{" "}
-          <span className="font-bold text-primary">맛집 기록</span>
+        <p className="mb-3 text-center text-[15px] tracking-tight text-text-secondary">
+          내가 직접 남기는 믿을 만한 맛집 기록
         </p>
       </div>
 
@@ -238,7 +240,7 @@ function LoginContent() {
         {/* 카카오 */}
         <div className={`relative ${lastProvider === "kakao" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "kakao" && !isLoading && (
-            <RecentBadge />
+            <RecentBadge color="#CA8A04" />
           )}
           <button
             onClick={() => handleOAuthLogin("kakao")}
@@ -265,7 +267,7 @@ function LoginContent() {
         {/* 네이버 */}
         <div className={`relative ${lastProvider === "naver" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "naver" && !isLoading && (
-            <RecentBadge />
+            <RecentBadge color="#03C75A" />
           )}
           <button
             onClick={() => {
@@ -293,7 +295,7 @@ function LoginContent() {
         {/* 구글 */}
         <div className={`relative ${lastProvider === "google" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "google" && !isLoading && (
-            <RecentBadge />
+            <RecentBadge color="#4285F4" />
           )}
           <button
             onClick={() => handleOAuthLogin("google")}
