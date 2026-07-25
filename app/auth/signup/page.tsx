@@ -55,7 +55,7 @@ function SignupContent() {
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>(null);
   const [nicknameMessage, setNicknameMessage] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState<Gender | null>("unknown");
+  const [gender, setGender] = useState<Gender | null>(null);
   const [intro, setIntro] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -232,7 +232,7 @@ function SignupContent() {
               type="text"
               value={nickname}
               onChange={(e) => handleNicknameChange(e.target.value)}
-              placeholder="2~12자, 특수문자는 _만 가능"
+              placeholder="2~12자, 특수문자는 _ . 만 가능"
               className={[
                 "h-14 w-full rounded-2xl border-[1.5px] bg-surface px-5 pr-12 text-[16px] tracking-tight text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary",
                 inputBorderClass,

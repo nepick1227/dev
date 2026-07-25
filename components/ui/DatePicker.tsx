@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 
 interface DatePickerProps {
@@ -39,11 +40,44 @@ export default function DatePicker({
     getYearRangeStart(parsed?.getFullYear() ?? new Date().getFullYear())
   );
   const ref = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  // 팝업을 body로 포털해 스크롤 컨테이너의 overflow 클리핑을 회피 (fixed 위치)
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; up: boolean } | null>(null);
+
+  const POPUP_MAX_H = 360;
+  const updatePosition = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom;
+    const up = spaceBelow < POPUP_MAX_H && r.top > spaceBelow;
+    setPos({
+      left: r.left,
+      width: r.width,
+      top: up ? r.top - 6 : r.bottom + 6,
+      up,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
 
   useEffect(() => {
     if (!isOpen) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        ref.current && !ref.current.contains(target) &&
+        popupRef.current && !popupRef.current.contains(target)
+      ) {
         setIsOpen(false);
         setViewMode("day");
       }
@@ -167,8 +201,17 @@ export default function DatePicker({
         </svg>
       </button>
 
-      {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-xl border border-border bg-white p-4 shadow-lg">
+      {isOpen && pos && createPortal(
+        <div
+          ref={popupRef}
+          style={{
+            position: "fixed",
+            left: pos.left,
+            top: pos.top,
+            width: pos.width,
+            transform: pos.up ? "translateY(-100%)" : undefined,
+          }}
+          className="z-50 max-h-90 overflow-y-auto rounded-xl border border-border bg-white p-4 shadow-lg">
           {/* 헤더 */}
           <div className="mb-3 flex items-center justify-between">
             <button type="button" onClick={handlePrev} className="rounded-lg p-1 active:bg-bg">
@@ -300,7 +343,8 @@ export default function DatePicker({
               })}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
