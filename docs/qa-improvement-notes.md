@@ -170,3 +170,20 @@ QA에서 NG(✕)로 잡혔으나 코드는 정상. 운영/개발 DB의 migration
 **수기 확인:**
 - 2-8 탈퇴 처리 실패 재현(어려움).
 - row 9 iOS Safari 카메라: permissions.query(camera) 미지원으로 항상 미설정 표시 가능 + getUserMedia로 카메라 잠깐 켜짐 → 실기기 확인/문구 검토.
+
+## [버그] 데스크탑 패널 하단 바 밀림 (프로필 편집/탈퇴)
+
+`.home-desktop-panel`에 transform이 있어 fixed 요소의 기준이 패널이 됨. ProfileEditForm/WithdrawalView는 무조건 `fixed left-1/2 -translate-x-1/2` 저장 바라 데스크탑 패널에서 화면 밖으로 밀림 (RecordForm은 actionPlacement="contained"로 회피하고 있었음).
+- **반영**: ProfileEditForm(fix/qa-08) + WithdrawalView(fix/qa-09)에 actionPlacement prop 추가, 데스크탑 패널에선 contained(relative in-flow). 모바일 페이지는 fixed 유지.
+
+## [10] Design-공통 (개선 제안 6건)
+
+**반영 완료:**
+- #1 Button disabled 톤 #E5E7EB(구분선과 동일) → #F3F4F6 (fix/qa-10).
+- #3 Toast 긴 문구 넘침: whitespace-nowrap 제거 + max-width로 화면 밖 이탈 방지, 2줄 허용 (fix/qa-10).
+- #5 DatePicker: 트리거 radius 12→16px 통일 + 인라인 달력 SVG → CalendarIcon 분리(코드규칙) (fix/qa-02).
+- #4 파괴적 확정 버튼 danger 통일: QA 중 이미 처리됨(내픽 삭제·기록수정 삭제·탈퇴 danger).
+
+**보류:**
+- #2 Input 포커스 링 + 인라인 닉네임 필드 공용 Input 통합: 공용 Input이 현재 미사용이라, 포커스 링은 인라인 필드(가입/프로필편집 닉네임·Textarea·DatePicker) 전반 통합 리팩터 필요 → 규모 중, 별도 진행.
+- #6 페이지 로딩 스피너 → 스켈레톤: 페이지별 스켈레톤 컴포넌트 필요 → 규모 대, 별도 진행.
