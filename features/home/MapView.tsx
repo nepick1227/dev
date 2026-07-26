@@ -817,6 +817,8 @@ export default function MapView() {
         onSearchClose={handleSearchClose}
         desktopSidebarOpen={isDesktopSidebarOpen}
         desktopVisible={panelView === "ranking"}
+        isMyPickMapMode={isMyPickOnlyView}
+        onMyPickMapToggle={handleMyPickMapToggle}
       />
 
       <div
@@ -969,7 +971,6 @@ export default function MapView() {
             defaultSnap={sheetDefaultSnap}
             regionName={rankingRegionName}
             isMyPickMode={isMyPickOnlyView}
-            onMyPickToggle={handleMyPickMapToggle}
           />
         </div>
       )}

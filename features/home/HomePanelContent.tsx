@@ -4,7 +4,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/ui/Spinner";
 import Timeline from "@/features/mypick/Timeline";
-import MonthlyMenuEvent from "@/features/monthly-menu/MonthlyMenuEvent";
 import ProfileView from "@/features/profile/ProfileView";
 import ProfileEditForm from "@/features/profile/ProfileEditForm";
 import PermissionsView from "@/features/profile/PermissionsView";
@@ -157,7 +156,6 @@ function MypickPanel({
           disabled={isMyPickLoading}
         />
       </div>
-      <MonthlyMenuEvent showLauncher />
       <Timeline initialRecords={records} onCreateRecord={onCreateRecord} onEditRecord={onEditRecord} />
     </div>
   );

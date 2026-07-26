@@ -4,6 +4,7 @@ import { useState, useCallback, type CSSProperties } from "react";
 import { SearchIcon, CloseIcon, MapPinIcon } from "@/components/ui/icons";
 import Spinner from "@/components/ui/Spinner";
 import Chip from "@/components/ui/Chip";
+import MyPickMapToggle from "./MyPickMapToggle";
 import { useKakaoSearch, type KakaoSearchResult } from "@/hooks/use-kakao-search";
 import type { Category } from "./types";
 
@@ -27,6 +28,8 @@ interface MapOverlayProps {
   onSearchClose?: () => void;
   desktopSidebarOpen?: boolean;
   desktopVisible?: boolean;
+  isMyPickMapMode?: boolean;
+  onMyPickMapToggle?: () => void;
 }
 
 const FILTER_TABS: { key: Category; label: string }[] = [
@@ -44,6 +47,8 @@ export default function MapOverlay({
   onSearchClose,
   desktopSidebarOpen = true,
   desktopVisible = true,
+  isMyPickMapMode = false,
+  onMyPickMapToggle,
 }: MapOverlayProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -176,16 +181,21 @@ export default function MapOverlay({
         )}
       </div>
 
-      {/* 카테고리 필터 */}
-      <div className="pointer-events-auto flex gap-2 md:hidden">
-        {FILTER_TABS.map((tab) => (
-          <Chip
-            key={tab.key}
-            label={tab.label}
-            active={category === tab.key}
-            onClick={() => onCategoryChange(tab.key)}
-          />
-        ))}
+      {/* 카테고리 필터 + 내 픽만 보기 */}
+      <div className="pointer-events-auto flex items-center justify-between gap-2 md:hidden">
+        <div className="flex gap-2">
+          {FILTER_TABS.map((tab) => (
+            <Chip
+              key={tab.key}
+              label={tab.label}
+              active={category === tab.key}
+              onClick={() => onCategoryChange(tab.key)}
+            />
+          ))}
+        </div>
+        {onMyPickMapToggle && (
+          <MyPickMapToggle checked={isMyPickMapMode} onChange={onMyPickMapToggle} />
+        )}
       </div>
     </div>
   );
