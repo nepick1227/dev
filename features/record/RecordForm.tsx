@@ -58,7 +58,7 @@ function getRecordCreateErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : "";
 
   if (message.includes("로그인이 필요")) {
-    return "로그인이 필요합니다. 다시 로그인해 주세요.";
+    return "로그인이 필요해요. 다시 로그인해 주세요.";
   }
   if (
     message.includes("가게") ||
@@ -74,17 +74,17 @@ function getRecordCreateErrorMessage(error: unknown) {
     message.includes("mime") ||
     message.includes("size")
   ) {
-    return "사진 업로드에 실패했습니다. 이미지 형식과 용량을 확인해 주세요.";
+    return "사진 업로드에 실패했어요. 이미지 형식과 용량을 확인해 주세요.";
   }
   if (
     message.includes("row-level security") ||
     message.includes("violates") ||
     message.includes("permission")
   ) {
-    return "기록 저장 권한을 확인하지 못했습니다. 다시 로그인해 주세요.";
+    return "기록 저장 권한을 확인하지 못했어요. 다시 로그인해 주세요.";
   }
 
-  return "저장에 실패했습니다. 다시 시도해 주세요.";
+  return "저장에 실패했어요. 다시 시도해 주세요.";
 }
 
 export default function RecordForm({
@@ -158,14 +158,14 @@ export default function RecordForm({
         store_id: storeId,
         visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
         recommendation,
-        comment,
+        comment: comment.trim(),
         image_url: imagePath,
       };
 
       const { error: recordError } = await supabase.from("records").insert(recordData);
       if (recordError) throw recordError;
 
-      showToast("기록이 저장되었습니다 🎉");
+      showToast("기록을 저장했어요 🎉");
       setTimeout(() => {
         if (onSaved) {
           onSaved();

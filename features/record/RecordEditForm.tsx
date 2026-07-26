@@ -92,7 +92,7 @@ export default function RecordEditForm({
     visitedAt !== record.visited_at.split("T")[0] ||
     visitedTime !== originalVisitedTime ||
     recommendation !== record.recommendation ||
-    comment !== record.comment ||
+    comment.trim() !== record.comment.trim() ||
     newImageFile !== null ||
     removeImage;
 
@@ -161,7 +161,7 @@ export default function RecordEditForm({
         .update({
           visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
           recommendation,
-          comment,
+          comment: comment.trim(),
           image_url: imageUrl,
         })
         .eq("id", record.id)
@@ -173,7 +173,7 @@ export default function RecordEditForm({
         await removeOrphanedRecordImage(supabase, record.image_url);
       }
 
-      showToast("기록을 수정했어요!");
+      showToast("기록을 수정했어요");
       setTimeout(() => {
         if (onSaved) {
           onSaved();
@@ -183,7 +183,7 @@ export default function RecordEditForm({
       }, 800);
     } catch (err) {
       console.error("[RecordEdit]", err instanceof Error ? err.message : "unknown error");
-      showToast("저장에 실패했습니다. 다시 시도해 주세요.");
+      showToast("저장에 실패했어요. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -221,7 +221,7 @@ export default function RecordEditForm({
 
       await removeOrphanedRecordImage(supabase, record.image_url);
 
-      showToast("기록이 삭제되었습니다");
+      showToast("기록을 삭제했어요");
       setTimeout(() => {
         if (onSaved) {
           onSaved();
@@ -231,7 +231,7 @@ export default function RecordEditForm({
       }, 800);
     } catch (err) {
       console.error("[RecordDelete]", err instanceof Error ? err.message : "unknown error");
-      showToast("삭제에 실패했습니다. 다시 시도해 주세요.");
+      showToast("삭제에 실패했어요. 다시 시도해 주세요.");
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
