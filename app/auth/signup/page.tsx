@@ -16,33 +16,6 @@ import DatePicker from "@/components/ui/DatePicker";
 type Gender = "male" | "female" | "unknown";
 type NicknameStatus = null | "checking" | "ok" | "taken" | "error";
 
-// ── 서브 컴포넌트: 라디오 버튼 ───────────────────────
-function RadioOption({ selected, label, onClick }: { selected: boolean; label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "flex w-full items-center gap-3 rounded-2xl border-[1.5px] p-3.5 transition-all duration-200",
-        selected ? "border-primary-border bg-primary-soft" : "border-border bg-bg",
-      ].join(" ")}
-    >
-      <div className={[
-        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
-        selected ? "border-primary" : "border-border",
-      ].join(" ")}>
-        {selected && <div className="h-4 w-4 rounded-full bg-primary opacity-50" />}
-      </div>
-      <span className={[
-        "text-[15px] tracking-tight text-text-primary",
-        selected ? "font-semibold" : "font-normal",
-      ].join(" ")}>
-        {label}
-      </span>
-    </button>
-  );
-}
-
 // ── 메인: 회원가입 프로필 입력 ───────────────────────
 function SignupContent() {
   const router = useRouter();
@@ -284,10 +257,25 @@ function SignupContent() {
             성별{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </label>
-          <div className="flex flex-col gap-2">
-            <RadioOption selected={gender === "male"} label="남성" onClick={() => setGender("male")} />
-            <RadioOption selected={gender === "female"} label="여성" onClick={() => setGender("female")} />
-            <RadioOption selected={gender === "unknown"} label="답변하지 않음" onClick={() => setGender("unknown")} />
+          <div className="flex gap-2.5">
+            {([
+              { value: "male", label: "남성" },
+              { value: "female", label: "여성" },
+              { value: "unknown", label: "선택 안 함" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setGender(opt.value)}
+                className={`flex-1 rounded-xl border py-3 text-[14px] font-semibold tracking-tight transition-colors ${
+                  gender === opt.value
+                    ? "border-primary-border bg-primary-soft text-primary"
+                    : "border-border bg-surface text-text-secondary"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
