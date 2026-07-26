@@ -17,6 +17,7 @@ import type { Profile, ProfileUpdate } from "@/types/database";
 interface ProfileEditFormProps {
   profile: Profile;
   onSaved?: () => void;
+  onHasChanges?: (hasChanges: boolean) => void;
 }
 
 type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
@@ -27,7 +28,7 @@ const GENDER_OPTIONS: { value: "male" | "female" | "unknown"; label: string }[] 
   { value: "unknown", label: "선택 안 함" },
 ];
 
-export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormProps) {
+export default function ProfileEditForm({ profile, onSaved, onHasChanges }: ProfileEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -118,6 +119,10 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
     imageFile !== null ||
     removeImage;
 
+  useEffect(() => {
+    onHasChanges?.(hasChanges);
+  }, [hasChanges, onHasChanges]);
+
   const canSubmit = isNicknameOk && introValidation.isValid && !isSubmitting && hasChanges;
 
   // ── 이미지 핸들러 ──────────────────────────────────────
@@ -167,7 +172,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
       }
 
       const updateData: ProfileUpdate = {
-        nickname,
+        nickname: nickname.trim(),
         intro: intro || null,
         profile_image: profileImageUrl,
         birth_date: birthDate || null,
@@ -197,7 +202,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
         if (cleanupError) console.error("[ProfileImageCleanup]", cleanupError.message);
       }
 
-      showToast("프로필이 업데이트되었습니다");
+      showToast("프로필이 업데이트됐어요");
       setTimeout(() => {
         if (onSaved) {
           onSaved();
@@ -207,7 +212,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
       }, 800);
     } catch (err) {
       console.error("[ProfileEdit]", err instanceof Error ? err.message : "unknown error");
-      showToast("저장에 실패했습니다. 다시 시도해 주세요.");
+      showToast("저장에 실패했어요. 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -343,7 +348,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
                 onClick={() => setGender(opt.value)}
                 className={`flex-1 rounded-xl border py-3 text-[14px] font-semibold tracking-tight transition-colors ${
                   gender === opt.value
-                    ? "border-primary bg-primary text-white"
+                    ? "border-primary-border bg-primary-soft text-primary"
                     : "border-border bg-surface text-text-secondary"
                 }`}
               >
