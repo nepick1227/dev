@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/ui/Spinner";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import Timeline from "@/features/mypick/Timeline";
 import MonthlyMenuEvent from "@/features/monthly-menu/MonthlyMenuEvent";
 import ProfileView from "@/features/profile/ProfileView";
@@ -39,6 +41,7 @@ export default function HomePanelContent({
   onMyPickMapToggle,
   isMyPickLoading = false,
 }: HomePanelContentProps) {
+  const router = useRouter();
   const [subview, setSubview] = useState<string>("main");
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -87,13 +90,17 @@ export default function HomePanelContent({
       return (
         <PanelShell title="회원탈퇴" onBack={handleBack}>
           <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
-            <WithdrawalView onCancel={handleBack} />
+            <WithdrawalView onCancel={handleBack} actionPlacement="contained" />
           </div>
         </PanelShell>
       );
     }
     if (subview !== "main") return <UnsupportedPanel title="프로필 메뉴" onBack={handleBack} />;
-    return <ProfilePanel key={reloadKey} onNavigate={(href) => setSubview(href === "/profile/edit" ? "profile-edit" : href)} />;
+    return <ProfilePanel key={reloadKey} onNavigate={(href) => {
+      // 약관은 패널 미구현이므로 실제 전체 페이지로 이동 (모바일과 동일 접근)
+      if (href.startsWith("/profile/terms/")) { router.push(href); return; }
+      setSubview(href === "/profile/edit" ? "profile-edit" : href);
+    }} />;
   }
 
   return null;
@@ -237,10 +244,31 @@ function ProfilePanel({ onNavigate }: { onNavigate: (href: string) => void }) {
 }
 
 function RecordCreatePanel({ onBack, onSaved }: { onBack: () => void; onSaved: () => void }) {
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const hasContentRef = useRef(false);
+
+  const handleBack = () => {
+    if (hasContentRef.current) setShowLeaveModal(true);
+    else onBack();
+  };
+
   return (
-    <PanelShell title="기록 추가" onBack={onBack}>
-      <RecordForm onSaved={onSaved} actionPlacement="contained" />
-    </PanelShell>
+    <>
+      <PanelShell title="기록 추가" onBack={handleBack}>
+        <RecordForm
+          onSaved={onSaved}
+          actionPlacement="contained"
+          onContentChange={(hasContent) => { hasContentRef.current = hasContent; }}
+        />
+      </PanelShell>
+      <LeaveConfirmModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        onLeave={onBack}
+        title="기록을 그만두시겠어요?"
+        continueLabel="계속 작성"
+      />
+    </>
   );
 }
 
@@ -256,6 +284,13 @@ function RecordEditPanel({
   const router = useRouter();
   const [record, setRecord] = useState<RecordWithStore | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const hasContentRef = useRef(false);
+
+  const handleBack = () => {
+    if (hasContentRef.current) setShowLeaveModal(true);
+    else onBack();
+  };
 
   useEffect(() => {
     let active = true;
@@ -292,13 +327,27 @@ function RecordEditPanel({
   }, [onBack, recordId, router]);
 
   return (
-    <PanelShell title="기록 수정" onBack={onBack}>
-      {isLoading ? (
-        <PanelLoading />
-      ) : record ? (
-        <RecordEditForm record={record} onSaved={onSaved} actionPlacement="contained" />
-      ) : null}
-    </PanelShell>
+    <>
+      <PanelShell title="기록 수정" onBack={handleBack}>
+        {isLoading ? (
+          <PanelLoading />
+        ) : record ? (
+          <RecordEditForm
+            record={record}
+            onSaved={onSaved}
+            actionPlacement="contained"
+            onHasChanges={(hasChanges) => { hasContentRef.current = hasChanges; }}
+          />
+        ) : null}
+      </PanelShell>
+      <LeaveConfirmModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        onLeave={onBack}
+        title="기록 수정을 그만두시겠어요?"
+        continueLabel="계속 수정"
+      />
+    </>
   );
 }
 
@@ -306,6 +355,13 @@ function ProfileEditPanel({ onBack, onSaved }: { onBack: () => void; onSaved: ()
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const hasChangesRef = useRef(false);
+
+  const handleBack = useCallback(() => {
+    if (hasChangesRef.current) setShowLeaveModal(true);
+    else onBack();
+  }, [onBack]);
 
   useEffect(() => {
     let active = true;
@@ -331,9 +387,38 @@ function ProfileEditPanel({ onBack, onSaved }: { onBack: () => void; onSaved: ()
   }, [router]);
 
   return (
-    <PanelShell title="프로필 편집" onBack={onBack}>
-      {isLoading ? <PanelLoading /> : profile ? <ProfileEditForm profile={profile} onSaved={onSaved} /> : null}
-    </PanelShell>
+    <>
+      <PanelShell title="프로필 편집" onBack={handleBack}>
+        {isLoading ? <PanelLoading /> : profile ? (
+          <ProfileEditForm
+            profile={profile}
+            onSaved={onSaved}
+            onHasChanges={(has) => { hasChangesRef.current = has; }}
+            actionPlacement="contained"
+          />
+        ) : null}
+      </PanelShell>
+      <Modal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        variant="dialog"
+        title="편집을 그만두시겠어요?"
+        footer={
+          <div className="flex gap-2.5">
+            <Button variant="secondary" fullWidth onClick={() => setShowLeaveModal(false)}>
+              계속 편집
+            </Button>
+            <Button fullWidth onClick={onBack}>
+              나가기
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[14px] leading-relaxed text-text-secondary">
+          변경한 내용은 저장되지 않습니다.
+        </p>
+      </Modal>
+    </>
   );
 }
 
@@ -369,5 +454,43 @@ function PanelLoading() {
     <div className="flex flex-1 items-center justify-center">
       <Spinner size={28} />
     </div>
+  );
+}
+
+// 데스크탑 패널 이탈 확인 모달 (모바일 /record, /record/[id]/edit 와 동일 동작)
+function LeaveConfirmModal({
+  isOpen,
+  onClose,
+  onLeave,
+  title,
+  continueLabel,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onLeave: () => void;
+  title: string;
+  continueLabel: string;
+}) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      variant="dialog"
+      title={title}
+      footer={
+        <div className="flex gap-2.5">
+          <Button variant="secondary" fullWidth onClick={onClose}>
+            {continueLabel}
+          </Button>
+          <Button fullWidth onClick={onLeave}>
+            나가기
+          </Button>
+        </div>
+      }
+    >
+      <p className="text-[14px] leading-relaxed text-text-secondary">
+        작성 중인 내용은 저장되지 않습니다.
+      </p>
+    </Modal>
   );
 }

@@ -1,4 +1,4 @@
-import { type TextareaHTMLAttributes, forwardRef } from "react";
+import { type ChangeEvent, type TextareaHTMLAttributes, forwardRef } from "react";
 import { validation } from "@/styles/tokens";
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -10,11 +10,19 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, hint, maxLength, currentLength, className = "", id, ...props }, ref) => {
+  ({ label, error, hint, maxLength, currentLength, className = "", id, onChange, ...props }, ref) => {
     const textareaId = id ?? label?.replace(/\s/g, "-").toLowerCase();
     const limit = maxLength ?? validation.comment.max;
     const count = currentLength ?? 0;
     const isOverLimit = count > limit;
+
+    // IME 조합·붙여넣기로 maxLength를 우회해 한도를 넘는 경우까지 하드 캡
+    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+      if (e.target.value.length > limit) {
+        e.target.value = e.target.value.slice(0, limit);
+      }
+      onChange?.(e);
+    };
 
     return (
       <div className="flex flex-col gap-1.5">
@@ -31,6 +39,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             ref={ref}
             id={textareaId}
             maxLength={limit}
+            onChange={handleChange}
             className={[
               "w-full rounded-2xl border-[1.5px] bg-surface px-5 py-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors duration-200 resize-none",
               "placeholder:text-text-tertiary",

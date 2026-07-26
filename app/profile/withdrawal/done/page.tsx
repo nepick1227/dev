@@ -36,7 +36,7 @@ export default function WithdrawalDonePage() {
         href="/auth/login"
         className="mt-2 rounded-xl bg-primary px-10 py-3.5 text-[15px] font-bold text-white"
       >
-        메인화면으로
+        로그인 화면으로
       </Link>
     </div>
   );

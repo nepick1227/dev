@@ -62,12 +62,12 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
         .order("visited_at", { ascending: false });
 
       if (mode === "monthly") {
-        const yearMonth = formatYearMonth(month);
-        const startDate = `${yearMonth}-01`;
-        const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0)
-          .toISOString()
-          .split("T")[0];
-        query = query.gte("visited_at", startDate).lte("visited_at", endDate);
+        // 월 시작(포함) ~ 다음 달 시작(제외). toISOString()의 UTC 변환으로 말일이
+        // 하루 당겨지거나 lte가 말일 시각 기록을 제외하던 문제를 방지한다.
+        const startDate = `${formatYearMonth(month)}-01`;
+        const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+        const endExclusive = `${formatYearMonth(nextMonth)}-01`;
+        query = query.gte("visited_at", startDate).lt("visited_at", endExclusive);
       }
 
       const { data, error } = await query;

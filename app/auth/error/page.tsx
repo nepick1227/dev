@@ -65,7 +65,7 @@ export default function AuthErrorPage() {
 
       <div className="safe-area-pb-lg flex flex-col gap-3 px-6">
         <a
-          href="#"
+          href="https://furtive-yogurt-135.notion.site/ef6c394bf09483b483c681e5589986a8?pvs=143"
           target="_blank"
           rel="noopener noreferrer"
           className="flex w-full items-center justify-center rounded-xl border border-border py-4 text-[15px] font-semibold tracking-tight text-text-primary transition-opacity active:opacity-60"

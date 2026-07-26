@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
+import { getStorageImagePath } from "@/lib/supabase/storage";
 import { formatTime } from "@/utils/format";
 import { CopyIcon, ShareIcon, EditIcon, TrashIcon, ChevronDownIcon, CafeIcon, RestaurantIcon } from "@/components/ui/icons";
 import { RecommendationBadge } from "@/components/ui/Badge";
@@ -31,6 +33,26 @@ export default function RecordCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const recordImageUrl = useSignedImageUrl("record-images", record.image_url);
+  // ⋮ 메뉴를 body로 포털해 타임라인 overflow 클리핑 회피. 하단이면 위로 플립.
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number; up: boolean } | null>(null);
+
+  const toggleMenu = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (menuOpen) { setMenuOpen(false); return; }
+    const rect = menuBtnRef.current?.getBoundingClientRect();
+    if (rect) {
+      const MENU_W = 144;
+      const MENU_H = 200;
+      const up = window.innerHeight - rect.bottom < MENU_H + 12;
+      setMenuPos({
+        left: rect.right - MENU_W,
+        top: up ? rect.top - 4 : rect.bottom + 4,
+        up,
+      });
+    }
+    setMenuOpen(true);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -55,7 +77,7 @@ export default function RecordCard({
       await navigator.clipboard.writeText(address);
       onShowToast?.("주소가 복사되었어요");
     } catch {
-      onShowToast?.("복사에 실패했습니다");
+      onShowToast?.("복사에 실패했어요");
     }
   }, [address, onShowToast]);
 
@@ -70,7 +92,7 @@ export default function RecordCard({
         await navigator.clipboard.writeText(address);
         onShowToast?.("주소가 복사되었어요");
       } catch {
-        onShowToast?.("복사에 실패했습니다");
+        onShowToast?.("복사에 실패했어요");
       }
     }
   }, [record.stores.name, address, onShowToast]);
@@ -97,15 +119,22 @@ export default function RecordCard({
         .eq("user_id", user.id);
       if (error) throw error;
 
+      // 기록 삭제 성공 후 고아가 될 이미지 정리 (실패해도 삭제 자체엔 영향 없음)
+      const imagePath = getStorageImagePath(record.image_url, "record-images");
+      if (imagePath) {
+        const { error: rmError } = await supabase.storage.from("record-images").remove([imagePath]);
+        if (rmError) console.error("[RecordCardImageCleanup]", rmError.message);
+      }
+
       onDelete?.();
-      onShowToast?.("기록이 삭제되었어요");
+      onShowToast?.("기록을 삭제했어요");
     } catch (err) {
       console.error("[RecordCardDelete]", err instanceof Error ? err.message : "unknown error");
-      onShowToast?.("삭제에 실패했습니다");
+      onShowToast?.("삭제에 실패했어요");
     } finally {
       setConfirmDelete(false);
     }
-  }, [record.id, onDelete, onShowToast]);
+  }, [record.id, record.image_url, onDelete, onShowToast]);
 
   return (
     <>
@@ -117,11 +146,11 @@ export default function RecordCard({
         footer={
           <div className="flex gap-2.5">
             <Button variant="secondary" fullWidth onClick={() => setConfirmDelete(false)}>취소</Button>
-            <Button fullWidth onClick={handleDelete}>삭제</Button>
+            <Button variant="danger" fullWidth onClick={handleDelete}>삭제</Button>
           </div>
         }
       >
-        <p className="text-[14px] leading-relaxed text-text-secondary">삭제한 기록은 복구할 수 없습니다.</p>
+        <p className="text-[14px] leading-relaxed text-text-secondary">삭제된 기록은 복구할 수 없습니다.</p>
       </Modal>
 
       <div className="flex gap-0">
@@ -153,9 +182,10 @@ export default function RecordCard({
                 </span>
                 <RecommendationBadge type={record.recommendation} />
               </div>
-              <div className="relative ml-1 shrink-0">
+              <div className="ml-1 shrink-0">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+                  ref={menuBtnRef}
+                  onClick={toggleMenu}
                   className="flex h-7 w-7 items-center justify-center rounded-full transition-colors active:bg-bg"
                   aria-label="더보기"
                 >
@@ -165,10 +195,17 @@ export default function RecordCard({
                     <circle cx="8" cy="13" r="1.5" fill="var(--color-text-tertiary)" />
                   </svg>
                 </button>
-                {menuOpen && (
+                {menuOpen && menuPos && createPortal(
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div className="absolute right-0 top-9 z-20 w-36 overflow-hidden rounded-2xl border border-border bg-white py-2 shadow-lg">
+                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                    <div
+                      style={{
+                        position: "fixed",
+                        left: menuPos.left,
+                        top: menuPos.top,
+                        transform: menuPos.up ? "translateY(-100%)" : undefined,
+                      }}
+                      className="z-50 w-36 overflow-hidden rounded-2xl border border-border bg-white py-2 shadow-lg">
                       <button onClick={handleEdit} className="flex h-11 w-full items-center gap-2.5 px-3.5 text-[14px] tracking-tight text-text-primary transition-colors active:bg-bg">
                         <EditIcon size={18} color="var(--color-text-primary)" />
                         수정하기
@@ -190,7 +227,8 @@ export default function RecordCard({
                         삭제하기
                       </button>
                     </div>
-                  </>
+                  </>,
+                  document.body
                 )}
               </div>
             </div>

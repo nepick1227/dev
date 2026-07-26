@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import Spinner from "@/components/ui/Spinner";
-import { NepickLogo } from "@/components/ui/icons";
+import { NepickLogo, MapPinIcon } from "@/components/ui/icons";
 
 const LAST_PROVIDER_KEY = "nepick_last_provider";
 
@@ -143,13 +143,13 @@ function LoginBackground() {
 }
 
 // ── 최근 로그인 뱃지 ─────────────────────────────────
-function RecentBadge({ borderColor, textColor }: { borderColor: string; textColor: string }) {
+function RecentBadge({ color }: { color: string }) {
   return (
     <div
       className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-tight"
-      style={{ borderColor, color: textColor }}
+      style={{ borderColor: color, color }}
     >
-      ✦ 최근 로그인
+      <MapPinIcon size={11} /> 최근 로그인
     </div>
   );
 }
@@ -163,6 +163,8 @@ function LoginContent() {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [lastProvider, setLastProviderState] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  // URL 에러 파라미터는 최초 진입 시 1회만 읽음 (이후 주소에서 제거)
+  const [initialError] = useState<string | null>(errorParam);
 
   const isLoading = loadingProvider !== null;
 
@@ -175,26 +177,26 @@ function LoginContent() {
 
   useEffect(() => {
     const supabase = createClient();
-    if (errorParam) {
+    if (initialError) {
       void supabase.auth.signOut();
+      // 표시 후 주소에서 에러 파라미터 제거 — 새로고침·북마크 시 재표시/강제 로그아웃 방지
+      window.history.replaceState(null, "", window.location.pathname);
       return;
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/home");
     });
-  }, [errorParam, router]);
+  }, [initialError, router]);
 
   // URL 에러 파라미터를 직접 메시지로 변환 (effect 불필요)
   const errorMessage =
-    errorParam === "account_deleted"
+    initialError === "account_deleted"
       ? "탈퇴 후 30일 이내에는 동일 계정으로 재가입이 불가합니다."
-      : errorParam === "provider_conflict"
+      : initialError === "provider_conflict"
       ? "이미 다른 로그인 방식으로 가입된 이메일입니다. 기존 로그인 방식으로 로그인해 주세요."
-      : errorParam === "login_failed"
+      : initialError === "login_failed" || initialError === "auth_failed"
       ? "로그인에 실패했습니다. 다시 시도해 주세요."
-      : errorParam === "auth_failed"
-      ? "로그인 인증에 실패했습니다. 다시 시도해 주세요."
       : null;
 
   const handleOAuthLogin = useCallback(async (provider: "kakao" | "google") => {
@@ -225,11 +227,9 @@ function LoginContent() {
         <div className="mb-3">
           <NepickLogo size={112} />
         </div>
-        <p className="mb-3 text-center text-[15px] tracking-tight text-text-primary">
-          내가 직접 남기는 믿을만한{" "}
-          <span className="font-bold text-primary">맛집 기록</span>
+        <p className="mb-3 text-center text-[15px] tracking-tight text-text-secondary">
+          내가 직접 남기는 믿을 만한 맛집 기록
         </p>
-        <div className="h-0.5 w-8 rounded-full bg-primary" />
       </div>
 
       {/* 로그인 버튼 영역 */}
@@ -242,7 +242,7 @@ function LoginContent() {
         {/* 카카오 */}
         <div className={`relative ${lastProvider === "kakao" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "kakao" && !isLoading && (
-            <RecentBadge borderColor="#B8860B" textColor="#B8860B" />
+            <RecentBadge color="#CA8A04" />
           )}
           <button
             onClick={() => handleOAuthLogin("kakao")}
@@ -269,7 +269,7 @@ function LoginContent() {
         {/* 네이버 */}
         <div className={`relative ${lastProvider === "naver" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "naver" && !isLoading && (
-            <RecentBadge borderColor="#03C75A" textColor="#03C75A" />
+            <RecentBadge color="#03C75A" />
           )}
           <button
             onClick={() => {
@@ -297,7 +297,7 @@ function LoginContent() {
         {/* 구글 */}
         <div className={`relative ${lastProvider === "google" && !isLoading ? "mt-1" : ""}`}>
           {lastProvider === "google" && !isLoading && (
-            <RecentBadge borderColor="#4285F4" textColor="#4285F4" />
+            <RecentBadge color="#4285F4" />
           )}
           <button
             onClick={() => handleOAuthLogin("google")}
