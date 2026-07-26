@@ -19,6 +19,8 @@ interface ProfileEditFormProps {
   profile: Profile;
   onSaved?: () => void;
   onHasChanges?: (hasChanges: boolean) => void;
+  /** "fixed"(기본, 모바일 페이지) | "contained"(데스크탑 패널 — 화면 기준 고정 대신 in-flow) */
+  actionPlacement?: "fixed" | "contained";
 }
 
 type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
@@ -29,7 +31,7 @@ const GENDER_OPTIONS: { value: "male" | "female" | "unknown"; label: string }[] 
   { value: "unknown", label: "선택 안 함" },
 ];
 
-export default function ProfileEditForm({ profile, onSaved, onHasChanges }: ProfileEditFormProps) {
+export default function ProfileEditForm({ profile, onSaved, onHasChanges, actionPlacement = "fixed" }: ProfileEditFormProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -393,7 +395,14 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges }: Prof
       </div>
 
       {/* 저장 버튼 */}
-      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 -translate-x-1/2 border-t border-border bg-surface px-5 pt-3">
+      <div
+        className={[
+          "app-fixed-bar safe-area-pb-lg border-t border-border bg-surface px-5 pt-3",
+          actionPlacement === "fixed"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            : "relative shrink-0",
+        ].join(" ")}
+      >
         <Button
           fullWidth
           isLoading={isSubmitting}

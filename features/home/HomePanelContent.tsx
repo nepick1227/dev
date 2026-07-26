@@ -347,6 +347,7 @@ function ProfileEditPanel({ onBack, onSaved }: { onBack: () => void; onSaved: ()
             profile={profile}
             onSaved={onSaved}
             onHasChanges={(has) => { hasChangesRef.current = has; }}
+            actionPlacement="contained"
           />
         ) : null}
       </PanelShell>
