@@ -40,7 +40,8 @@ function ProfileGuard() {
         .select("nickname")
         .eq("id", user.id)
         .maybeSingle();
-      if (!profile?.nickname) router.replace("/auth/signout?error=auth_failed");
+      // 가입 미완료(닉네임 없음) → 로그아웃 대신 약관/가입 단계로 복구
+      if (!profile?.nickname) router.replace("/auth/terms");
     });
   }, [router]);
 

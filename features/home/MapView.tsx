@@ -541,6 +541,7 @@ export default function MapView() {
     mapRef.current = map;
 
     const pos = await getCurrentPosition();
+    map.setCenter(new kakao.maps.LatLng(pos.lat, pos.lng));
     locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
     setSearchPosition({ lat: pos.lat, lng: pos.lng });
     geocoderRef.current = new kakao.maps.services.Geocoder();
@@ -909,6 +910,7 @@ export default function MapView() {
           }}
         >
           {[
+            { key: "all" as const, label: "전체" },
             { key: "restaurant" as const, label: "음식점" },
             { key: "cafe" as const, label: "카페" },
           ].map((item) => (
