@@ -19,9 +19,11 @@ const REASONS = [
 
 interface WithdrawalViewProps {
   onCancel?: () => void;
+  /** "fixed"(기본, 모바일 페이지) | "contained"(데스크탑 패널 — in-flow) */
+  actionPlacement?: "fixed" | "contained";
 }
 
-export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
+export default function WithdrawalView({ onCancel, actionPlacement = "fixed" }: WithdrawalViewProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
   const [reason, setReason] = useState<string | null>(null);
@@ -162,7 +164,14 @@ export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 flex -translate-x-1/2 gap-2.5 border-t border-border bg-surface px-5 pt-3">
+      <div
+        className={[
+          "app-fixed-bar safe-area-pb-lg flex gap-2.5 border-t border-border bg-surface px-5 pt-3",
+          actionPlacement === "fixed"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            : "relative shrink-0",
+        ].join(" ")}
+      >
         <Button variant="secondary" fullWidth onClick={handleCancel}>
           이전
         </Button>

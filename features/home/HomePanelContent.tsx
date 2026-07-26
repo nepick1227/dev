@@ -87,7 +87,7 @@ export default function HomePanelContent({
       return (
         <PanelShell title="회원탈퇴" onBack={handleBack}>
           <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
-            <WithdrawalView onCancel={handleBack} />
+            <WithdrawalView onCancel={handleBack} actionPlacement="contained" />
           </div>
         </PanelShell>
       );
