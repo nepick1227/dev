@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/http";
+import { resolveSafeNextPath } from "@/lib/auth/next-url";
 
 export async function GET(request: NextRequest) {
   const rateLimited = checkRateLimit(request, "auth-callback", {
@@ -56,10 +57,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/auth/terms`);
   }
 
-  // 기존 유저 → 홈으로 (welcome 파라미터로 토스트 트리거)
-  // next 파라미터 화이트리스트 검증 (오픈 리다이렉트 방지)
-  const ALLOWED_PATHS = ["/home", "/mypick", "/profile", "/record"];
-  const safePath = ALLOWED_PATHS.includes(next) ? next : "/home";
-  const homeUrl = safePath === "/home" ? `${origin}/home?welcome=1` : `${origin}${safePath}`;
-  return NextResponse.redirect(homeUrl);
+  // 기존 유저 → 원래 하던 작업(next)으로, 없으면 홈으로 (welcome 파라미터로 토스트 트리거)
+  const safePath = resolveSafeNextPath(next, origin);
+  const redirectUrl = safePath === "/home" ? `${origin}/home?welcome=1` : `${origin}${safePath}`;
+  return NextResponse.redirect(redirectUrl);
 }

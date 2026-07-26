@@ -4,6 +4,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/http";
+import { resolveSafeNextPath } from "@/lib/auth/next-url";
 
 interface ExistingAuthUser {
   email?: string;
@@ -72,6 +73,7 @@ function isSameNaverUser(user: ExistingAuthUser | null, naverId: string) {
 function redirectWithClearedState(url: string) {
   const response = NextResponse.redirect(url);
   response.cookies.delete("naver_oauth_state");
+  response.cookies.delete("naver_oauth_next");
   return response;
 }
 
@@ -108,6 +110,7 @@ export async function GET(request: NextRequest) {
   // CSRF 검증
   const cookieStore = await cookies();
   const savedState = cookieStore.get("naver_oauth_state")?.value;
+  const savedNext = cookieStore.get("naver_oauth_next")?.value;
 
   if (!state || state !== savedState) {
     return NextResponse.redirect(`${origin}/auth/error`);
@@ -210,11 +213,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const response = NextResponse.redirect(
-      `${origin}${profile?.nickname ? "/home" : "/auth/terms"}`
-    );
+    let redirectUrl = `${origin}/auth/terms`;
+    if (profile?.nickname) {
+      const safePath = resolveSafeNextPath(savedNext, origin);
+      redirectUrl = `${origin}${safePath}${safePath === "/home" ? "?welcome=1" : ""}`;
+    }
 
+    const response = NextResponse.redirect(redirectUrl);
     response.cookies.delete("naver_oauth_state");
+    response.cookies.delete("naver_oauth_next");
     return response;
   } catch (error) {
     console.error("[Naver Auth]", error instanceof Error ? error.message : "unknown_error");

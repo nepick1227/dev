@@ -13,12 +13,15 @@ export async function GET(request: NextRequest) {
   });
   if (rateLimited) return rateLimited;
 
-  const origin = new URL(request.url).origin;
+  const { origin, searchParams } = new URL(request.url);
   const state = crypto.randomUUID(); // CSRF 방지
+  const next = searchParams.get("next");
 
   const params = new URLSearchParams({
     response_type: "code",
     client_id: process.env.NAVER_CLIENT_ID!,
+    // redirect_uri는 네이버 콘솔에 등록된 값과 정확히 일치해야 하므로
+    // next는 쿼리로 붙이지 않고 별도 쿠키로 전달한다.
     redirect_uri: `${origin}/api/auth/naver/callback`,
     state,
   });
@@ -35,6 +38,16 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 10, // 10분
     path: "/",
   });
+
+  if (next) {
+    response.cookies.set("naver_oauth_next", next, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 10, // 10분
+      path: "/",
+    });
+  }
 
   return response;
 }

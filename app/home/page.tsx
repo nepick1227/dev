@@ -28,13 +28,15 @@ function WelcomeToast() {
   return <Toast message={toast.message} visible={toast.visible} />;
 }
 
+// 비로그인 사용자는 지도/랭킹을 둘러볼 수 있어야 하므로 로그인 강제 없이
+// 통과시키고, 로그인된 유저의 프로필 완성 여부만 확인한다.
 function ProfileGuard() {
   const router = useRouter();
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.replace("/auth/login"); return; }
+      if (!user) return;
       const { data: profile } = await supabase
         .from("profiles")
         .select("nickname")

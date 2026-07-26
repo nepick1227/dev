@@ -211,6 +211,7 @@ export default function MapView() {
   const [panelView, setPanelView] = useState<PanelView>("ranking");
   const [isMyPickMapMode, setIsMyPickMapMode] = useState(false);
   const [showNoPickModal, setShowNoPickModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const router = useRouter();
   const [myPickStores, setMyPickStores] = useState<Store[]>([]);
   const [isMyPickLoading, setIsMyPickLoading] = useState(false);
@@ -740,6 +741,13 @@ export default function MapView() {
       return;
     }
 
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     const stores = myPickStores.length > 0 ? myPickStores : await loadMyPickStores();
     if (stores.length === 0) {
       setShowNoPickModal(true);
@@ -1059,6 +1067,32 @@ export default function MapView() {
         }
       >
         <p className="text-[14px] text-text-secondary">내 픽을 기록하러 가볼까요?</p>
+      </Modal>
+
+      <Modal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        variant="dialog"
+        title="로그인이 필요해요"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="secondary" size="md" fullWidth onClick={() => setShowLoginModal(false)}>
+              취소
+            </Button>
+            <Button
+              size="md"
+              fullWidth
+              onClick={() => {
+                setShowLoginModal(false);
+                router.push("/auth/login?next=%2Fhome");
+              }}
+            >
+              로그인하기
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[14px] text-text-secondary">내 픽을 보려면 로그인해주세요.</p>
       </Modal>
     </>
   );

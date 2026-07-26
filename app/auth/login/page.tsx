@@ -159,6 +159,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
+  const nextParam = searchParams.get("next");
 
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [lastProvider, setLastProviderState] = useState<string | null>(null);
@@ -181,9 +182,9 @@ function LoginContent() {
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace("/home");
+      if (session) router.replace(nextParam ?? "/home");
     });
-  }, [errorParam, router]);
+  }, [errorParam, nextParam, router]);
 
   // URL 에러 파라미터를 직접 메시지로 변환 (effect 불필요)
   const errorMessage =
@@ -203,18 +204,19 @@ function LoginContent() {
     setLastProvider(provider);
 
     const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    if (nextParam) callbackUrl.searchParams.set("next", nextParam);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo },
+      options: { redirectTo: callbackUrl.toString() },
     });
 
     if (error) {
       setLoginError("로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.");
       setLoadingProvider(null);
     }
-  }, []);
+  }, [nextParam]);
 
   return (
     <div className="page-container">
@@ -275,7 +277,10 @@ function LoginContent() {
             onClick={() => {
               setLoadingProvider("naver");
               setLastProvider("naver");
-              window.location.href = "/api/auth/naver";
+              const naverUrl = nextParam
+                ? `/api/auth/naver?next=${encodeURIComponent(nextParam)}`
+                : "/api/auth/naver";
+              window.location.href = naverUrl;
             }}
             disabled={isLoading}
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#03C75A] py-4 text-[15px] font-semibold tracking-tight text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"

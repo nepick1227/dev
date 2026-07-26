@@ -45,11 +45,14 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
-  // "/", /auth/*, /api/auth/*, /api/kakao-search 경로는 항상 허용
+  // "/", "/home", /auth/*, /api/auth/*, /api/kakao-search 경로는 항상 허용
   // "/"는 서버에서 307로 리다이렉트하지 않고 200으로 응답해야
   // AdSense 소유권 확인 등 외부 크롤러가 <head> 태그를 읽을 수 있음
+  // "/home"은 비로그인 사용자도 지도/랭킹을 둘러볼 수 있어야 함 —
+  // 기록 저장/픽 확인처럼 로그인이 필요한 액션은 각 화면에서 개별적으로 막음
   if (
     pathname === "/" ||
+    pathname === "/home" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/kakao-search")

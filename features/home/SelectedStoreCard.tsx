@@ -3,6 +3,9 @@
 import { useState, useCallback, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { CloseIcon } from "@/components/ui/icons";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
+import { createClient } from "@/lib/supabase/client";
 import type { Store } from "@/types/database";
 
 export const CARD_BOTTOM_PX = 28;
@@ -18,6 +21,7 @@ interface SelectedStoreCardProps {
 export default function SelectedStoreCard({ store, rank, onClose, desktopSidebarOpen = true }: SelectedStoreCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const address = store.road_address ?? store.address;
   const categoryLabel = store.subcategory ?? (store.category === "cafe" ? "카페" : "음식점");
 
@@ -31,7 +35,7 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
     }
   }, [address]);
 
-  const handleRecord = useCallback(() => {
+  const buildRecordPath = useCallback(() => {
     const params = new URLSearchParams({
       kakao_id: store.kakao_id,
       place_name: store.name,
@@ -43,8 +47,22 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
       category_group_code: store.category === "cafe" ? "CE7" : "FD6",
       category_name: store.subcategory ?? "",
     });
-    router.push(`/record?${params.toString()}`);
-  }, [store, router]);
+    return `/record?${params.toString()}`;
+  }, [store]);
+
+  const handleRecord = useCallback(async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    router.push(buildRecordPath());
+  }, [buildRecordPath, router]);
+
+  const handleGoToLogin = useCallback(() => {
+    router.push(`/auth/login?next=${encodeURIComponent(buildRecordPath())}`);
+  }, [buildRecordPath, router]);
 
   return (
     <div
@@ -104,6 +122,25 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
           기록+
         </button>
       </div>
+
+      <Modal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        variant="dialog"
+        title="로그인이 필요해요"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="secondary" size="md" fullWidth onClick={() => setShowLoginModal(false)}>
+              취소
+            </Button>
+            <Button size="md" fullWidth onClick={handleGoToLogin}>
+              로그인하기
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[14px] text-text-secondary">기록을 남기려면 로그인해주세요.</p>
+      </Modal>
     </div>
   );
 }
