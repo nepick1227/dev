@@ -122,6 +122,8 @@ function kakaoSearch(lat, lng, categoryCode, page) {
       headers: { Authorization: `KakaoAK ${KAKAO_KEY}` },
     };
     https.get(options, (res) => {
+      // 청크 경계의 멀티바이트(한글) 문자가 깨지지 않도록 UTF-8 스트림 디코딩
+      res.setEncoding("utf8");
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
@@ -152,6 +154,7 @@ function upsertStores(rows) {
       },
     };
     const req = https.request(options, (res) => {
+      res.setEncoding("utf8");
       let data = "";
       res.on("data", (c) => (data += c));
       res.on("end", () => {
