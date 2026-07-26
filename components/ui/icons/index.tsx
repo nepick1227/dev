@@ -191,6 +191,16 @@ export function NepickLogo({ size = 80 }: { size?: number }) {
   return <img src="/brand/nepick-logo-transparent.png" alt="네픽 로고" width={size} height={size} style={{ objectFit: "contain" }} />;
 }
 
+export function CalendarIcon({ size = 18, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="3" stroke={color} strokeWidth="2" />
+      <path d="M3 9H21" stroke={color} strokeWidth="2" />
+      <path d="M8 2V6M16 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function CafeIcon({ size = 20, color = "currentColor", className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">

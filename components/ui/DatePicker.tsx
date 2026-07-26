@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
+import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from "@/components/ui/icons";
 
 interface DatePickerProps {
   value: string; // YYYY-MM-DD
@@ -187,18 +187,14 @@ export default function DatePicker({
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className={`flex w-full items-center justify-between rounded-xl border-[1.5px] bg-white px-4 py-3.5 text-left text-[15px] tracking-tight transition-colors ${
+        className={`flex w-full items-center justify-between rounded-2xl border-[1.5px] bg-white px-4 py-3.5 text-left text-[15px] tracking-tight transition-colors ${
           isOpen ? "border-primary" : "border-border"
         }`}
       >
         <span className={display ? "text-text-primary" : "text-text-secondary"}>
           {display || placeholder}
         </span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="18" rx="3" stroke="#9CA3AF" strokeWidth="2" />
-          <path d="M3 9H21" stroke="#9CA3AF" strokeWidth="2" />
-          <path d="M8 2V6M16 2V6" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" />
-        </svg>
+        <CalendarIcon size={18} color="#9CA3AF" />
       </button>
 
       {isOpen && pos && createPortal(
