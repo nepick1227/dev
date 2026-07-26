@@ -194,7 +194,9 @@ export default function MapOverlay({
           ))}
         </div>
         {onMyPickMapToggle && (
-          <MyPickMapToggle checked={isMyPickMapMode} onChange={onMyPickMapToggle} />
+          <div className="shrink-0 rounded-full border border-border bg-surface px-3 py-1.5 shadow-sm">
+            <MyPickMapToggle checked={isMyPickMapMode} onChange={onMyPickMapToggle} />
+          </div>
         )}
       </div>
     </div>
