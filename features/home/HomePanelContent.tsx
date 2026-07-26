@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/ui/Spinner";
 import Modal from "@/components/ui/Modal";
@@ -355,6 +355,13 @@ function ProfileEditPanel({ onBack, onSaved }: { onBack: () => void; onSaved: ()
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const hasChangesRef = useRef(false);
+
+  const handleBack = useCallback(() => {
+    if (hasChangesRef.current) setShowLeaveModal(true);
+    else onBack();
+  }, [onBack]);
 
   useEffect(() => {
     let active = true;
@@ -380,9 +387,38 @@ function ProfileEditPanel({ onBack, onSaved }: { onBack: () => void; onSaved: ()
   }, [router]);
 
   return (
-    <PanelShell title="프로필 편집" onBack={onBack}>
-      {isLoading ? <PanelLoading /> : profile ? <ProfileEditForm profile={profile} onSaved={onSaved} /> : null}
-    </PanelShell>
+    <>
+      <PanelShell title="프로필 편집" onBack={handleBack}>
+        {isLoading ? <PanelLoading /> : profile ? (
+          <ProfileEditForm
+            profile={profile}
+            onSaved={onSaved}
+            onHasChanges={(has) => { hasChangesRef.current = has; }}
+            actionPlacement="contained"
+          />
+        ) : null}
+      </PanelShell>
+      <Modal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        variant="dialog"
+        title="편집을 그만두시겠어요?"
+        footer={
+          <div className="flex gap-2.5">
+            <Button variant="secondary" fullWidth onClick={() => setShowLeaveModal(false)}>
+              계속 편집
+            </Button>
+            <Button fullWidth onClick={onBack}>
+              나가기
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[14px] leading-relaxed text-text-secondary">
+          변경한 내용은 저장되지 않습니다.
+        </p>
+      </Modal>
+    </>
   );
 }
 
