@@ -6,7 +6,6 @@ import StoreCard from "./StoreCard";
 import Spinner from "@/components/ui/Spinner";
 import Toast from "@/components/ui/Toast";
 import { useToast } from "@/hooks/use-toast";
-import MyPickMapToggle from "./MyPickMapToggle";
 import type { Store } from "@/types/database";
 
 interface RankingSheetProps {
@@ -21,7 +20,6 @@ interface RankingSheetProps {
   defaultSnap?: "collapsed" | "half" | "full";
   regionName?: string;
   isMyPickMode?: boolean;
-  onMyPickToggle?: () => void;
 }
 
 export interface RankingSheetHandle {
@@ -30,7 +28,7 @@ export interface RankingSheetHandle {
 }
 
 const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function RankingSheet(
-  { stores, isLoading, page = 0, totalPages = 1, hasMore, onLoadMore, onStoreClick, onSnapChange, defaultSnap = "half", regionName, isMyPickMode, onMyPickToggle },
+  { stores, isLoading, page = 0, totalPages = 1, hasMore, onLoadMore, onStoreClick, onSnapChange, defaultSnap = "half", regionName, isMyPickMode },
   ref
 ) {
   const sheetRef = useRef<BottomSheetHandle>(null);
@@ -59,25 +57,19 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
           {isMyPickMode ? "내가 기록한 맛집" : (regionName ?? "불러오는 중...")}
         </p>
       </div>
-      <div className="ml-auto flex items-center gap-2">
-        {!isMyPickMode && (
-          <button
-            onClick={handleLoadMore}
-            className={`flex items-center gap-1 rounded-full border border-border bg-bg px-3 py-1.5 text-[12px] font-semibold text-text-secondary transition-colors ${!hasMore ? "opacity-40" : ""}`}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 4v6h-6" />
-              <path d="M1 20v-6h6" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            <span>{page + 1}/{totalPages}</span>
-          </button>
-        )}
-        <MyPickMapToggle
-          checked={!!isMyPickMode}
-          onChange={() => onMyPickToggle?.()}
-        />
-      </div>
+      {!isMyPickMode && (
+        <button
+          onClick={handleLoadMore}
+          className={`ml-auto flex items-center gap-1 rounded-full border border-border bg-bg px-3 py-1.5 text-[12px] font-semibold text-text-secondary transition-colors ${!hasMore ? "opacity-40" : ""}`}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 4v6h-6" />
+            <path d="M1 20v-6h6" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+          <span>{page + 1}/{totalPages}</span>
+        </button>
+      )}
     </div>
   );
 
