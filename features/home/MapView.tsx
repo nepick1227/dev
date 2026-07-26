@@ -97,7 +97,7 @@ const RESTAURANT_SUBCATEGORIES = [
   "한식",
 ] as const;
 
-const RANKING_DISPLAY_LIMIT = 60;
+const RANKING_DISPLAY_LIMIT = 50;
 const DESKTOP_NAV_WIDTH = 64;
 const DESKTOP_MARKER_SAFE_GAP = 48;
 const GENERIC_REGION_NAME = "현재 보고 있는 지역";
