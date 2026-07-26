@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
-import { MapPinIcon, CameraIcon, BellIcon } from "@/components/ui/icons";
+import { MapPinIcon, CameraIcon } from "@/components/ui/icons";
 
 type PermStatus = "granted" | "denied" | "prompt";
 
@@ -57,13 +57,14 @@ const ITEMS = [
     icon: <CameraIcon size={20} color="#2563EB" />,
     iconBg: "#DBEAFE",
   },
-  {
-    key: "notification" as const,
-    label: "알림",
-    description: "방문 기록 알림과 새로운 소식을 받아볼 수 있어요.",
-    icon: <BellIcon size={20} color="#D97706" />,
-    iconBg: "#FEF3C7",
-  },
+  // 알림 권한 항목은 출시 정책 확정 전까지 비노출 (QA 07 2-1)
+  // {
+  //   key: "notification" as const,
+  //   label: "알림",
+  //   description: "방문 기록 알림과 새로운 소식을 받아볼 수 있어요.",
+  //   icon: <BellIcon size={20} color="#D97706" />,
+  //   iconBg: "#FEF3C7",
+  // },
 ] as const;
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────
@@ -81,8 +82,8 @@ export default function PermissionsView() {
   }, []);
 
   const handleRequest = useCallback(async () => {
-    const { location, camera, notification } = permissions;
-    const hasPrompt = location === "prompt" || camera === "prompt" || notification === "prompt";
+    const { location, camera } = permissions;
+    const hasPrompt = location === "prompt" || camera === "prompt";
 
     if (!hasPrompt) {
       showToast("권한 변경은 기기 설정에서 직접 변경할 수 있어요.");
@@ -103,11 +104,7 @@ export default function PermissionsView() {
       } catch {}
     }
 
-    if (notification === "prompt") {
-      try {
-        await Notification.requestPermission();
-      } catch {}
-    }
+    // 알림 권한 요청은 항목 비노출에 맞춰 보류 (QA 07 2-1)
 
     // 권한 응답 후 상태 다시 조회
     const updated = await fetchPermissions();

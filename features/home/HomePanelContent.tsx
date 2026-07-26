@@ -39,6 +39,7 @@ export default function HomePanelContent({
   onMyPickMapToggle,
   isMyPickLoading = false,
 }: HomePanelContentProps) {
+  const router = useRouter();
   const [subview, setSubview] = useState<string>("main");
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -93,7 +94,11 @@ export default function HomePanelContent({
       );
     }
     if (subview !== "main") return <UnsupportedPanel title="프로필 메뉴" onBack={handleBack} />;
-    return <ProfilePanel key={reloadKey} onNavigate={(href) => setSubview(href === "/profile/edit" ? "profile-edit" : href)} />;
+    return <ProfilePanel key={reloadKey} onNavigate={(href) => {
+      // 약관은 패널 미구현이므로 실제 전체 페이지로 이동 (모바일과 동일 접근)
+      if (href.startsWith("/profile/terms/")) { router.push(href); return; }
+      setSubview(href === "/profile/edit" ? "profile-edit" : href);
+    }} />;
   }
 
   return null;
