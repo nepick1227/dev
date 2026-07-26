@@ -19,9 +19,11 @@ const REASONS = [
 
 interface WithdrawalViewProps {
   onCancel?: () => void;
+  /** "fixed"(기본, 모바일 페이지) | "contained"(데스크탑 패널 — in-flow) */
+  actionPlacement?: "fixed" | "contained";
 }
 
-export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
+export default function WithdrawalView({ onCancel, actionPlacement = "fixed" }: WithdrawalViewProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
   const [reason, setReason] = useState<string | null>(null);
@@ -71,7 +73,7 @@ export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
       window.location.replace("/profile/withdrawal/done");
     } catch (err) {
       console.error("[Withdrawal]", err instanceof Error ? err.message : "unknown error");
-      showToast("탈퇴 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
+      showToast("탈퇴 처리 중 오류가 발생했어요. 다시 시도해 주세요.");
       setIsSubmitting(false);
     }
   }, [agreed, isSubmitting, reason, customText, showToast]);
@@ -83,12 +85,12 @@ export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
       {/* 최종 확인 팝업 */}
       <Modal
         isOpen={showConfirm}
-        onClose={() => { if (!isSubmitting) { setShowConfirm(false); handleCancel(); } }}
+        onClose={() => { if (!isSubmitting) setShowConfirm(false); }}
         variant="dialog"
         title="정말 탈퇴하시겠어요?"
         footer={
           <div className="flex gap-2.5">
-            <Button variant="secondary" fullWidth onClick={() => { setShowConfirm(false); handleCancel(); }} disabled={isSubmitting}>
+            <Button variant="secondary" fullWidth onClick={() => setShowConfirm(false)} disabled={isSubmitting}>
               취소
             </Button>
             <Button variant="danger" fullWidth onClick={handleConfirm} disabled={!agreed || isSubmitting} isLoading={isSubmitting}>
@@ -162,7 +164,14 @@ export default function WithdrawalView({ onCancel }: WithdrawalViewProps) {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="app-fixed-bar safe-area-pb-lg fixed bottom-0 left-1/2 flex -translate-x-1/2 gap-2.5 border-t border-border bg-surface px-5 pt-3">
+      <div
+        className={[
+          "app-fixed-bar safe-area-pb-lg flex gap-2.5 border-t border-border bg-surface px-5 pt-3",
+          actionPlacement === "fixed"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            : "relative shrink-0",
+        ].join(" ")}
+      >
         <Button variant="secondary" fullWidth onClick={handleCancel}>
           이전
         </Button>
