@@ -59,7 +59,7 @@ export default function ProfileView({ profile, stats, providers, onNavigate }: P
     {
       title: "고객센터",
       items: [
-        { label: "사용설명서", externalUrl: "https://yaebinkim.notion.site/386a8622fa548044819ec342c4fe6299?source=copy_link" },
+        { label: "사용설명서", externalUrl: "https://furtive-yogurt-135.notion.site/3a9c394bf09480f89933eb3c2eff8bd6" },
         { label: "의견 보내기", externalUrl: "https://furtive-yogurt-135.notion.site/ef6c394bf09483b483c681e5589986a8?pvs=143" },
       ],
     },
