@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
+import Spinner from "@/components/ui/Spinner";
 import Textarea from "@/components/ui/Textarea";
 import { UserIcon, CameraIcon } from "@/components/ui/icons";
 import DatePicker from "@/components/ui/DatePicker";
@@ -104,6 +105,8 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges }: Prof
   // ── 저장 가능 여부 ─────────────────────────────────────
   const nicknameValidation = validateNickname(nickname);
   const introValidation = validateIntro(intro);
+
+  const isNicknameOriginal = nickname.trim() === (profile.nickname ?? "").trim();
 
   const isNicknameOk =
     nicknameValidation.isValid &&
@@ -283,23 +286,50 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges }: Prof
           <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
             닉네임
           </label>
-          <input
-            type="text"
-            value={nickname}
-            onChange={(e) => {
-              if (e.target.value.length <= 12) setNickname(e.target.value);
-            }}
-            placeholder="2~12자"
-            className="h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface px-5 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary placeholder:text-text-tertiary"
-            autoComplete="off"
-            maxLength={12}
-          />
-          <NicknameHint
-            nickname={nickname}
-            formatResult={nicknameValidation}
-            status={nicknameStatus}
-            isOriginal={nickname.trim() === (profile.nickname ?? "").trim()}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => {
+                if (e.target.value.length <= 12) setNickname(e.target.value);
+              }}
+              placeholder="2~12자"
+              className={[
+                "h-14 w-full rounded-2xl border-[1.5px] bg-surface px-5 pr-12 text-[16px] tracking-tight text-text-primary outline-none transition-colors placeholder:text-text-tertiary",
+                nicknameStatus === "available" && !isNicknameOriginal
+                  ? "border-success-border focus:border-success-border"
+                  : nicknameStatus === "taken" || nicknameStatus === "error" || (nickname.length > 0 && !nicknameValidation.isValid)
+                    ? "border-primary-dark focus:border-primary-dark"
+                    : "border-border focus:border-primary",
+              ].join(" ")}
+              autoComplete="off"
+              maxLength={12}
+            />
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+              {nicknameStatus === "checking" && <Spinner size={16} />}
+              {nicknameStatus === "available" && !isNicknameOriginal && (
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <circle cx="9" cy="9" r="9" fill="var(--color-success)" />
+                  <path d="M5 9.5L7.5 12L13 6.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              {(nicknameStatus === "taken" || nicknameStatus === "error" || (nickname.length > 0 && !nicknameValidation.isValid)) && (
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <circle cx="9" cy="9" r="9" fill="var(--color-primary)" />
+                  <path d="M6 6L12 12M12 6L6 12" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <div className="mt-1.5 flex items-center justify-between px-1">
+            <NicknameHint
+              nickname={nickname}
+              formatResult={nicknameValidation}
+              status={nicknameStatus}
+              isOriginal={isNicknameOriginal}
+            />
+            <span className="shrink-0 text-[12px] text-text-secondary">{nickname.length}/12</span>
+          </div>
         </div>
 
         {/* 한줄소개 */}
@@ -392,7 +422,7 @@ function NicknameHint({ nickname, formatResult, status, isOriginal }: NicknameHi
   // 포맷 오류 우선 표시
   if (!formatResult.isValid) {
     return (
-      <p className="mt-1.5 text-[12px] tracking-tight text-primary">
+      <p className="text-[12px] tracking-tight text-primary">
         {formatResult.message}
       </p>
     );
@@ -403,29 +433,29 @@ function NicknameHint({ nickname, formatResult, status, isOriginal }: NicknameHi
 
   if (status === "checking") {
     return (
-      <p className="mt-1.5 text-[12px] tracking-tight text-text-secondary">
+      <p className="text-[12px] tracking-tight text-text-secondary">
         중복 확인 중
       </p>
     );
   }
   if (status === "taken") {
     return (
-      <p className="mt-1.5 text-[12px] tracking-tight text-primary">
+      <p className="text-[12px] tracking-tight text-primary">
         이미 사용 중인 닉네임이에요
       </p>
     );
   }
   if (status === "available") {
     return (
-      <p className="mt-1.5 text-[12px] tracking-tight text-success-text">
+      <p className="text-[12px] tracking-tight text-success-text">
         사용 가능한 닉네임이에요
       </p>
     );
   }
   if (status === "error") {
     return (
-      <p className="mt-1.5 text-[12px] tracking-tight text-primary">
-        닉네임 확인에 실패했습니다. 다시 시도해 주세요.
+      <p className="text-[12px] tracking-tight text-primary">
+        닉네임 확인에 실패했어요. 다시 시도해 주세요.
       </p>
     );
   }
