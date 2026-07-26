@@ -97,8 +97,7 @@ const RESTAURANT_SUBCATEGORIES = [
   "한식",
 ] as const;
 
-const DESKTOP_RANKING_LIMIT = 60;
-const RANKING_DEFAULT_LIMIT = 20;
+const RANKING_DISPLAY_LIMIT = 50;
 const DESKTOP_NAV_WIDTH = 64;
 const DESKTOP_MARKER_SAFE_GAP = 48;
 const GENERIC_REGION_NAME = "현재 보고 있는 지역";
@@ -217,17 +216,10 @@ export default function MapView() {
   const [searchPosition, setSearchPosition] = useState<{ lat: number; lng: number } | undefined>(undefined);
   // tapMode: 지도 배경 탭으로 가게 선택 시 랭킹 마커 숨기고 단일 핀만 표시
   const [tapMode, setTapMode] = useState(false);
-  // 랭킹 리스트 "더보기" 페이지 — 0-indexed, 클릭할 때마다 20개씩 추가 노출 (최대 60개 = 3페이지)
-  const [rankingPage, setRankingPage] = useState(0);
 
   const sheetDefaultSnap = cardOpenedRef.current ? "collapsed" : "half" as const;
   const isMapFull = snap === "collapsed";
   const { rankedStores, isLoading, fetchStores } = useMapStores();
-
-  // 새로 fetch될 때마다(지도 이동/카테고리 변경 등) 페이지를 1페이지로 되돌린다.
-  useEffect(() => {
-    setRankingPage(0);
-  }, [rankedStores]);
 
   const visibleRankedStores = category === "restaurant"
     ? rankedStores.filter((store) => matchesRestaurantSubcategory(store, restaurantSubcategory))
@@ -235,14 +227,6 @@ export default function MapView() {
   const isMyPickOnlyView = isMyPickMapMode;
   const panelStores = isMyPickOnlyView ? myPickStores : visibleRankedStores;
   const panelLoading = isMyPickOnlyView ? isMyPickLoading : isLoading;
-  const rankingPoolSize = Math.min(panelStores.length, DESKTOP_RANKING_LIMIT);
-  const totalPages = Math.max(1, Math.ceil(rankingPoolSize / RANKING_DEFAULT_LIMIT));
-  const revealedCount = Math.min((rankingPage + 1) * RANKING_DEFAULT_LIMIT, rankingPoolSize);
-  const hasMore = !isMyPickOnlyView && rankingPage < totalPages - 1;
-  const handleLoadMore = useCallback(
-    () => setRankingPage((p) => Math.min(p + 1, totalPages - 1)),
-    [totalPages]
-  );
   const rankingRegionName = useMemo(
     () => getRankingRegionName(regionName, panelStores),
     [regionName, panelStores]
@@ -498,10 +482,9 @@ export default function MapView() {
     }
 
     // 지도 핀은 랭킹 리스트에 노출된 가게와 항상 동일한 집합·순서를 공유한다.
-    const isDesktop = isDesktopLayout();
     const storesForMarkers = isMyPickOnlyView
       ? myPickStores
-      : panelStores.slice(0, isDesktop ? DESKTOP_RANKING_LIMIT : revealedCount);
+      : panelStores.slice(0, RANKING_DISPLAY_LIMIT);
 
     // 겹치는 마커 나선형 오프셋 적용 후 랭킹 마커 렌더링
     const displayStores = spreadOverlappingMarkers(storesForMarkers);
@@ -524,11 +507,9 @@ export default function MapView() {
       markersRef.current = [];
     };
   }, [
-    isDesktopLayout,
     isMyPickOnlyView,
     myPickStores,
     panelStores,
-    revealedCount,
     selectedStore,
     selectedRank,
     panToVisible,
@@ -818,8 +799,6 @@ export default function MapView() {
         onSearchClose={handleSearchClose}
         desktopSidebarOpen={isDesktopSidebarOpen}
         desktopVisible={panelView === "ranking"}
-        isMyPickMapMode={isMyPickOnlyView}
-        onMyPickMapToggle={handleMyPickMapToggle}
       />
 
       <div
@@ -869,7 +848,7 @@ export default function MapView() {
                 </div>
               ) : (
                 <ul className="nepick-fade-in divide-y divide-border pb-6">
-                  {panelStores.slice(0, isMyPickOnlyView ? panelStores.length : DESKTOP_RANKING_LIMIT).map((store, idx) => (
+                  {panelStores.slice(0, isMyPickOnlyView ? panelStores.length : RANKING_DISPLAY_LIMIT).map((store, idx) => (
                     <li key={store.id}>
                       <StoreCard store={store} rank={idx + 1} onClick={handleStoreClick} />
                     </li>
@@ -962,17 +941,14 @@ export default function MapView() {
         <div className="md:hidden">
           <RankingSheet
             ref={rankingRef}
-            stores={panelStores.slice(0, isMyPickOnlyView ? panelStores.length : revealedCount)}
+            stores={panelStores.slice(0, isMyPickOnlyView ? panelStores.length : RANKING_DISPLAY_LIMIT)}
             isLoading={panelLoading}
-            page={rankingPage}
-            totalPages={totalPages}
-            hasMore={hasMore}
-            onLoadMore={handleLoadMore}
             onStoreClick={handleStoreClick}
             onSnapChange={setSnap}
             defaultSnap={sheetDefaultSnap}
             regionName={rankingRegionName}
             isMyPickMode={isMyPickOnlyView}
+            onMyPickToggle={handleMyPickMapToggle}
           />
         </div>
       )}
