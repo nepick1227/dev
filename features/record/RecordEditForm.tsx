@@ -92,7 +92,7 @@ export default function RecordEditForm({
     visitedAt !== record.visited_at.split("T")[0] ||
     visitedTime !== originalVisitedTime ||
     recommendation !== record.recommendation ||
-    comment !== record.comment ||
+    comment.trim() !== record.comment.trim() ||
     newImageFile !== null ||
     removeImage;
 
@@ -161,7 +161,7 @@ export default function RecordEditForm({
         .update({
           visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
           recommendation,
-          comment,
+          comment: comment.trim(),
           image_url: imageUrl,
         })
         .eq("id", record.id)

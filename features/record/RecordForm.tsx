@@ -158,7 +158,7 @@ export default function RecordForm({
         store_id: storeId,
         visited_at: new Date(`${visitedAt}T${visitedTime}:00`).toISOString(),
         recommendation,
-        comment,
+        comment: comment.trim(),
         image_url: imagePath,
       };
 
