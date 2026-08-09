@@ -9,6 +9,7 @@ import {
   type MonthlyMenuRecord,
   type MonthlyMenuResult,
 } from "@/lib/monthly-menu";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 
 interface MonthlyMenuStatus {
   sourceMonth: string;
@@ -104,6 +105,7 @@ export default function MonthlyMenuEvent({
       const data = await response.json() as MonthlyMenuResult & { error?: string };
       if (!response.ok) throw new Error(data.error ?? "메뉴판 생성에 실패했습니다.");
 
+      pushGtmEvent("monthly_menu_generate");
       setResult(data);
       setStatus((current) => current ? {
         ...current,

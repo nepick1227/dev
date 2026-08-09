@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
@@ -165,6 +166,10 @@ export default function RecordForm({
       const { error: recordError } = await supabase.from("records").insert(recordData);
       if (recordError) throw recordError;
 
+      pushGtmEvent("record_save", {
+        has_image: imageFile !== null,
+        recommendation,
+      });
       showToast("기록을 저장했어요 🎉");
       setTimeout(() => {
         if (onSaved) {
@@ -268,7 +273,10 @@ export default function RecordForm({
                 return (
                   <button
                     key={opt}
-                    onClick={() => setRecommendation(opt)}
+                    onClick={() => {
+                      setRecommendation(opt);
+                      pushGtmEvent("recommendation_select", { recommendation: opt });
+                    }}
                     className={`flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200 ${
                       isSelected ? "border-primary/30 bg-primary/13" : "border-border bg-bg"
                     }`}

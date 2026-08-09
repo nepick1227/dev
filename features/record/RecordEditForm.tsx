@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useToast } from "@/hooks/use-toast";
 import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Toast from "@/components/ui/Toast";
@@ -173,6 +174,7 @@ export default function RecordEditForm({
         await removeOrphanedRecordImage(supabase, record.image_url);
       }
 
+      pushGtmEvent("record_update");
       showToast("기록을 수정했어요");
       setTimeout(() => {
         if (onSaved) {
@@ -221,6 +223,7 @@ export default function RecordEditForm({
 
       await removeOrphanedRecordImage(supabase, record.image_url);
 
+      pushGtmEvent("record_delete");
       showToast("기록을 삭제했어요");
       setTimeout(() => {
         if (onSaved) {

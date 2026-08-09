@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import Spinner from "@/components/ui/Spinner";
 import { NepickLogo, MapPinIcon } from "@/components/ui/icons";
 
@@ -203,6 +204,7 @@ function LoginContent() {
     setLoadingProvider(provider);
     setLoginError(null);
     setLastProvider(provider);
+    pushGtmEvent("login_click", { provider });
 
     const supabase = createClient();
     const redirectTo = `${window.location.origin}/auth/callback`;
@@ -275,6 +277,7 @@ function LoginContent() {
             onClick={() => {
               setLoadingProvider("naver");
               setLastProvider("naver");
+              pushGtmEvent("login_click", { provider: "naver" });
               window.location.href = "/api/auth/naver";
             }}
             disabled={isLoading}

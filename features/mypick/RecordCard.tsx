@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import { getStorageImagePath } from "@/lib/supabase/storage";
 import { formatTime } from "@/utils/format";
@@ -126,6 +127,7 @@ export default function RecordCard({
         if (rmError) console.error("[RecordCardImageCleanup]", rmError.message);
       }
 
+      pushGtmEvent("record_delete");
       onDelete?.();
       onShowToast?.("기록을 삭제했어요");
     } catch (err) {

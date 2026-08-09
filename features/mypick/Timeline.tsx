@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import MonthFilter from "./MonthFilter";
@@ -47,6 +48,7 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
   const [isLoading, setIsLoading] = useState(!initialRecords);
   // 서버에서 초기 데이터를 받은 경우, 첫 번째 timeline 모드 fetch는 스킵
   const skipInitialFetch = useRef(!!initialRecords);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchRecords = useCallback(async (mode: ViewMode, month: Date) => {
     setIsLoading(true);
@@ -87,6 +89,17 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
     }
     fetchRecords(viewMode, currentMonth);
   }, [viewMode, currentMonth, fetchRecords]);
+
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!searchQuery.trim()) return;
+    searchDebounceRef.current = setTimeout(() => {
+      pushGtmEvent("mypick_search");
+    }, 500);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery]);
 
   const filteredRecords = searchQuery
     ? records.filter((r) => {
@@ -132,6 +145,7 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
           </div>
           <button
             onClick={() => {
+              pushGtmEvent("record_start_from_mypick");
               if (onCreateRecord) {
                 onCreateRecord();
               } else {
@@ -213,6 +227,7 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
               {viewMode === "timeline" && !searchQuery && (
                 <button
                   onClick={() => {
+                    pushGtmEvent("record_start_from_mypick");
                     if (onCreateRecord) {
                       onCreateRecord();
                     } else {
