@@ -3,6 +3,7 @@
 import { useState, useCallback, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { CloseIcon } from "@/components/ui/icons";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import type { Store } from "@/types/database";
 
 export const CARD_BOTTOM_PX = 28;
@@ -32,6 +33,7 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
   }, [address]);
 
   const handleRecord = useCallback(() => {
+    pushGtmEvent("record_start_from_map");
     const params = new URLSearchParams({
       kakao_id: store.kakao_id,
       place_name: store.name,

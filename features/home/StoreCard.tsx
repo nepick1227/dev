@@ -19,6 +19,7 @@ export default function StoreCard({ store, rank, onClick }: StoreCardProps) {
     <div
       className="flex w-full items-center gap-3 px-5 py-3.5 transition-colors active:bg-bg"
       onClick={handleClick}
+      data-gtm-event="ranking_store_click"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && handleClick()}

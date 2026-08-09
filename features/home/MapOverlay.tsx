@@ -153,6 +153,7 @@ export default function MapOverlay({
                   <li key={place.id} className="border-b border-border last:border-none">
                     <button
                       onClick={() => handleSelect(place)}
+                      data-gtm-event="search_select"
                       className="flex w-full items-start gap-3 px-4 py-3 text-left active:bg-bg"
                     >
                       <MapPinIcon size={14} color="var(--color-primary)" className="mt-0.5 shrink-0" />

@@ -8,6 +8,7 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import RecordForm from "@/features/record/RecordForm";
 import Spinner from "@/components/ui/Spinner";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import type { KakaoPlace } from "@/features/record/StoreSearch";
 
 function RecordPageContent() {
@@ -59,7 +60,7 @@ function RecordPageContent() {
             <Button variant="secondary" fullWidth onClick={() => setShowLeaveModal(false)}>
               계속 작성
             </Button>
-            <Button fullWidth onClick={() => router.back()}>
+            <Button fullWidth onClick={() => { pushGtmEvent("record_abandon"); router.back(); }}>
               나가기
             </Button>
           </div>

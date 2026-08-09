@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useToast } from "@/hooks/use-toast";
 import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Toast from "@/components/ui/Toast";
@@ -207,6 +208,7 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
         if (cleanupError) console.error("[ProfileImageCleanup]", cleanupError.message);
       }
 
+      pushGtmEvent("profile_update");
       showToast("프로필이 업데이트됐어요");
       setTimeout(() => {
         if (onSaved) {

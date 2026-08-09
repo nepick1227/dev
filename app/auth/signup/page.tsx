@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Spinner from "@/components/ui/Spinner";
@@ -117,6 +118,7 @@ function SignupContent() {
         throw error;
       }
 
+      pushGtmEvent("signup_complete");
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);
     } catch (err) {
@@ -155,6 +157,7 @@ function SignupContent() {
         throw error;
       }
 
+      pushGtmEvent("signup_skip");
       showToast("환영합니다 🎉");
       setTimeout(() => router.push("/home"), 800);
     } catch (err) {

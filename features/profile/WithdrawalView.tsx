@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
@@ -68,6 +69,8 @@ export default function WithdrawalView({ onCancel, actionPlacement = "fixed" }: 
         .eq("id", user.id);
 
       if (error) throw error;
+
+      pushGtmEvent("withdrawal_complete", { reason });
 
       // signOut은 done 페이지에서 처리 — 여기서 하면 auth 상태 변경 이벤트가 가로챔
       window.location.replace("/profile/withdrawal/done");

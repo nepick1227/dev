@@ -15,6 +15,7 @@ import Button from "@/components/ui/Button";
 import { useMapStores, type MapBounds } from "@/hooks/use-map-stores";
 import { getCurrentPosition } from "@/lib/kakao/map";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
 import type { Category } from "./types";
 import type { Store } from "@/types/database";
@@ -493,6 +494,7 @@ export default function MapView() {
       const dimmed = selectedStore !== null && selectedStore.id !== store.id;
       const marker = createRankMarker(map, store, rank, dimmed, displayLat, displayLng);
       kakao.maps.event.addListener(marker, "click", () => {
+        pushGtmEvent("marker_click");
         setTapMode(false);
         cardOpenedRef.current = true;
         setSelectedStore(store);
@@ -727,6 +729,7 @@ export default function MapView() {
       setShowNoPickModal(true);
       return;
     }
+    pushGtmEvent("mypick_map_toggle");
     setIsMyPickMapMode(true);
     if (map) {
       window.setTimeout(() => fitStoresToVisibleMap(map, stores), 0);

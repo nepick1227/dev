@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { NepickLogo } from "@/components/ui/icons";
 import { TERMS_CONTENT, type TermsKey } from "@/lib/terms-content";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 
 // ── 체크박스 컴포넌트 ────────────────────────────────
 interface CheckboxItemProps {
@@ -130,6 +131,8 @@ export default function TermsPage() {
 
   const handleStart = useCallback(async () => {
     if (!allRequired) return;
+
+    pushGtmEvent("terms_agree", { marketing: agreements.marketing });
 
     // 1. 위치 권한 요청 (필수 약관 동의 완료 후)
     if (typeof navigator !== "undefined" && navigator.geolocation) {

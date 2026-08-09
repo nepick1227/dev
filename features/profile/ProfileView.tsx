@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -45,6 +46,7 @@ export default function ProfileView({ profile, stats, providers, onNavigate }: P
   const handleLogout = useCallback(async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    pushGtmEvent("logout");
     router.replace("/auth/login");
   }, [router]);
 
