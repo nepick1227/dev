@@ -307,7 +307,8 @@ export default function MapView() {
       };
     }
 
-    const latPadTop = latRange * 0.20;  // 검색바+필터(~17%) + 여유(3%)
+    // 검색바+카테고리 필터(~17%) + 여유(3%). 음식점 세부 필터 줄이 추가로 뜨면 그만큼 더 확보.
+    const latPadTop = latRange * (categoryRef.current === "restaurant" ? 0.28 : 0.20);
     const lngPad = lngRange * 0.05;
 
     if (snapRef.current === "half") {
@@ -799,6 +800,11 @@ export default function MapView() {
         onSearchClose={handleSearchClose}
         desktopSidebarOpen={isDesktopSidebarOpen}
         desktopVisible={panelView === "ranking"}
+        restaurantSubcategory={restaurantSubcategory}
+        restaurantSubcategories={RESTAURANT_SUBCATEGORIES}
+        onRestaurantSubcategoryChange={(value) =>
+          setRestaurantSubcategory(value as (typeof RESTAURANT_SUBCATEGORIES)[number])
+        }
       />
 
       <div
