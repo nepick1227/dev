@@ -4,18 +4,22 @@
  * 사용법:
  *   KAKAO_REST_API_KEY=<키> SUPABASE_URL=<url> SUPABASE_SERVICE_KEY=<key> node scripts/batch-kakao-places.js
  *   DRY_RUN=1 MAX_CELLS=3 ... node scripts/batch-kakao-places.js
+ *   REGIONS=seoul,busan ... node scripts/batch-kakao-places.js   # 특정 지역만 실행 (기본값: 전체)
  *
  * 동작:
- *   - 서울 전체를 500m 그리드로 분할
+ *   - 전국 광역시 단위(REGIONS, 서울+6개 광역시+세종) 를 지역별로 500m 그리드로 분할
  *   - 각 셀마다 음식점(FD6) + 카페(CE7) 카테고리 검색 (최대 3페이지 × 15개 = 45개)
  *   - 하루 호출 한도(MAX_DAILY_CALLS)에 도달하면 진행 상태를 저장하고 종료
- *   - 다음 날 실행 시 중단된 지점부터 이어서 진행
+ *   - 다음 날 실행 시 중단된 지점부터 이어서 진행 (지역 간 이어짐, 순서는 REGIONS 배열 순)
  *   - Supabase stores 테이블에 upsert (kakao_id 기준 중복 제거)
  *
- * 서울 커버리지 예상:
- *   - 그리드 셀 수: 약 14,000개
+ * 지역 경계는 각 광역시 전체를 감싸는 근사 사각형입니다. 산/바다 등 비도심 셀은
+ * 카카오 검색 결과가 0건이라 API 호출만 소모하고 적재는 없습니다(기존 서울 그리드와 동일한 방식).
+ *
+ * 예상 커버리지 (지역 전체 기준):
+ *   - 그리드 셀 수: 지역당 수천~1만4천개 수준 (서울이 가장 넓음, 세종이 가장 작음)
  *   - 셀당 API 호출: 카테고리 2 × 페이지 3 = 6회
- *   - 전체 호출: ~84,000회 → 하루 50,000회 제한 시 약 2일 소요
+ *   - 전국 8개 지역 총합 시 하루 50,000회 제한 기준 1~2주 소요 예상 — REGIONS로 지역을 나눠 실행 권장
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -43,13 +47,33 @@ const DELAY_MS = 100;             // 호출 간 딜레이 (ms) — 초당 10회 
 const PROGRESS_FILE = path.join(__dirname, ".batch-progress.json");
 const DRY_RUN = process.env.DRY_RUN === "1";
 
-// ── 서울 경계 (위경도) ──────────────────────────────────
-const BOUNDS = {
-  minLat: 37.413,
-  maxLat: 37.715,
-  minLng: 126.734,
-  maxLng: 127.269,
-};
+// ── 전국 광역시 단위 경계 (위경도) ────────────────────────
+// 각 지역 전체를 감싸는 근사 사각형. REGIONS 환경변수로 일부만 선택 가능
+// (예: REGIONS=seoul,busan). 미지정 시 아래 순서대로 전체 실행.
+const ALL_REGIONS = [
+  { key: "seoul", name: "서울", bounds: { minLat: 37.413, maxLat: 37.715, minLng: 126.734, maxLng: 127.269 } },
+  { key: "busan", name: "부산", bounds: { minLat: 34.876, maxLat: 35.402, minLng: 128.741, maxLng: 129.309 } },
+  { key: "daegu", name: "대구", bounds: { minLat: 35.591, maxLat: 35.984, minLng: 128.349, maxLng: 128.775 } },
+  { key: "incheon", name: "인천", bounds: { minLat: 37.183, maxLat: 37.750, minLng: 126.383, maxLng: 126.775 } },
+  { key: "gwangju", name: "광주", bounds: { minLat: 35.079, maxLat: 35.257, minLng: 126.734, maxLng: 126.982 } },
+  { key: "daejeon", name: "대전", bounds: { minLat: 36.203, maxLat: 36.481, minLng: 127.245, maxLng: 127.518 } },
+  { key: "ulsan", name: "울산", bounds: { minLat: 35.423, maxLat: 35.688, minLng: 129.157, maxLng: 129.517 } },
+  { key: "sejong", name: "세종", bounds: { minLat: 36.443, maxLat: 36.687, minLng: 127.184, maxLng: 127.386 } },
+];
+
+const REQUESTED_REGION_KEYS = (process.env.REGIONS ?? "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+const REGIONS = REQUESTED_REGION_KEYS.length > 0
+  ? ALL_REGIONS.filter((r) => REQUESTED_REGION_KEYS.includes(r.key))
+  : ALL_REGIONS;
+
+if (REGIONS.length === 0) {
+  console.error(`REGIONS 값이 올바르지 않습니다. 사용 가능한 지역: ${ALL_REGIONS.map((r) => r.key).join(", ")}`);
+  process.exit(1);
+}
 
 const CATEGORIES = [
   { code: "FD6", name: "restaurant" },
@@ -73,11 +97,23 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/** 진행 상태 불러오기 */
+/**
+ * 진행 상태 불러오기
+ * REGIONS 선택이 이전 실행과 다르면 그리드 구성 자체가 달라져 cellIndex가
+ * 어긋나므로, regionKeys가 일치할 때만 이어서 진행하고 다르면 처음부터 시작한다.
+ */
 function loadProgress() {
   if (!fs.existsSync(PROGRESS_FILE)) return { cellIndex: 0, callCount: 0 };
   try {
-    return JSON.parse(fs.readFileSync(PROGRESS_FILE, "utf-8"));
+    const saved = JSON.parse(fs.readFileSync(PROGRESS_FILE, "utf-8"));
+    const currentKeys = REGIONS.map((r) => r.key).join(",");
+    if (saved.regionKeys && saved.regionKeys !== currentKeys) {
+      console.log(
+        `⚠️  이전 실행의 REGIONS(${saved.regionKeys})와 이번 REGIONS(${currentKeys})가 달라 처음부터 시작합니다.`
+      );
+      return { cellIndex: 0, callCount: 0 };
+    }
+    return saved;
   } catch {
     return { cellIndex: 0, callCount: 0 };
   }
@@ -85,24 +121,38 @@ function loadProgress() {
 
 /** 진행 상태 저장 */
 function saveProgress(state) {
-  fs.writeFileSync(PROGRESS_FILE, JSON.stringify(state, null, 2));
+  fs.writeFileSync(
+    PROGRESS_FILE,
+    JSON.stringify({ ...state, regionKeys: REGIONS.map((r) => r.key).join(",") }, null, 2)
+  );
 }
 
 // ── 그리드 생성 ──────────────────────────────────────────
-function buildGrid() {
+function buildGridForBounds(bounds) {
   const cells = [];
   const latStep = meterToLat(GRID_STEP_M);
-  let lat = BOUNDS.minLat;
-  while (lat <= BOUNDS.maxLat) {
+  let lat = bounds.minLat;
+  while (lat <= bounds.maxLat) {
     const lngStep = meterToLng(GRID_STEP_M, lat);
-    let lng = BOUNDS.minLng;
-    while (lng <= BOUNDS.maxLng) {
+    let lng = bounds.minLng;
+    while (lng <= bounds.maxLng) {
       cells.push({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) });
       lng += lngStep;
     }
     lat += latStep;
   }
   return cells;
+}
+
+/** 선택된 REGIONS 순서대로 지역 그리드를 이어붙여 하나의 셀 목록으로 생성 */
+function buildGrid() {
+  return REGIONS.flatMap((region) =>
+    buildGridForBounds(region.bounds).map((cell) => ({
+      ...cell,
+      regionKey: region.key,
+      regionName: region.name,
+    }))
+  );
 }
 
 // ── 카카오 카테고리 검색 ─────────────────────────────────
@@ -199,9 +249,11 @@ async function main() {
   const progress = loadProgress();
   let { cellIndex, callCount } = progress;
 
+  console.log(`대상 지역: ${REGIONS.map((r) => r.name).join(", ")}`);
   console.log(`총 그리드 셀: ${grid.length}개 | 시작 셀: ${cellIndex} | 오늘 호출 수: ${callCount}`);
 
   let insertedTotal = 0;
+  let currentRegionKey = null;
 
   const endCellIndex = MAX_CELLS > 0 ? Math.min(cellIndex + MAX_CELLS, grid.length) : grid.length;
 
@@ -212,7 +264,11 @@ async function main() {
       return;
     }
 
-    const { lat, lng } = grid[cellIndex];
+    const { lat, lng, regionKey, regionName } = grid[cellIndex];
+    if (regionKey !== currentRegionKey) {
+      currentRegionKey = regionKey;
+      console.log(`\n── ${regionName} 시작 (셀 ${cellIndex}) ──`);
+    }
     const rows = [];
 
     for (const { code, name } of CATEGORIES) {
@@ -246,7 +302,7 @@ async function main() {
     }
 
     if (cellIndex % 100 === 0) {
-      process.stdout.write(`\r셀 ${cellIndex}/${grid.length} | 호출 ${callCount} | 적재 ${insertedTotal}건`);
+      process.stdout.write(`\r[${regionName}] 셀 ${cellIndex}/${grid.length} | 호출 ${callCount} | 적재 ${insertedTotal}건`);
       saveProgress({ cellIndex, callCount });
     }
   }
