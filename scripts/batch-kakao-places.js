@@ -4,22 +4,22 @@
  * 사용법:
  *   KAKAO_REST_API_KEY=<키> SUPABASE_URL=<url> SUPABASE_SERVICE_KEY=<key> node scripts/batch-kakao-places.js
  *   DRY_RUN=1 MAX_CELLS=3 ... node scripts/batch-kakao-places.js
- *   REGIONS=seoul,busan ... node scripts/batch-kakao-places.js   # 특정 지역만 실행 (기본값: 전체)
+ *   REGIONS=seoul,busan ... node scripts/batch-kakao-places.js       # 특정 지역만 실행 (기본값: 전체)
+ *   TARGET_PER_REGION=3000 ... node scripts/batch-kakao-places.js    # 지역당 목표 건수 조정 (기본 5000, 0=무제한)
  *
  * 동작:
- *   - 전국 광역시 단위(REGIONS, 서울+6개 광역시+세종) 를 지역별로 500m 그리드로 분할
+ *   - 전국 광역시 단위(REGIONS, 서울+6개 광역시+세종+제주시+서귀포시) 를 지역별로 500m 그리드로 분할
  *   - 각 셀마다 음식점(FD6) + 카페(CE7) 카테고리 검색 (최대 3페이지 × 15개 = 45개)
+ *   - 지역별로 음식점+카페 합산 적재 건수가 TARGET_PER_REGION(기본 5,000)에 도달하면
+ *     그 지역의 남은 셀은 건너뛰고 바로 다음 지역으로 이동 (API 호출/DB 쓰기 낭비 방지)
  *   - 하루 호출 한도(MAX_DAILY_CALLS)에 도달하면 진행 상태를 저장하고 종료
- *   - 다음 날 실행 시 중단된 지점부터 이어서 진행 (지역 간 이어짐, 순서는 REGIONS 배열 순)
+ *   - 다음 날 실행 시 중단된 지점부터 이어서 진행 (지역 간 이어짐, 순서는 REGIONS 배열 순, 지역별 누적 건수도 이어서 추적)
  *   - Supabase stores 테이블에 upsert (kakao_id 기준 중복 제거)
  *
  * 지역 경계는 각 광역시 전체를 감싸는 근사 사각형입니다. 산/바다 등 비도심 셀은
  * 카카오 검색 결과가 0건이라 API 호출만 소모하고 적재는 없습니다(기존 서울 그리드와 동일한 방식).
- *
- * 예상 커버리지 (지역 전체 기준):
- *   - 그리드 셀 수: 지역당 수천~1만4천개 수준 (서울이 가장 넓음, 세종이 가장 작음)
- *   - 셀당 API 호출: 카테고리 2 × 페이지 3 = 6회
- *   - 전국 8개 지역 총합 시 하루 50,000회 제한 기준 1~2주 소요 예상 — REGIONS로 지역을 나눠 실행 권장
+ * TARGET_PER_REGION이 적용되면 대부분 도심 밀집 지역만 훑고 목표에 도달해 조기 종료되므로
+ * 무제한 전체 그리드보다 훨씬 적은 호출로 끝납니다.
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -46,6 +46,9 @@ const RADIUS = 350;               // 검색 반경 (미터) — 그리드 겹침
 const DELAY_MS = 100;             // 호출 간 딜레이 (ms) — 초당 10회 이내 유지
 const PROGRESS_FILE = path.join(__dirname, ".batch-progress.json");
 const DRY_RUN = process.env.DRY_RUN === "1";
+// 도시(지역)당 목표 적재 건수(음식점+카페 합산). 도달하면 그 지역은 건너뛰고 다음 지역으로 넘어감.
+// 0으로 설정하면 무제한(지역 전체 그리드를 끝까지 순회) — 기존 동작과 동일.
+const TARGET_PER_REGION = Number.parseInt(process.env.TARGET_PER_REGION ?? "5000", 10);
 
 // ── 전국 광역시 단위 경계 (위경도) ────────────────────────
 // 각 지역 전체를 감싸는 근사 사각형. REGIONS 환경변수로 일부만 선택 가능
@@ -59,6 +62,9 @@ const ALL_REGIONS = [
   { key: "daejeon", name: "대전", bounds: { minLat: 36.203, maxLat: 36.481, minLng: 127.245, maxLng: 127.518 } },
   { key: "ulsan", name: "울산", bounds: { minLat: 35.423, maxLat: 35.688, minLng: 129.157, maxLng: 129.517 } },
   { key: "sejong", name: "세종", bounds: { minLat: 36.443, maxLat: 36.687, minLng: 127.184, maxLng: 127.386 } },
+  // 제주/서귀포는 부속 섬(추자도, 우도, 마라도 등)을 빼고 본섬 육지부만 감싼 사각형
+  { key: "jeju", name: "제주시", bounds: { minLat: 33.300, maxLat: 33.590, minLng: 126.140, maxLng: 126.750 } },
+  { key: "seogwipo", name: "서귀포시", bounds: { minLat: 33.140, maxLat: 33.340, minLng: 126.150, maxLng: 126.940 } },
 ];
 
 const REQUESTED_REGION_KEYS = (process.env.REGIONS ?? "")
@@ -155,6 +161,14 @@ function buildGrid() {
   );
 }
 
+/** fromIndex가 속한 지역 블록이 끝나는(다음 지역이 시작하는) 인덱스 반환 */
+function regionBlockEndIndex(grid, fromIndex) {
+  const key = grid[fromIndex].regionKey;
+  let i = fromIndex;
+  while (i < grid.length && grid[i].regionKey === key) i++;
+  return i;
+}
+
 // ── 카카오 카테고리 검색 ─────────────────────────────────
 function kakaoSearch(lat, lng, categoryCode, page) {
   return new Promise((resolve, reject) => {
@@ -247,9 +261,12 @@ function toStoreRow(place, category) {
 async function main() {
   const grid = buildGrid();
   const progress = loadProgress();
-  let { cellIndex, callCount } = progress;
+  let { cellIndex, callCount, regionInserted = {} } = progress;
 
   console.log(`대상 지역: ${REGIONS.map((r) => r.name).join(", ")}`);
+  if (TARGET_PER_REGION > 0) {
+    console.log(`지역당 목표: 음식점+카페 합산 ${TARGET_PER_REGION}건 (도달 시 다음 지역으로 이동)`);
+  }
   console.log(`총 그리드 셀: ${grid.length}개 | 시작 셀: ${cellIndex} | 오늘 호출 수: ${callCount}`);
 
   let insertedTotal = 0;
@@ -260,15 +277,23 @@ async function main() {
   for (; cellIndex < endCellIndex; cellIndex++) {
     if (callCount >= MAX_DAILY_CALLS) {
       console.log(`\n하루 호출 한도(${MAX_DAILY_CALLS})에 도달. 진행 상태 저장 후 종료.`);
-      saveProgress({ cellIndex, callCount });
+      saveProgress({ cellIndex, callCount, regionInserted });
       return;
     }
 
     const { lat, lng, regionKey, regionName } = grid[cellIndex];
     if (regionKey !== currentRegionKey) {
       currentRegionKey = regionKey;
-      console.log(`\n── ${regionName} 시작 (셀 ${cellIndex}) ──`);
+      console.log(`\n── ${regionName} 시작 (셀 ${cellIndex}, 현재 누적 ${regionInserted[regionKey] ?? 0}건) ──`);
     }
+
+    // 이미 이 지역의 목표 건수에 도달했으면 API 호출 없이 다음 지역으로 건너뜀
+    if (TARGET_PER_REGION > 0 && (regionInserted[regionKey] ?? 0) >= TARGET_PER_REGION) {
+      console.log(`[${regionName}] 목표(${TARGET_PER_REGION}건) 도달 — 남은 셀 건너뛰고 다음 지역으로 이동`);
+      cellIndex = regionBlockEndIndex(grid, cellIndex) - 1; // for문 증가로 다음 지역 첫 셀로 이동
+      continue;
+    }
+
     const rows = [];
 
     for (const { code, name } of CATEGORIES) {
@@ -296,6 +321,7 @@ async function main() {
           await upsertStores(rows);
         }
         insertedTotal += rows.length;
+        regionInserted[regionKey] = (regionInserted[regionKey] ?? 0) + rows.length;
       } catch (e) {
         console.error(`  upsert 오류:`, e.message);
       }
@@ -303,13 +329,17 @@ async function main() {
 
     if (cellIndex % 100 === 0) {
       process.stdout.write(`\r[${regionName}] 셀 ${cellIndex}/${grid.length} | 호출 ${callCount} | 적재 ${insertedTotal}건`);
-      saveProgress({ cellIndex, callCount });
+      saveProgress({ cellIndex, callCount, regionInserted });
     }
   }
 
   // 완료 시 진행 파일 삭제
   if (fs.existsSync(PROGRESS_FILE)) fs.unlinkSync(PROGRESS_FILE);
   console.log(`\n완료${DRY_RUN ? " (dry-run)" : ""}! 총 적재 대상: ${insertedTotal}건 | 총 API 호출: ${callCount}회`);
+  console.log(
+    "지역별 적재 건수: " +
+      REGIONS.map((r) => `${r.name} ${regionInserted[r.key] ?? 0}건`).join(" / ")
+  );
 }
 
 main().catch((e) => {
