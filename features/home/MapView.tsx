@@ -249,10 +249,10 @@ export default function MapView() {
     return {
       left: visibleLeft + DESKTOP_MARKER_SAFE_GAP,
       right: 88,
-      top: !isMyPickOnlyView && categoryRef.current === "restaurant" ? 128 : 88,
+      top: 88,
       bottom: 88,
     };
-  }, [isDesktopSidebarOpen, isMyPickOnlyView]);
+  }, [isDesktopSidebarOpen]);
 
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
