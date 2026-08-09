@@ -150,15 +150,56 @@ function buildGridForBounds(bounds) {
   return cells;
 }
 
-/** 선택된 REGIONS 순서대로 지역 그리드를 이어붙여 하나의 셀 목록으로 생성 */
+/**
+ * 시드 고정 PRNG (Park-Miller LCG) — Math.random() 대신 사용.
+ * 같은 seed로 호출하면 항상 같은 난수열이 나와서, 재실행/재개 시에도
+ * buildGrid()가 항상 동일한 셀 순서를 만들어낸다(진행 상태 파일의
+ * cellIndex가 매번 같은 셀을 가리키도록 보장하기 위함).
+ */
+function createSeededRandom(seed) {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return function next() {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+/** Fisher-Yates 셔플 (in-place) */
+function shuffleInPlace(arr, rng) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/** 문자열 → 32bit 정수 해시 (지역 키별로 다른 시드를 만들기 위함) */
+function hashStringToSeed(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return h === 0 ? 1 : Math.abs(h);
+}
+
+/**
+ * 선택된 REGIONS 순서대로 지역 그리드를 이어붙여 하나의 셀 목록으로 생성.
+ * 각 지역 내부는 좌표 순서가 아니라 셔플된 순서로 처리한다 — 그래야
+ * TARGET_PER_REGION에 일찍 도달해도 지역의 남쪽/서쪽 일부만이 아니라
+ * 전역에 고르게 퍼진 샘플이 된다(예: 대전/대구 도심이 통째로 빠지는
+ * 문제 방지). 지역 블록의 연속성(regionBlockEndIndex 전제)은 유지된다.
+ */
 function buildGrid() {
-  return REGIONS.flatMap((region) =>
-    buildGridForBounds(region.bounds).map((cell) => ({
+  return REGIONS.flatMap((region) => {
+    const cells = buildGridForBounds(region.bounds).map((cell) => ({
       ...cell,
       regionKey: region.key,
       regionName: region.name,
-    }))
-  );
+    }));
+    const rng = createSeededRandom(hashStringToSeed(region.key));
+    return shuffleInPlace(cells, rng);
+  });
 }
 
 /** fromIndex가 속한 지역 블록이 끝나는(다음 지역이 시작하는) 인덱스 반환 */
