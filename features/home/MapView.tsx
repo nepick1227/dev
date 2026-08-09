@@ -80,23 +80,6 @@ const CLUSTER_SPIRAL: [number, number][] = [
   [-CLUSTER_OFFSET * 1.73, 0],
 ];
 
-const RESTAURANT_SUBCATEGORIES = [
-  "전체",
-  "간식",
-  "분식",
-  "뷔페",
-  "술집",
-  "아시아음식",
-  "양식",
-  "일식",
-  "중식",
-  "패스트푸드",
-  "패밀리레스토랑",
-  "피자",
-  "치킨",
-  "한식",
-] as const;
-
 const RANKING_DISPLAY_LIMIT = 50;
 const DESKTOP_NAV_WIDTH = 64;
 const DESKTOP_MARKER_SAFE_GAP = 48;
@@ -140,11 +123,6 @@ function spreadOverlappingMarkers(
   });
 
   return result;
-}
-
-function matchesRestaurantSubcategory(store: Store, subcategory: string): boolean {
-  if (subcategory === "전체" || store.category !== "restaurant") return true;
-  return (store.subcategory ?? "").includes(subcategory);
 }
 
 function getReferenceRegionUnit(regionName: string): string | null {
@@ -200,7 +178,6 @@ export default function MapView() {
   const myPickModeRef = useRef(false);
 
   const [category, setCategory] = useState<Category>("all");
-  const [restaurantSubcategory, setRestaurantSubcategory] = useState<(typeof RESTAURANT_SUBCATEGORIES)[number]>("전체");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedRank, setSelectedRank] = useState<number>(0);
@@ -221,9 +198,7 @@ export default function MapView() {
   const isMapFull = snap === "collapsed";
   const { rankedStores, isLoading, fetchStores } = useMapStores();
 
-  const visibleRankedStores = category === "restaurant"
-    ? rankedStores.filter((store) => matchesRestaurantSubcategory(store, restaurantSubcategory))
-    : rankedStores;
+  const visibleRankedStores = rankedStores;
   const isMyPickOnlyView = isMyPickMapMode;
   const panelStores = isMyPickOnlyView ? myPickStores : visibleRankedStores;
   const panelLoading = isMyPickOnlyView ? isMyPickLoading : isLoading;
@@ -307,8 +282,7 @@ export default function MapView() {
       };
     }
 
-    // 검색바+카테고리 필터(~17%) + 여유(3%). 음식점 세부 필터 줄이 추가로 뜨면 그만큼 더 확보.
-    const latPadTop = latRange * (categoryRef.current === "restaurant" ? 0.28 : 0.20);
+    const latPadTop = latRange * 0.20;  // 검색바+필터(~17%) + 여유(3%)
     const lngPad = lngRange * 0.05;
 
     if (snapRef.current === "half") {
@@ -591,7 +565,6 @@ export default function MapView() {
     categoryRef.current = cat;
     setCategory(cat);
     setIsMyPickMapMode(false);
-    if (cat !== "restaurant") setRestaurantSubcategory("전체");
     if (mapRef.current) {
       fetchStores(getBounds(mapRef.current), cat);
     }
@@ -800,11 +773,6 @@ export default function MapView() {
         onSearchClose={handleSearchClose}
         desktopSidebarOpen={isDesktopSidebarOpen}
         desktopVisible={panelView === "ranking"}
-        restaurantSubcategory={restaurantSubcategory}
-        restaurantSubcategories={RESTAURANT_SUBCATEGORIES}
-        onRestaurantSubcategoryChange={(value) =>
-          setRestaurantSubcategory(value as (typeof RESTAURANT_SUBCATEGORIES)[number])
-        }
       />
 
       <div
@@ -912,31 +880,6 @@ export default function MapView() {
               ].join(" ")}
             >
               {item.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {!isMyPickOnlyView && category === "restaurant" && (
-        <div
-          className="pointer-events-auto absolute top-[68px] z-30 hidden gap-2 overflow-x-auto whitespace-nowrap pb-2 transition-[left] duration-300 md:flex"
-          style={{
-            left: desktopFloatingLeft,
-            maxWidth: desktopFloatingMaxWidth,
-          }}
-        >
-          {RESTAURANT_SUBCATEGORIES.map((item) => (
-            <button
-              key={item}
-              onClick={() => setRestaurantSubcategory(item)}
-              className={[
-                "shrink-0 rounded-full border px-3.5 py-2 text-[12px] font-semibold shadow-md transition-colors",
-                restaurantSubcategory === item
-                  ? "border-primary bg-primary text-white"
-                  : "border-border bg-surface text-text-primary hover:border-primary",
-              ].join(" ")}
-            >
-              {item}
             </button>
           ))}
         </div>

@@ -27,9 +27,6 @@ interface MapOverlayProps {
   onSearchClose?: () => void;
   desktopSidebarOpen?: boolean;
   desktopVisible?: boolean;
-  restaurantSubcategory?: string;
-  restaurantSubcategories?: readonly string[];
-  onRestaurantSubcategoryChange?: (subcategory: string) => void;
 }
 
 const FILTER_TABS: { key: Category; label: string }[] = [
@@ -47,9 +44,6 @@ export default function MapOverlay({
   onSearchClose,
   desktopSidebarOpen = true,
   desktopVisible = true,
-  restaurantSubcategory,
-  restaurantSubcategories,
-  onRestaurantSubcategoryChange,
 }: MapOverlayProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -193,26 +187,6 @@ export default function MapOverlay({
           />
         ))}
       </div>
-
-      {/* 음식점 세부 카테고리 필터 (모바일) */}
-      {category === "restaurant" && restaurantSubcategories && restaurantSubcategories.length > 0 && (
-        <div className="hide-scrollbar pointer-events-auto flex gap-2 overflow-x-auto whitespace-nowrap pb-1 md:hidden">
-          {restaurantSubcategories.map((item) => (
-            <button
-              key={item}
-              onClick={() => onRestaurantSubcategoryChange?.(item)}
-              className={[
-                "shrink-0 rounded-full border px-3.5 py-2 text-[12px] font-semibold shadow-sm transition-colors",
-                restaurantSubcategory === item
-                  ? "border-primary bg-primary text-white"
-                  : "border-border bg-surface text-text-primary",
-              ].join(" ")}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
