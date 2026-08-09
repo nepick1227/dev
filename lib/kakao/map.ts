@@ -4,11 +4,10 @@
  * 카카오 검색 API는 Edge Function(supabase/functions/kakao-search)을 통해 호출하세요.
  */
 
-// 대한민국 중심 좌표 + 전국이 한 화면에 보이는 축소 레벨 (GPS 권한 거부/실패 시 폴백)
-// 특정 도시로 고정하지 않아, 위치 권한이 없는 사용자도 전국 지도에서 시작해 원하는 지역으로 이동할 수 있음
-export const DEFAULT_LAT = 36.5;
-export const DEFAULT_LNG = 127.8;
-export const DEFAULT_ZOOM = 13;
+// 서울 시청 기본 좌표 (GPS 권한 거부 시 폴백)
+export const DEFAULT_LAT = 37.5665;
+export const DEFAULT_LNG = 126.978;
+export const DEFAULT_ZOOM = 3;
 
 /**
  * 카카오맵 SDK 동적 로드
