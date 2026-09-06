@@ -26,7 +26,7 @@ export default function KakaoMap({
   overlay,
   onReady,
 }: KakaoMapProps) {
-  const { containerRef, isReady } = useKakaoMap({ lat, lng, level, onReady });
+  const { containerRef, isReady, error } = useKakaoMap({ lat, lng, level, onReady });
 
   return (
     <div className={`relative ${className}`}>
@@ -34,9 +34,20 @@ export default function KakaoMap({
       <div ref={containerRef} className="h-full w-full" />
 
       {/* 로딩 상태 */}
-      {!isReady && (
+      {!isReady && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-bg">
           <Spinner color="var(--color-primary)" size={32} />
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-bg px-6 text-center">
+          <div>
+            <p className="text-[15px] font-bold tracking-tight text-text-primary">지도를 불러오지 못했어요</p>
+            <p className="mt-1 text-[13px] leading-relaxed tracking-tight text-text-secondary">
+              카카오맵 연결을 확인한 뒤 새로고침해 주세요.
+            </p>
+          </div>
         </div>
       )}
 

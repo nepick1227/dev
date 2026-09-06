@@ -27,13 +27,13 @@ function WelcomeToast() {
   return <Toast message={toast.message} visible={toast.visible} />;
 }
 
-function ProfileGuard() {
+function ProfileCompletionGuard() {
   const router = useRouter();
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.replace("/auth/login"); return; }
+      if (!user) return;
       const { data: profile } = await supabase
         .from("profiles")
         .select("nickname")
@@ -53,7 +53,7 @@ export default function HomePage() {
       <Suspense>
         <WelcomeToast />
       </Suspense>
-      <ProfileGuard />
+      <ProfileCompletionGuard />
       <div className="flex flex-1 flex-col overflow-hidden">
         <MapView />
       </div>

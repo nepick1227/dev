@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
 import { CloseIcon } from "@/components/ui/icons";
+import { createClient } from "@/lib/supabase/client";
 import {
   formatMonthlyMenuDate,
   type MonthlyMenuRecord,
@@ -44,6 +45,10 @@ export default function MonthlyMenuEvent({
   const fetchStatus = useCallback(async () => {
     setIsStatusLoading(true);
     try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const response = await fetch("/api/monthly-menu", { cache: "no-store" });
       if (!response.ok) return;
       const nextStatus = await response.json() as MonthlyMenuStatus;

@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { useSignedImageUrl } from "@/hooks/use-signed-image-url";
 import Modal from "@/components/ui/Modal";
@@ -44,10 +43,8 @@ export default function ProfileView({ profile, stats, providers, onNavigate }: P
   const profileImageUrl = useSignedImageUrl("profile-images", profile.profile_image);
 
   const handleLogout = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
     pushGtmEvent("logout");
-    router.replace("/auth/login");
+    router.replace("/auth/signout");
   }, [router]);
 
   // 메뉴 섹션 구조

@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/http";
 
+const ALLOWED_NEXT_PATHS = new Set(["/home", "/mypick", "/profile", "/record"]);
+
 interface ExistingAuthUser {
   email?: string;
   user_metadata?: {
@@ -72,7 +74,22 @@ function isSameNaverUser(user: ExistingAuthUser | null, naverId: string) {
 function redirectWithClearedState(url: string) {
   const response = NextResponse.redirect(url);
   response.cookies.delete("naver_oauth_state");
+  response.cookies.delete("naver_oauth_next");
   return response;
+}
+
+function getSafeNextPath(next: string | undefined, origin: string) {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return "/home";
+
+  try {
+    const url = new URL(next, origin);
+    if (url.origin !== origin) return "/home";
+    return ALLOWED_NEXT_PATHS.has(url.pathname)
+      ? `${url.pathname}${url.search}`
+      : "/home";
+  } catch {
+    return "/home";
+  }
 }
 
 /**
@@ -109,6 +126,7 @@ export async function GET(request: NextRequest) {
   // CSRF 검증
   const cookieStore = await cookies();
   const savedState = cookieStore.get("naver_oauth_state")?.value;
+  const safeNext = getSafeNextPath(cookieStore.get("naver_oauth_next")?.value, origin);
 
   if (!state || state !== savedState) {
     console.error("[Auth] naver_callback_failed reason=state_mismatch");
@@ -213,11 +231,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const response = NextResponse.redirect(
-      `${origin}${profile?.nickname ? "/home" : "/auth/terms"}`
-    );
+    const response = NextResponse.redirect(`${origin}${profile?.nickname ? safeNext : "/auth/terms"}`);
 
     response.cookies.delete("naver_oauth_state");
+    response.cookies.delete("naver_oauth_next");
     return response;
   } catch (error) {
     console.error("[Auth] naver_callback_failed reason=exception", error instanceof Error ? error.message : "unknown_error");

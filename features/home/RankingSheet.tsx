@@ -15,6 +15,7 @@ interface RankingSheetProps {
   defaultSnap?: "collapsed" | "half" | "full";
   regionName?: string;
   isMyPickMode?: boolean;
+  showMyPickToggle?: boolean;
   onMyPickToggle?: () => void;
 }
 
@@ -24,7 +25,7 @@ export interface RankingSheetHandle {
 }
 
 const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function RankingSheet(
-  { stores, isLoading, onStoreClick, onSnapChange, defaultSnap = "half", regionName, isMyPickMode, onMyPickToggle },
+  { stores, isLoading, onStoreClick, onSnapChange, defaultSnap = "half", regionName, isMyPickMode, showMyPickToggle = false, onMyPickToggle },
   ref
 ) {
   const sheetRef = useRef<BottomSheetHandle>(null);
@@ -44,10 +45,14 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
           {isMyPickMode ? "내가 기록한 맛집" : (regionName ?? "불러오는 중...")}
         </p>
       </div>
-      <MyPickMapToggle
-        checked={!!isMyPickMode}
-        onChange={() => onMyPickToggle?.()}
-      />
+      <div className="ml-auto flex items-center gap-2">
+        {showMyPickToggle && (
+          <MyPickMapToggle
+            checked={!!isMyPickMode}
+            onChange={() => onMyPickToggle?.()}
+          />
+        )}
+      </div>
     </div>
   );
 

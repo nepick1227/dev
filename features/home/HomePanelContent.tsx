@@ -23,6 +23,7 @@ interface HomePanelContentProps {
   isMyPickMapMode?: boolean;
   onMyPickMapToggle?: () => void;
   isMyPickLoading?: boolean;
+  showMyPickMapToggle?: boolean;
 }
 
 interface RecordStats {
@@ -39,6 +40,7 @@ export default function HomePanelContent({
   isMyPickMapMode = false,
   onMyPickMapToggle,
   isMyPickLoading = false,
+  showMyPickMapToggle = false,
 }: HomePanelContentProps) {
   const router = useRouter();
   const [subview, setSubview] = useState<string>("main");
@@ -70,6 +72,7 @@ export default function HomePanelContent({
         isMyPickMapMode={isMyPickMapMode}
         onMyPickMapToggle={onMyPickMapToggle}
         isMyPickLoading={isMyPickLoading}
+        showMyPickMapToggle={showMyPickMapToggle}
       />
     );
   }
@@ -111,12 +114,14 @@ function MypickPanel({
   isMyPickMapMode,
   onMyPickMapToggle,
   isMyPickLoading,
+  showMyPickMapToggle,
 }: {
   onCreateRecord: () => void;
   onEditRecord: (recordId: number) => void;
   isMyPickMapMode: boolean;
   onMyPickMapToggle?: () => void;
   isMyPickLoading: boolean;
+  showMyPickMapToggle: boolean;
 }) {
   const [records, setRecords] = useState<RecordWithStore[] | null>(null);
 
@@ -157,11 +162,13 @@ function MypickPanel({
           <p className="text-[11px] font-medium tracking-tight text-text-secondary">내 기록</p>
           <h2 className="mt-0.5 text-[20px] font-extrabold tracking-tight text-text-primary">내 픽</h2>
         </div>
-        <MyPickMapToggle
-          checked={isMyPickMapMode}
-          onChange={() => onMyPickMapToggle?.()}
-          disabled={isMyPickLoading}
-        />
+        {showMyPickMapToggle && (
+          <MyPickMapToggle
+            checked={isMyPickMapMode}
+            onChange={() => onMyPickMapToggle?.()}
+            disabled={isMyPickLoading}
+          />
+        )}
       </div>
       <Timeline initialRecords={records} onCreateRecord={onCreateRecord} onEditRecord={onEditRecord} />
     </div>
