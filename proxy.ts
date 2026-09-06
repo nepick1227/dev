@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_ASSET_PATHS = new Set([
+  "/",
+  "/home",
   "/robots.txt",
   "/sitemap.xml",
   "/site.webmanifest",
@@ -63,7 +65,9 @@ export async function proxy(request: NextRequest) {
 
   // 비로그인 유저 → 로그인 페이지로
   if (!user) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    const loginUrl = new URL("/auth/login", request.url);
+    loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
   }
 
   return supabaseResponse;

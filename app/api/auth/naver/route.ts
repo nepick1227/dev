@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
   });
   if (rateLimited) return rateLimited;
 
-  const origin = new URL(request.url).origin;
+  const requestUrl = new URL(request.url);
+  const origin = requestUrl.origin;
+  const next = requestUrl.searchParams.get("next");
   const state = crypto.randomUUID(); // CSRF 방지
 
   const params = new URLSearchParams({
@@ -35,6 +37,15 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 10, // 10분
     path: "/",
   });
+  if (next?.startsWith("/") && !next.startsWith("//")) {
+    response.cookies.set("naver_oauth_next", next, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 10,
+      path: "/",
+    });
+  }
 
   return response;
 }

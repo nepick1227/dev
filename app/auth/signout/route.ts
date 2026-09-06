@@ -9,8 +9,11 @@ export async function GET(request: NextRequest) {
 
   await supabase.auth.signOut();
 
-  const loginUrl = new URL("/auth/login", origin);
-  if (error) loginUrl.searchParams.set("error", error);
+  if (error) {
+    const loginUrl = new URL("/auth/login", origin);
+    loginUrl.searchParams.set("error", error);
+    return NextResponse.redirect(loginUrl);
+  }
 
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.redirect(new URL("/home", origin));
 }

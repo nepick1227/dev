@@ -15,6 +15,7 @@ interface UseKakaoMapReturn {
   containerRef: React.RefObject<HTMLDivElement | null>;
   mapRef: React.RefObject<kakao.maps.Map | null>;
   isReady: boolean;
+  error: string | null;
 }
 
 /**
@@ -34,6 +35,7 @@ export function useKakaoMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
 
@@ -46,6 +48,7 @@ export function useKakaoMap({
     loadKakaoMapSDK()
       .then(() => {
         if (!mounted || !containerRef.current || mapRef.current) return;
+        setError(null);
 
         const map = new kakao.maps.Map(containerRef.current, {
           center: new kakao.maps.LatLng(lat, lng),
@@ -58,6 +61,9 @@ export function useKakaoMap({
       })
       .catch((err) => {
         console.error("[useKakaoMap] SDK 로드 실패:", err);
+        if (mounted) {
+          setError("지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        }
       });
 
     return () => {
@@ -67,5 +73,5 @@ export function useKakaoMap({
   }, []);
   // 의도적으로 의존성 배열 비움 — 지도는 마운트 시 한 번만 초기화
 
-  return { containerRef, mapRef, isReady };
+  return { containerRef, mapRef, isReady, error };
 }

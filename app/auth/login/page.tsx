@@ -9,6 +9,20 @@ import Spinner from "@/components/ui/Spinner";
 import { NepickLogo, MapPinIcon } from "@/components/ui/icons";
 
 const LAST_PROVIDER_KEY = "nepick_last_provider";
+const ALLOWED_NEXT_PATHS = new Set(["/home", "/mypick", "/profile", "/record"]);
+
+function getSafeNextPath(next: string | null) {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+
+  try {
+    const url = new URL(next, "https://nepick.local");
+    return ALLOWED_NEXT_PATHS.has(url.pathname)
+      ? `${url.pathname}${url.search}`
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function getLastProvider(): string | null {
   if (typeof window === "undefined") return null;
@@ -160,6 +174,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
+  const next = getSafeNextPath(searchParams.get("next"));
 
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [lastProvider, setLastProviderState] = useState<string | null>(null);
@@ -186,9 +201,9 @@ function LoginContent() {
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace("/home");
+      if (session) router.replace(next ?? "/home");
     });
-  }, [initialError, router]);
+  }, [initialError, next, router]);
 
   // URL 에러 파라미터를 직접 메시지로 변환 (effect 불필요)
   const errorMessage =
@@ -207,18 +222,19 @@ function LoginContent() {
     pushGtmEvent("login_click", { provider });
 
     const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    const redirectTo = new URL("/auth/callback", window.location.origin);
+    if (next) redirectTo.searchParams.set("next", next);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo },
+      options: { redirectTo: redirectTo.toString() },
     });
 
     if (error) {
       setLoginError("로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.");
       setLoadingProvider(null);
     }
-  }, []);
+  }, [next]);
 
   return (
     <div className="page-container">
@@ -278,7 +294,9 @@ function LoginContent() {
               setLoadingProvider("naver");
               setLastProvider("naver");
               pushGtmEvent("login_click", { provider: "naver" });
-              window.location.href = "/api/auth/naver";
+              const naverUrl = new URL("/api/auth/naver", window.location.origin);
+              if (next) naverUrl.searchParams.set("next", next);
+              window.location.href = naverUrl.toString();
             }}
             disabled={isLoading}
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#03C75A] py-4 text-[15px] font-semibold tracking-tight text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
@@ -325,8 +343,17 @@ function LoginContent() {
           </button>
         </div>
 
+        <button
+          type="button"
+          onClick={() => router.push("/home")}
+          disabled={isLoading}
+          className="flex w-full items-center justify-center rounded-2xl border border-border bg-surface py-3.5 text-[14px] font-semibold tracking-tight text-text-secondary transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          로그인 없이 둘러보기
+        </button>
+
         {/* 버전 */}
-        <p className="pt-14 text-center text-[12px] text-text-tertiary">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+        <p className="pt-10 text-center text-[12px] text-text-tertiary">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
       </div>
     </div>
   );

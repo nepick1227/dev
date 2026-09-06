@@ -2,8 +2,9 @@
 
 import { useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { HomeIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
+import { createClient } from "@/lib/supabase/client";
 
 interface NavItem {
   href: string;
@@ -37,13 +38,23 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [desktopActiveHref, setDesktopActiveHref] = useState("/home");
 
-  const handleDesktopPanelNav = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleDesktopPanelNav = async (event: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (typeof window === "undefined" || !window.matchMedia("(min-width: 768px)").matches) return;
     if (!pathname.startsWith("/home")) return;
 
     event.preventDefault();
+    if (href !== "/home") {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push(`/auth/login?next=${encodeURIComponent(href)}`);
+        return;
+      }
+    }
+
     setDesktopActiveHref(href);
     window.dispatchEvent(new CustomEvent("nepick:home-panel", {
       detail: href === "/home" ? "ranking" : href === "/mypick" ? "mypick" : "profile",

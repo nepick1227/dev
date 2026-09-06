@@ -3,6 +3,22 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/http";
 
+const ALLOWED_NEXT_PATHS = new Set(["/home", "/mypick", "/profile", "/record"]);
+
+function getSafeNextPath(next: string, origin: string) {
+  if (!next.startsWith("/") || next.startsWith("//")) return "/home";
+
+  try {
+    const url = new URL(next, origin);
+    if (url.origin !== origin) return "/home";
+    return ALLOWED_NEXT_PATHS.has(url.pathname)
+      ? `${url.pathname}${url.search}`
+      : "/home";
+  } catch {
+    return "/home";
+  }
+}
+
 export async function GET(request: NextRequest) {
   const rateLimited = checkRateLimit(request, "auth-callback", {
     limit: 30,
@@ -59,8 +75,7 @@ export async function GET(request: NextRequest) {
 
   // 기존 유저 → 홈으로 (welcome 파라미터로 토스트 트리거)
   // next 파라미터 화이트리스트 검증 (오픈 리다이렉트 방지)
-  const ALLOWED_PATHS = ["/home", "/mypick", "/profile", "/record"];
-  const safePath = ALLOWED_PATHS.includes(next) ? next : "/home";
+  const safePath = getSafeNextPath(next, origin);
   const homeUrl = safePath === "/home" ? `${origin}/home?welcome=1` : `${origin}${safePath}`;
   return NextResponse.redirect(homeUrl);
 }

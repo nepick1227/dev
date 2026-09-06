@@ -210,6 +210,7 @@ export default function MapView() {
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [panelView, setPanelView] = useState<PanelView>("ranking");
   const [isMyPickMapMode, setIsMyPickMapMode] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showNoPickModal, setShowNoPickModal] = useState(false);
   const router = useRouter();
   const [myPickStores, setMyPickStores] = useState<Store[]>([]);
@@ -241,6 +242,27 @@ export default function MapView() {
   useEffect(() => {
     myPickModeRef.current = isMyPickOnlyView;
   }, [isMyPickOnlyView]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    let active = true;
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (active) setIsAuthenticated(!!user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user);
+      if (!session?.user) {
+        setIsMyPickMapMode(false);
+      }
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     snapRef.current = snap;
@@ -715,6 +737,11 @@ export default function MapView() {
     setSelectedStore(null);
     setTapMode(false);
 
+    if (!isAuthenticated) {
+      router.push("/auth/login?next=/home");
+      return;
+    }
+
     if (isMyPickMapMode) {
       setIsMyPickMapMode(false);
       if (map) {
@@ -739,9 +766,11 @@ export default function MapView() {
     fetchStores,
     fitStoresToVisibleMap,
     getBounds,
+    isAuthenticated,
     isMyPickMapMode,
     loadMyPickStores,
     myPickStores,
+    router,
   ]);
 
   const handleDesktopSidebarToggle = useCallback(() => {
@@ -827,11 +856,13 @@ export default function MapView() {
                     {isMyPickOnlyView ? "내가 기록한 맛집" : rankingRegionName || "불러오는 중..."}
                   </p>
                 </div>
-                <MyPickMapToggle
-                  checked={isMyPickOnlyView}
-                  onChange={handleMyPickMapToggle}
-                  disabled={isMyPickLoading}
-                />
+                {isAuthenticated && (
+                  <MyPickMapToggle
+                    checked={isMyPickOnlyView}
+                    onChange={handleMyPickMapToggle}
+                    disabled={isMyPickLoading}
+                  />
+                )}
               </div>
             </div>
 
@@ -867,6 +898,7 @@ export default function MapView() {
             isMyPickMapMode={isMyPickOnlyView}
             onMyPickMapToggle={handleMyPickMapToggle}
             isMyPickLoading={isMyPickLoading}
+            showMyPickMapToggle={isAuthenticated}
           />
         )}
       </div>
@@ -951,6 +983,7 @@ export default function MapView() {
             defaultSnap={sheetDefaultSnap}
             regionName={rankingRegionName}
             isMyPickMode={isMyPickOnlyView}
+            showMyPickToggle={isAuthenticated}
             onMyPickToggle={handleMyPickMapToggle}
           />
         </div>

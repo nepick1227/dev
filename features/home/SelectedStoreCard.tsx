@@ -4,6 +4,7 @@ import { useState, useCallback, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { CloseIcon } from "@/components/ui/icons";
 import { pushGtmEvent } from "@/lib/analytics/gtm";
+import { createClient } from "@/lib/supabase/client";
 import type { Store } from "@/types/database";
 
 export const CARD_BOTTOM_PX = 28;
@@ -32,7 +33,7 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
     }
   }, [address]);
 
-  const handleRecord = useCallback(() => {
+  const handleRecord = useCallback(async () => {
     pushGtmEvent("record_start_from_map");
     const params = new URLSearchParams({
       kakao_id: store.kakao_id,
@@ -45,7 +46,16 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
       category_group_code: store.category === "cafe" ? "CE7" : "FD6",
       category_name: store.subcategory ?? "",
     });
-    router.push(`/record?${params.toString()}`);
+    const recordPath = `/record?${params.toString()}`;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      router.push(`/auth/login?next=${encodeURIComponent(recordPath)}`);
+      return;
+    }
+
+    router.push(recordPath);
   }, [store, router]);
 
   return (
