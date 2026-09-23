@@ -7,15 +7,19 @@ import RankingSheet, { type RankingSheetHandle } from "./RankingSheet";
 import MapOverlay from "./MapOverlay";
 import HomePanelContent, { type PanelView } from "./HomePanelContent";
 import MyPickMapToggle from "./MyPickMapToggle";
-import SelectedStoreCard, { CARD_BOTTOM_PX, CARD_HEIGHT_PX } from "./SelectedStoreCard";
+import SelectedStoreCard from "./SelectedStoreCard";
 import StoreCard from "./StoreCard";
 import Spinner from "@/components/ui/Spinner";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import FloatingRecordButton from "@/components/ui/FloatingRecordButton";
+import { CafeIcon, RestaurantIcon } from "@/components/ui/icons";
 import { useMapStores, type MapBounds } from "@/hooks/use-map-stores";
-import { getCurrentPosition } from "@/lib/kakao/map";
+import { DEFAULT_LAT, DEFAULT_LNG, getCurrentPositionStrict } from "@/lib/kakao/map";
 import { createClient } from "@/lib/supabase/client";
 import { pushGtmEvent } from "@/lib/analytics/gtm";
+import AuthGate from "@/features/auth/AuthGate";
+import { openLoginPrompt } from "@/features/auth/login-prompt-events";
 import { parseKakaoCategory, parseKakaoSubcategory } from "@/utils/format";
 import type { Category } from "./types";
 import type { Store } from "@/types/database";
@@ -81,32 +85,19 @@ const CLUSTER_SPIRAL: [number, number][] = [
   [-CLUSTER_OFFSET * 1.73, 0],
 ];
 
-const RESTAURANT_SUBCATEGORIES = [
-  "전체",
-  "간식",
-  "분식",
-  "뷔페",
-  "술집",
-  "아시아음식",
-  "양식",
-  "일식",
-  "중식",
-  "패스트푸드",
-  "패밀리레스토랑",
-  "피자",
-  "치킨",
-  "한식",
-] as const;
-
 const RANKING_DISPLAY_LIMIT = 50;
-const DESKTOP_NAV_WIDTH = 64;
+const DESKTOP_NAV_WIDTH = 0;
+const DESKTOP_PANEL_WIDTH = 396;
 const DESKTOP_MARKER_SAFE_GAP = 48;
 const GENERIC_REGION_NAME = "현재 보고 있는 지역";
 const REGION_MATCH_THRESHOLD = 0.8;
 
 function getDesktopPanelWidth(): number {
-  if (typeof window === "undefined") return 430;
-  return Math.min(430, Math.max(300, window.innerWidth * 0.32));
+  if (typeof window === "undefined") return DESKTOP_PANEL_WIDTH;
+  const configuredWidth = Number.parseFloat(
+    window.getComputedStyle(document.documentElement).getPropertyValue("--home-panel-width")
+  );
+  return Number.isFinite(configuredWidth) ? configuredWidth : DESKTOP_PANEL_WIDTH;
 }
 
 function spreadOverlappingMarkers(
@@ -141,11 +132,6 @@ function spreadOverlappingMarkers(
   });
 
   return result;
-}
-
-function matchesRestaurantSubcategory(store: Store, subcategory: string): boolean {
-  if (subcategory === "전체" || store.category !== "restaurant") return true;
-  return (store.subcategory ?? "").includes(subcategory);
 }
 
 function getReferenceRegionUnit(regionName: string): string | null {
@@ -187,7 +173,11 @@ function createLocationDot(map: kakao.maps.Map, lat: number, lng: number): kakao
 
 // ── MapView ──────────────────────────────────────────────
 
-export default function MapView() {
+interface MapViewProps {
+  initialPanel?: PanelView;
+}
+
+export default function MapView({ initialPanel = "ranking" }: MapViewProps) {
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const rankingRef = useRef<RankingSheetHandle>(null);
   const markersRef = useRef<kakao.maps.Marker[]>([]);
@@ -199,23 +189,25 @@ export default function MapView() {
   const cardOpenedRef = useRef(false);
   const accumulatedStoresRef = useRef<Store[]>([]);
   const myPickModeRef = useRef(false);
+  const mapViewBeforeMyPickRef = useRef<{ lat: number; lng: number; level: number } | null>(null);
 
   const [category, setCategory] = useState<Category>("all");
-  const [restaurantSubcategory, setRestaurantSubcategory] = useState<(typeof RESTAURANT_SUBCATEGORIES)[number]>("전체");
   const [snap, setSnap] = useState<"collapsed" | "half" | "full">("half");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedRank, setSelectedRank] = useState<number>(0);
   const [regionName, setRegionName] = useState<string>("");
   const [isLocating, setIsLocating] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
-  const [panelView, setPanelView] = useState<PanelView>("ranking");
+  const [panelView, setPanelView] = useState<PanelView>(initialPanel);
   const [isMyPickMapMode, setIsMyPickMapMode] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [showNoPickModal, setShowNoPickModal] = useState(false);
   const router = useRouter();
   const [myPickStores, setMyPickStores] = useState<Store[]>([]);
   const [isMyPickLoading, setIsMyPickLoading] = useState(false);
   const [searchPosition, setSearchPosition] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   // tapMode: 지도 배경 탭으로 가게 선택 시 랭킹 마커 숨기고 단일 핀만 표시
   const [tapMode, setTapMode] = useState(false);
 
@@ -223,9 +215,7 @@ export default function MapView() {
   const isMapFull = snap === "collapsed";
   const { rankedStores, isLoading, fetchStores } = useMapStores();
 
-  const visibleRankedStores = category === "restaurant"
-    ? rankedStores.filter((store) => matchesRestaurantSubcategory(store, restaurantSubcategory))
-    : rankedStores;
+  const visibleRankedStores = rankedStores;
   const isMyPickOnlyView = isMyPickMapMode;
   const panelStores = isMyPickOnlyView ? myPickStores : visibleRankedStores;
   const panelLoading = isMyPickOnlyView ? isMyPickLoading : isLoading;
@@ -247,12 +237,15 @@ export default function MapView() {
     const supabase = createClient();
     let active = true;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (active) setIsAuthenticated(!!user);
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
+      setIsAuthenticated(!!session?.user);
+      setIsAuthReady(true);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session?.user);
+      setIsAuthReady(true);
       if (!session?.user) {
         setIsMyPickMapMode(false);
       }
@@ -283,12 +276,39 @@ export default function MapView() {
       const nextView = (event as CustomEvent<PanelView>).detail;
       if (!["ranking", "mypick", "profile"].includes(nextView)) return;
       setPanelView(nextView);
-      setIsMyPickMapMode(nextView === "mypick");
+      setIsMyPickMapMode(nextView === "mypick" && isAuthenticated);
       setIsDesktopSidebarOpen(true);
     };
 
     window.addEventListener("nepick:home-panel", handlePanelView);
     return () => window.removeEventListener("nepick:home-panel", handlePanelView);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthReady || typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("panel") !== "mypick") return;
+
+    setPanelView("mypick");
+    setIsMyPickMapMode(isAuthenticated);
+    setIsDesktopSidebarOpen(true);
+    window.dispatchEvent(new CustomEvent("nepick:home-panel", { detail: "mypick" }));
+  }, [isAuthReady, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthReady || panelView !== "mypick") return;
+    setIsMyPickMapMode(isAuthenticated);
+  }, [isAuthReady, isAuthenticated, panelView]);
+
+  useEffect(() => {
+    const handleHomeReset = () => {
+      setPanelView("ranking");
+      setIsMyPickMapMode(false);
+      setSelectedStore(null);
+      setTapMode(false);
+      setIsDesktopSidebarOpen(true);
+    };
+    window.addEventListener("nepick:home-reset", handleHomeReset);
+    return () => window.removeEventListener("nepick:home-reset", handleHomeReset);
   }, []);
 
   const getDesktopInsets = useCallback((sidebarOpen = isDesktopSidebarOpen) => {
@@ -297,10 +317,10 @@ export default function MapView() {
     return {
       left: visibleLeft + DESKTOP_MARKER_SAFE_GAP,
       right: 88,
-      top: !isMyPickOnlyView && categoryRef.current === "restaurant" ? 128 : 88,
+      top: 88,
       bottom: 88,
     };
-  }, [isDesktopSidebarOpen, isMyPickOnlyView]);
+  }, [isDesktopSidebarOpen]);
 
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
@@ -545,9 +565,15 @@ export default function MapView() {
     isInitializedRef.current = true;
     mapRef.current = map;
 
-    const pos = await getCurrentPosition();
+    let pos = { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
+    try {
+      pos = await getCurrentPositionStrict();
+      setUserPosition(pos);
+      locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
+    } catch {
+      setUserPosition(null);
+    }
     map.setCenter(new kakao.maps.LatLng(pos.lat, pos.lng));
-    locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
     setSearchPosition({ lat: pos.lat, lng: pos.lng });
     geocoderRef.current = new kakao.maps.services.Geocoder();
 
@@ -591,9 +617,42 @@ export default function MapView() {
     //   } catch { /* 조회 실패 시 무시 */ }
     // });
 
+    if (panelView === "mypick") {
+      const stores = await loadMyPickStores();
+      if (stores.length > 0) fitStoresToVisibleMap(map, stores);
+      fetchRegion();
+      return;
+    }
+
     fetchStores(getBounds(map), categoryRef.current);
     fetchRegion();
-  }, [fetchStores, getBounds, fetchRegion]);
+  }, [fetchStores, fitStoresToVisibleMap, getBounds, fetchRegion, loadMyPickStores, panelView]);
+
+  useEffect(() => {
+    let resizeTimer = 0;
+
+    const handleResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        const map = mapRef.current;
+        if (!map) return;
+
+        map.relayout();
+        if (panelView === "mypick") {
+          if (myPickStores.length > 0) fitStoresToVisibleMap(map, myPickStores);
+        } else {
+          fetchStores(getBounds(map), categoryRef.current);
+        }
+        fetchRegion();
+      }, 150);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [fetchRegion, fetchStores, fitStoresToVisibleMap, getBounds, myPickStores, panelView]);
 
   const sheetWasOpenRef = useRef(false);
 
@@ -614,7 +673,6 @@ export default function MapView() {
     categoryRef.current = cat;
     setCategory(cat);
     setIsMyPickMapMode(false);
-    if (cat !== "restaurant") setRestaurantSubcategory("전체");
     if (mapRef.current) {
       fetchStores(getBounds(mapRef.current), cat);
     }
@@ -698,9 +756,10 @@ export default function MapView() {
     if (!map || isLocating) return;
     setIsLocating(true);
     try {
-      const pos = await getCurrentPosition();
+      const pos = await getCurrentPositionStrict();
       locationDotRef.current?.setMap(null);
       locationDotRef.current = createLocationDot(map, pos.lat, pos.lng);
+      setUserPosition(pos);
       setSearchPosition({ lat: pos.lat, lng: pos.lng });
       map.setCenter(new kakao.maps.LatLng(pos.lat, pos.lng));
       setSelectedStore(null);
@@ -732,33 +791,61 @@ export default function MapView() {
     rankingRef.current?.open();
   }, []);
 
+  const handleRecordFromHome = useCallback(() => {
+    pushGtmEvent("record_start_from_home");
+    if (!isAuthenticated) {
+      openLoginPrompt("/record");
+      return;
+    }
+    router.push("/record");
+  }, [isAuthenticated, router]);
+
   const handleMyPickMapToggle = useCallback(async () => {
     const map = mapRef.current;
     setSelectedStore(null);
     setTapMode(false);
 
     if (!isAuthenticated) {
-      router.push("/auth/login?next=/home");
+      openLoginPrompt("/home");
       return;
     }
 
     if (isMyPickMapMode) {
       setIsMyPickMapMode(false);
       if (map) {
-        fetchStores(getBounds(map), categoryRef.current);
-        fetchRegion();
+        const previousView = mapViewBeforeMyPickRef.current;
+        if (previousView) {
+          map.setLevel(previousView.level);
+          map.setCenter(new kakao.maps.LatLng(previousView.lat, previousView.lng));
+        }
+        mapViewBeforeMyPickRef.current = null;
+
+        window.setTimeout(() => {
+          fetchStores(getBounds(map), categoryRef.current);
+          fetchRegion();
+        }, 0);
       }
       return;
     }
 
     const stores = myPickStores.length > 0 ? myPickStores : await loadMyPickStores();
     if (stores.length === 0) {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
       setShowNoPickModal(true);
       return;
     }
+
     pushGtmEvent("mypick_map_toggle");
     setIsMyPickMapMode(true);
     if (map) {
+      const center = map.getCenter();
+      mapViewBeforeMyPickRef.current = {
+        lat: center.getLat(),
+        lng: center.getLng(),
+        level: map.getLevel(),
+      };
       window.setTimeout(() => fitStoresToVisibleMap(map, stores), 0);
     }
   }, [
@@ -770,7 +857,6 @@ export default function MapView() {
     isMyPickMapMode,
     loadMyPickStores,
     myPickStores,
-    router,
   ]);
 
   const handleDesktopSidebarToggle = useCallback(() => {
@@ -791,7 +877,7 @@ export default function MapView() {
       }
       fetchStores(getBounds(map, isDesktopSidebarOpen), categoryRef.current);
       fetchRegion();
-    }, 320);
+    }, 240);
 
     return () => window.clearTimeout(timer);
   }, [
@@ -805,21 +891,29 @@ export default function MapView() {
     myPickStores,
   ]);
 
-  const desktopFloatingLeft = isDesktopSidebarOpen
-    ? "calc(var(--home-sidebar-width) + 16px)"
-    : "calc(var(--home-nav-width) + 16px)";
-  const desktopFloatingMaxWidth = isDesktopSidebarOpen
-    ? "calc(100vw - var(--home-sidebar-width) - 40px)"
-    : "calc(100vw - var(--home-nav-width) - 40px)";
-
   // 플로팅 버튼 위치: 카드 열림 → 카드 위, collapsed → 시트(88px)+gap(8px) 위
-  const floatingButtonBottom = selectedStore
-    ? `${CARD_BOTTOM_PX + CARD_HEIGHT_PX}px`
-    : "96px";
+  if (!isAuthReady && panelView !== "ranking") {
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-bg">
+        <Spinner size={28} />
+      </div>
+    );
+  }
+
+  if (isAuthReady && !isAuthenticated && panelView !== "ranking") {
+    return <AuthGate nextPath={panelView === "profile" ? "/profile" : "/mypick"} />;
+  }
 
   return (
     <>
-    <div className="relative flex-1 overflow-hidden">
+    <div
+      className="relative flex-1 overflow-hidden"
+      style={{
+        "--home-visible-sidebar-width": isDesktopSidebarOpen
+          ? "var(--home-panel-width)"
+          : "0px",
+      } as CSSProperties}
+    >
       <KakaoMap className="h-full w-full" onReady={handleMapReady} />
 
       <MapOverlay
@@ -835,24 +929,20 @@ export default function MapView() {
 
       <div
         className={[
-          "home-desktop-panel absolute bottom-0 top-0 z-10 hidden flex-col border-r border-border bg-surface shadow-[4px_0_24px_rgba(0,0,0,0.08)] transition-transform duration-300 md:flex",
-          isDesktopSidebarOpen ? "" : "is-closed",
+          "home-desktop-panel absolute bottom-0 left-0 top-0 z-10 hidden shrink-0 flex-col overflow-hidden border-r border-divider bg-surface transition-[width] duration-[220ms] md:flex",
+          isDesktopSidebarOpen ? "w-[var(--home-panel-width)]" : "w-0 border-r-0",
         ].join(" ")}
-        style={{
-          "--desktop-panel-transform": isDesktopSidebarOpen
-            ? "translateX(0)"
-            : "translateX(calc(-1 * var(--home-panel-width)))",
-        } as CSSProperties}
       >
+        <div className="flex h-full min-w-[var(--home-panel-width)] flex-col">
         {panelView === "ranking" ? (
           <>
-            <div className="px-5 pb-4 pt-24">
-              <div className="flex items-start justify-between gap-3">
+            <div className="px-[22px] pb-3 pt-5">
+              <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium tracking-tight text-text-secondary">
+                  <p className="text-[11px] font-bold text-text-tertiary">
                     {isMyPickOnlyView ? "내 픽 지도" : "맛집 랭킹"}
                   </p>
-                  <p className="mt-0.5 text-[18px] font-extrabold leading-snug tracking-tight text-text-primary">
+                  <p className="mt-0.5 truncate text-[18px] font-[800] leading-snug text-text-primary">
                     {isMyPickOnlyView ? "내가 기록한 맛집" : rankingRegionName || "불러오는 중..."}
                   </p>
                 </div>
@@ -864,9 +954,33 @@ export default function MapView() {
                   />
                 )}
               </div>
+              {!isMyPickOnlyView && (
+                <div className="mt-3 flex gap-2">
+                  {[
+                    { key: "all" as const, label: "전체" },
+                    { key: "restaurant" as const, label: "음식점" },
+                    { key: "cafe" as const, label: "카페" },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      onClick={() => handleCategoryChange(item.key)}
+                      className={[
+                        "inline-flex h-9 items-center gap-2 rounded-full border-[1.5px] px-[15px] text-[14px] transition-colors",
+                        category === item.key
+                          ? "border-primary bg-primary font-bold text-white shadow-[0_3px_10px_rgba(211,47,47,0.28)]"
+                          : "border-border bg-surface font-semibold text-text-body hover:border-primary hover:text-primary",
+                      ].join(" ")}
+                    >
+                      {item.key === "restaurant" && <RestaurantIcon size={18} />}
+                      {item.key === "cafe" && <CafeIcon size={18} />}
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
+            <div className="ranking-scrollbar min-h-0 flex-1 overflow-y-auto">
               {panelLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <Spinner size={28} />
@@ -884,7 +998,7 @@ export default function MapView() {
                 <ul className="nepick-fade-in divide-y divide-border pb-6">
                   {panelStores.slice(0, isMyPickOnlyView ? panelStores.length : RANKING_DISPLAY_LIMIT).map((store, idx) => (
                     <li key={store.id}>
-                      <StoreCard store={store} rank={idx + 1} onClick={handleStoreClick} />
+                      <StoreCard store={store} rank={idx + 1} onClick={handleStoreClick} userPosition={userPosition} />
                     </li>
                   ))}
                 </ul>
@@ -895,81 +1009,30 @@ export default function MapView() {
           <HomePanelContent
             key={panelView}
             view={panelView}
-            isMyPickMapMode={isMyPickOnlyView}
-            onMyPickMapToggle={handleMyPickMapToggle}
-            isMyPickLoading={isMyPickLoading}
-            showMyPickMapToggle={isAuthenticated}
           />
         )}
+        </div>
       </div>
 
       <button
         onClick={handleDesktopSidebarToggle}
         className={[
-          "home-sidebar-toggle absolute top-1/2 z-40 hidden h-11 -translate-y-1/2 items-center justify-center gap-1 rounded-r-full border border-l-0 border-border bg-surface px-3 text-[12px] font-bold text-text-secondary shadow-lg transition-[left,colors] duration-300 hover:text-primary md:flex",
-          isDesktopSidebarOpen ? "" : "is-closed",
+          "home-sidebar-toggle absolute top-1/2 z-40 hidden h-14 w-7 -translate-y-1/2 items-center justify-center rounded-r-xl bg-surface text-text-secondary shadow-[2px_0_8px_rgba(0,0,0,0.1)] transition-[left,color] duration-[220ms] hover:text-primary md:flex",
+          isDesktopSidebarOpen ? "left-[var(--home-panel-width)]" : "left-0",
         ].join(" ")}
-        style={{
-          left: isDesktopSidebarOpen ? "var(--home-sidebar-width)" : "var(--home-nav-width)",
-        }}
         aria-label={isDesktopSidebarOpen ? "목록 숨기기" : "목록 보기"}
       >
-        <span>{isDesktopSidebarOpen ? "<" : ">"}</span>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          className={`transition-transform duration-[220ms] ${isDesktopSidebarOpen ? "" : "rotate-180"}`}
+          aria-hidden="true"
+        >
+          <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
-
-      {!isMyPickOnlyView && (
-        <div
-          className="pointer-events-auto absolute top-5 z-30 hidden items-center gap-2 transition-[left] duration-300 md:flex"
-          style={{
-            left: desktopFloatingLeft,
-            maxWidth: desktopFloatingMaxWidth,
-          }}
-        >
-          {[
-            { key: "all" as const, label: "전체" },
-            { key: "restaurant" as const, label: "음식점" },
-            { key: "cafe" as const, label: "카페" },
-          ].map((item) => (
-            <button
-              key={item.key}
-              onClick={() => handleCategoryChange(item.key)}
-              className={[
-                "rounded-full border px-4 py-2 text-[13px] font-semibold shadow-md transition-colors",
-                category === item.key
-                  ? "border-primary bg-primary text-white"
-                  : "border-primary bg-surface text-primary hover:bg-primary-soft",
-              ].join(" ")}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {!isMyPickOnlyView && category === "restaurant" && (
-        <div
-          className="pointer-events-auto absolute top-[68px] z-30 hidden gap-2 overflow-x-auto whitespace-nowrap pb-2 transition-[left] duration-300 md:flex"
-          style={{
-            left: desktopFloatingLeft,
-            maxWidth: desktopFloatingMaxWidth,
-          }}
-        >
-          {RESTAURANT_SUBCATEGORIES.map((item) => (
-            <button
-              key={item}
-              onClick={() => setRestaurantSubcategory(item)}
-              className={[
-                "shrink-0 rounded-full border px-3.5 py-2 text-[12px] font-semibold shadow-md transition-colors",
-                restaurantSubcategory === item
-                  ? "border-primary bg-primary text-white"
-                  : "border-border bg-surface text-text-primary hover:border-primary",
-              ].join(" ")}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* 랭킹 시트: 가게 카드가 없을 때만 표시 */}
       {!selectedStore && (
@@ -985,29 +1048,27 @@ export default function MapView() {
             isMyPickMode={isMyPickOnlyView}
             showMyPickToggle={isAuthenticated}
             onMyPickToggle={handleMyPickMapToggle}
+            userPosition={userPosition}
           />
         </div>
       )}
 
-      {/* 플로팅 버튼 */}
-
-
       {/* 중앙 버튼 — 지도보기/카드 열림 시 랭킹보기 / 시트 열림 시 지도보기 */}
-      {(isMapFull || !!selectedStore) && !isMyPickOnlyView ? (
+      {isMapFull && !selectedStore && !isMyPickOnlyView ? (
         <button
           onClick={handleRankingToggle}
           className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg md:hidden"
-          style={{ bottom: floatingButtonBottom, transition: "bottom 0.3s ease-out" }}
+          style={{ bottom: "96px", transition: "bottom 0.3s ease-out" }}
         >
           <span>🏆</span>
           <span>랭킹보기</span>
         </button>
-      ) : !isMapFull && !isMyPickOnlyView && (
+      ) : !isMapFull && !selectedStore && !isMyPickOnlyView && (
         <button
           onClick={handleCollapse}
           className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-text-primary shadow-lg md:hidden"
           style={{
-            bottom: snap === "full" ? "32px" : "calc(50vh + 8px)",
+            bottom: snap === "full" ? "32px" : "calc(50% + 8px)",
             transition: "bottom 0.3s ease-out",
           }}
         >
@@ -1016,16 +1077,28 @@ export default function MapView() {
         </button>
       )}
 
-      {/* 현재 위치 버튼 */}
+      {/* 기록하기 버튼 */}
+      {snap !== "full" && !selectedStore && (
+        <div
+          className={`absolute right-4 z-40 transition-[bottom] duration-300 ease-out md:hidden ${
+            isMapFull ? "bottom-24" : "bottom-[calc(50%+8px)]"
+          }`}
+        >
+          <FloatingRecordButton onClick={handleRecordFromHome} />
+        </div>
+      )}
+
       {snap !== "full" && (
         <button
           onClick={handleCurrentLocation}
           disabled={isLocating}
-          className="map-location-button absolute right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-primary bg-white shadow-lg transition-opacity disabled:opacity-50"
+          className={`map-location-button absolute right-4 z-40 h-10 w-10 items-center justify-center rounded-full border border-primary bg-white shadow-lg transition-opacity disabled:opacity-50 ${
+            selectedStore ? "hidden md:flex" : "flex"
+          }`}
           style={{
-            "--mobile-location-bottom": isMapFull || !!selectedStore
-              ? floatingButtonBottom
-              : "calc(50vh + 8px)",
+            "--mobile-location-bottom": isMapFull
+              ? "146px"
+              : "calc(50% + 58px)",
             transition: "bottom 0.3s ease-out",
           } as CSSProperties}
           aria-label="현재 위치로 이동"
@@ -1045,9 +1118,7 @@ export default function MapView() {
         </button>
       )}
 
-    </div>
-
-      {/* 선택된 가게 카드 — 지도 컨테이너 밖에서 렌더링하여 마커 위에 표시 */}
+      {/* 선택된 가게 카드는 실제 지도 영역 하단을 기준으로 배치 */}
       {selectedStore && (
         <SelectedStoreCard
           store={selectedStore}
@@ -1056,6 +1127,8 @@ export default function MapView() {
           desktopSidebarOpen={isDesktopSidebarOpen}
         />
       )}
+
+    </div>
 
       <Modal
         isOpen={showNoPickModal}
@@ -1075,6 +1148,7 @@ export default function MapView() {
       >
         <p className="text-[14px] text-text-secondary">내 픽을 기록하러 가볼까요?</p>
       </Modal>
+
     </>
   );
 }

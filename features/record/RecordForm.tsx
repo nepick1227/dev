@@ -12,16 +12,11 @@ import StoreSearch, { type KakaoPlace } from "./StoreSearch";
 import ImageUpload from "./ImageUpload";
 import DatePicker from "@/components/ui/DatePicker";
 import TimePicker from "@/components/ui/TimePicker";
+import RatingSelector from "./RatingSelector";
 import { MapPinIcon, CloseIcon } from "@/components/ui/icons";
 import { validateComment } from "@/utils/validation";
-import {
-  recommendationLabels,
-  recommendationEmojis,
-  type RecommendationType,
-} from "@/styles/tokens";
+import { type RecommendationType } from "@/styles/tokens";
 import type { RecordInsert } from "@/types/database";
-
-const RECOMMENDATION_OPTIONS: RecommendationType[] = ["recommend", "neutral", "not_recommend"];
 
 interface RecordFormProps {
   onContentChange?: (hasContent: boolean) => void;
@@ -133,7 +128,8 @@ export default function RecordForm({
 
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error("로그인이 필요합니다");
 
       const storeId = await resolveStoreId(selectedPlace);
@@ -207,28 +203,28 @@ export default function RecordForm({
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className={`hide-scrollbar flex-1 overflow-y-auto ${actionPlacement === "fixed" ? "pb-32" : "pb-6"}`}>
-        <div className="app-content-narrow px-5 pt-6">
+      <div className={`hide-scrollbar flex-1 overflow-y-auto bg-bg ${actionPlacement === "fixed" ? "pb-32 md:pb-8" : "pb-6"}`}>
+        <div className={`app-content-narrow px-5 pt-[22px] md:rounded-[20px] md:border md:border-divider md:bg-surface md:px-7 md:pt-7 ${actionPlacement === "fixed" ? "md:!max-w-[552px]" : ""}`}>
           {/* 이미지 업로드 */}
-          <section className="mb-6">
+          <section className="mb-6 md:mb-5">
             <ImageUpload value={imageFile} onChange={setImageFile} onError={showToast} />
           </section>
 
           {/* 가게 선택 */}
-          <section className="mb-6">
-            <p className="mb-2 text-[14px] font-semibold tracking-tight text-text-primary">
+          <section className="mb-6 md:mb-5">
+            <p className="mb-[9px] text-[14.5px] font-bold text-text-primary">
               맛집 이름
-              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+              <span className="ml-1 text-primary">*</span>
             </p>
 
             {selectedPlace ? (
               <div className="flex items-center gap-3 rounded-xl border border-border bg-bg p-4">
                 <MapPinIcon size={18} color="var(--color-primary)" className="shrink-0" />
                 <div className="flex-1 overflow-hidden">
-                  <p className="truncate text-[15px] font-semibold tracking-tight text-text-primary">
+                  <p className="truncate text-[15px] font-bold text-text-primary">
                     {selectedPlace.place_name}
                   </p>
-                  <p className="truncate text-[12px] tracking-tight text-text-secondary">
+                  <p className="truncate text-[12px] text-text-description">
                     {selectedPlace.road_address_name || selectedPlace.address_name}
                   </p>
                 </div>
@@ -242,60 +238,45 @@ export default function RecordForm({
           </section>
 
           {/* 방문 일시 */}
-          <section className="mb-6">
-            <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+          <section className="mb-6 md:mb-5">
+            <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
               방문일시
-              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+              <span className="ml-1 text-primary">*</span>
             </label>
             <div className="flex gap-2">
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1 md:flex-[1.4]">
                 <DatePicker
                   value={visitedAt}
                   onChange={setVisitedAt}
                   max={new Date().toISOString().split("T")[0]}
                 />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <TimePicker value={visitedTime} onChange={setVisitedTime} />
               </div>
             </div>
           </section>
 
           {/* 추천 여부 */}
-          <section className="mb-6">
-            <p className="mb-2.5 text-[14px] font-semibold tracking-tight text-text-primary">
+          <section className="mb-6 md:mb-5">
+            <p className="mb-[9px] text-[14.5px] font-bold text-text-primary">
               내 입맛엔 어땠나요?
-              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+              <span className="ml-1 text-primary">*</span>
             </p>
-            <div className="flex gap-3">
-              {RECOMMENDATION_OPTIONS.map((opt) => {
-                const isSelected = recommendation === opt;
-                return (
-                  <button
-                    key={opt}
-                    onClick={() => {
-                      setRecommendation(opt);
-                      pushGtmEvent("recommendation_select", { recommendation: opt });
-                    }}
-                    className={`flex flex-1 flex-col items-center gap-1.5 rounded-xl border-[1.5px] py-3.5 transition-all duration-200 ${
-                      isSelected ? "border-primary/30 bg-primary/13" : "border-border bg-bg"
-                    }`}
-                  >
-                    <span className="text-[22px]">{recommendationEmojis[opt]}</span>
-                    <span className={`text-[12px] font-semibold tracking-tight ${isSelected ? "text-primary" : "text-text-secondary"}`}>
-                      {recommendationLabels[opt]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <RatingSelector
+              value={recommendation}
+              onChange={(option) => {
+                setRecommendation(option);
+                pushGtmEvent("recommendation_select", { recommendation: option });
+              }}
+            />
           </section>
 
           {/* 코멘트 */}
           <section className="mb-6">
-            <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+            <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
               코멘트
-              <span className="ml-1 text-[12px] font-medium text-primary">*필수</span>
+              <span className="ml-1 text-primary">*</span>
             </label>
             <Textarea
               value={comment}
@@ -307,6 +288,19 @@ export default function RecordForm({
               error={commentError || undefined}
             />
           </section>
+
+          {actionPlacement === "fixed" && (
+            <div className="hidden pb-7 md:block">
+              <Button
+                fullWidth
+                isLoading={isSubmitting}
+                disabled={!canSubmit}
+                onClick={handleSubmit}
+              >
+                저장하기
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -315,7 +309,7 @@ export default function RecordForm({
         className={[
           "app-fixed-bar safe-area-pb-lg border-t border-border bg-surface px-5 pt-3",
           actionPlacement === "fixed"
-            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2 md:hidden"
             : "relative shrink-0",
         ].join(" ")}
       >

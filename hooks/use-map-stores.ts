@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Store } from "@/types/database";
 import type { Category } from "@/features/home/types";
@@ -46,10 +46,12 @@ function capByGrid(stores: Store[], bounds: MapBounds): Store[] {
 export function useMapStores() {
   const [rankedStores, setRankedStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const requestIdRef = useRef(0);
 
   // 랭킹 리스트와 지도 핀이 공유하는 단일 소스: bounds 내 점수 상위 150개를 받아
   // 그리드당 최대 5개로 다듬은 뒤 점수순으로 노출한다.
   const fetchStores = useCallback(async (bounds: MapBounds, category: Category) => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     try {
       const supabase = createClient();
@@ -70,11 +72,13 @@ export function useMapStores() {
       const { data, error } = await query;
       if (error) throw error;
 
-      setRankedStores(capByGrid((data as Store[]) ?? [], bounds));
+      if (requestId === requestIdRef.current) {
+        setRankedStores(capByGrid((data as Store[]) ?? [], bounds));
+      }
     } catch {
-      setRankedStores([]);
+      if (requestId === requestIdRef.current) setRankedStores([]);
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
   }, []);
 

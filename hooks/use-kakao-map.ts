@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { loadKakaoMapSDK, DEFAULT_LAT, DEFAULT_LNG, DEFAULT_ZOOM } from "@/lib/kakao/map";
+import {
+  loadKakaoMapSDK,
+  DEFAULT_LAT,
+  DEFAULT_LNG,
+  DEFAULT_ZOOM,
+  MAX_ZOOM_OUT_LEVEL,
+} from "@/lib/kakao/map";
 
 interface UseKakaoMapOptions {
   lat?: number;
@@ -16,6 +22,7 @@ interface UseKakaoMapReturn {
   mapRef: React.RefObject<kakao.maps.Map | null>;
   isReady: boolean;
   error: string | null;
+  retry: () => void;
 }
 
 /**
@@ -36,14 +43,22 @@ export function useKakaoMap({
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+
+  const retry = useCallback(() => {
+    if (mapRef.current) return;
+    setRetryNonce((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     // Strict Mode 이중 실행 방지: 이미 지도가 생성된 경우 스킵
     if (mapRef.current) return;
 
     let mounted = true;
+    setError(null);
+    setIsReady(false);
 
     loadKakaoMapSDK()
       .then(() => {
@@ -52,8 +67,9 @@ export function useKakaoMap({
 
         const map = new kakao.maps.Map(containerRef.current, {
           center: new kakao.maps.LatLng(lat, lng),
-          level,
+          level: Math.min(level, MAX_ZOOM_OUT_LEVEL),
         });
+        map.setMaxLevel(MAX_ZOOM_OUT_LEVEL);
 
         mapRef.current = map;
         setIsReady(true);
@@ -70,8 +86,8 @@ export function useKakaoMap({
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // 의도적으로 의존성 배열 비움 — 지도는 마운트 시 한 번만 초기화
+  }, [retryNonce]);
+  // 위도·경도 변경에는 재생성하지 않고, 명시적인 재시도에만 다시 초기화합니다.
 
-  return { containerRef, mapRef, isReady, error };
+  return { containerRef, mapRef, isReady, error, retry };
 }

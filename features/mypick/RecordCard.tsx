@@ -20,6 +20,8 @@ interface RecordCardProps {
   onShowToast?: (message: string) => void;
   onDelete?: () => void;
   onEdit?: (recordId: number) => void;
+  compact?: boolean;
+  imagePriority?: boolean;
 }
 
 export default function RecordCard({
@@ -28,12 +30,17 @@ export default function RecordCard({
   onShowToast,
   onDelete,
   onEdit,
+  compact = false,
+  imagePriority = false,
 }: RecordCardProps) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const recordImageUrl = useSignedImageUrl("record-images", record.image_url);
+  const hasRecordImage = Boolean(record.image_url?.trim());
+  const [loadedImageUrl, setLoadedImageUrl] = useState<string | null>(null);
+  const isImageLoaded = Boolean(recordImageUrl && loadedImageUrl === recordImageUrl);
   // ⋮ 메뉴를 body로 포털해 타임라인 overflow 클리핑 회피. 하단이면 위로 플립.
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; up: boolean } | null>(null);
@@ -157,38 +164,40 @@ export default function RecordCard({
 
       <div className="flex gap-0">
         {/* 타임라인 세로선 + 카테고리 아이콘 + 시간 */}
-        <div className="flex w-10 shrink-0 flex-col items-center">
+        <div className={`flex shrink-0 flex-col items-center ${compact ? "w-10" : "w-11 md:w-10"}`}>
           <div className={[
-            "flex h-9 w-9 items-center justify-center rounded-full border border-border",
-            record.stores.category === "cafe" ? "bg-orange-50" : "bg-violet-50",
+            compact
+              ? "flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-divider"
+              : "flex h-10 w-10 items-center justify-center rounded-[12px] border border-divider md:h-[38px] md:w-[38px] md:rounded-[11px]",
+            record.stores.category === "cafe" ? "bg-bg-soft" : "bg-primary-soft",
           ].join(" ")}>
             {record.stores.category === "cafe"
-              ? <CafeIcon size={18} color="#C2410C" />
-              : <RestaurantIcon size={18} color="#8B5CF6" />
+              ? <CafeIcon size={18} color="var(--color-text-body)" />
+              : <RestaurantIcon size={18} color="var(--color-primary)" />
             }
           </div>
-          <p className="mt-1 text-center text-[12px] font-medium leading-tight tracking-tight text-text-tertiary">
+          <p className={`mt-1 text-center font-semibold leading-tight text-text-tertiary ${compact ? "text-[11.5px]" : "text-[12px]"}`}>
             {formatTime(record.visited_at)}
           </p>
-          {!isLast && <div className="mt-1 w-px flex-1 bg-border" />}
+          {!isLast && <div className={`mt-1 flex-1 bg-border ${compact ? "w-0.5" : "w-px"}`} />}
         </div>
 
         {/* 카드 내용 */}
-        <div className={`flex-1 pl-3 ${isLast ? "pb-2" : "pb-4"}`}>
-          <div className="rounded-2xl border border-border bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <div className={`min-w-0 flex-1 pl-3 ${isLast ? "pb-2" : "pb-[18px]"}`}>
+          <div className="pt-0.5">
             {/* 가게명 + 추천 배지 + ⋮ 버튼 */}
-            <div className="flex h-7 items-center justify-between">
+            <div className={`flex items-center justify-between ${compact ? "h-6" : "h-7"}`}>
               <div className="flex min-w-0 items-center gap-2">
-                <span className="min-w-0 truncate text-[15px] font-bold tracking-tight text-text-primary">
+                <span className={`min-w-0 truncate font-bold text-text-primary ${compact ? "text-[14.5px]" : "text-[15.5px]"}`}>
                   {record.stores.name}
                 </span>
-                <RecommendationBadge type={record.recommendation} />
+                <RecommendationBadge type={record.recommendation} compact={compact} />
               </div>
               <div className="ml-1 shrink-0">
                 <button
                   ref={menuBtnRef}
                   onClick={toggleMenu}
-                  className="flex h-7 w-7 items-center justify-center rounded-full transition-colors active:bg-bg"
+                  className={`-m-2 flex h-10 w-10 items-center justify-center transition-colors active:bg-bg ${compact ? "rounded-[7px]" : "rounded-full"}`}
                   aria-label="더보기"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -207,23 +216,23 @@ export default function RecordCard({
                         top: menuPos.top,
                         transform: menuPos.up ? "translateY(-100%)" : undefined,
                       }}
-                      className="z-50 w-36 overflow-hidden rounded-2xl border border-border bg-white py-2 shadow-lg">
-                      <button onClick={handleEdit} className="flex h-11 w-full items-center gap-2.5 px-3.5 text-[14px] tracking-tight text-text-primary transition-colors active:bg-bg">
+                      className="z-50 w-[150px] overflow-hidden rounded-[12px] bg-white p-1.5 shadow-[0_10px_26px_rgba(0,0,0,0.16)]">
+                      <button onClick={handleEdit} className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13.5px] font-semibold text-text-body transition-colors active:bg-bg-soft">
                         <EditIcon size={18} color="var(--color-text-primary)" />
                         수정하기
                       </button>
-                      <button onClick={handleCopyAddress} className="flex h-11 w-full items-center gap-2.5 px-3.5 text-[14px] tracking-tight text-text-primary transition-colors active:bg-bg">
+                      <button onClick={handleCopyAddress} className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13.5px] font-semibold text-text-body transition-colors active:bg-bg-soft">
                         <CopyIcon size={18} color="var(--color-text-primary)" />
                         주소 복사
                       </button>
-                      <button onClick={handleShare} className="flex h-11 w-full items-center gap-2.5 px-3.5 text-[14px] tracking-tight text-text-primary transition-colors active:bg-bg">
+                      <button onClick={handleShare} className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13.5px] font-semibold text-text-body transition-colors active:bg-bg-soft">
                         <ShareIcon size={18} color="var(--color-text-primary)" />
                         공유하기
                       </button>
                       <div className="mx-3.5 h-px bg-border" />
                       <button
                         onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setConfirmDelete(true); }}
-                        className="flex h-11 w-full items-center gap-2.5 px-3.5 text-[14px] tracking-tight text-primary transition-colors active:bg-primary-soft"
+                        className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13.5px] font-semibold text-primary transition-colors active:bg-primary-soft"
                       >
                         <TrashIcon size={18} color="var(--color-primary)" />
                         삭제하기
@@ -236,28 +245,28 @@ export default function RecordCard({
             </div>
 
             {/* 주소 */}
-            <div className="mt-1.5 flex h-5 items-center">
-              <span className="truncate text-[12px] tracking-tight text-text-secondary">
+            <div className={`flex h-5 items-center ${compact ? "mt-[3px]" : "mt-1.5"}`}>
+              <span className={`truncate font-semibold text-text-tertiary ${compact ? "text-[12px]" : "text-[12.5px]"}`}>
                 {address.length > 28 ? address.slice(0, 28) + "…" : address}
               </span>
             </div>
 
             {/* 코멘트 + 이미지 */}
-            <div className="mt-3 flex gap-2">
+            <div className={`flex gap-2 ${compact ? "mt-[7px]" : "mt-3"}`}>
               <div className="min-w-0 flex-1">
                 <div
-                  className={`relative rounded-[13px] bg-gray-50 px-3.5 py-2.5 text-[13px] leading-relaxed tracking-tight text-text-primary whitespace-pre-wrap ${
+                  className={`relative bg-bg-soft leading-[1.5] text-text-body whitespace-pre-wrap ${compact ? "rounded-[11px] px-3 py-2.5 text-[13px]" : "rounded-[12px] px-[13px] py-[11px] text-[13.5px]"} ${
                     !expanded && commentOverflow ? "min-h-12 max-h-16 overflow-hidden" : ""
-                  } ${commentOverflow ? "pb-6" : ""}`}
+                  } ${commentOverflow ? "pb-6" : ""} ${hasRecordImage ? "min-h-16" : ""}`}
                 >
                   {record.comment}
                   {!expanded && commentOverflow && (
-                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-7 rounded-b-[13px] bg-linear-to-t from-gray-50 to-transparent" />
+                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-7 rounded-b-[12px] bg-linear-to-t from-bg-soft to-transparent" />
                   )}
                   {commentOverflow && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                      className="absolute bottom-1.5 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-50"
+                      className="absolute bottom-1.5 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-bg-soft before:absolute before:-inset-2 before:content-['']"
                       aria-label={expanded ? "접기" : "더보기"}
                     >
                       <ChevronDownIcon
@@ -269,14 +278,22 @@ export default function RecordCard({
                   )}
                 </div>
               </div>
-              {recordImageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={recordImageUrl}
-                  alt={record.stores.name}
-                  className="h-16 w-16 shrink-0 self-start rounded-[10px] object-cover"
-                  loading="lazy"
-                />
+              {hasRecordImage && (
+                <div className="relative h-16 w-16 shrink-0 self-start overflow-hidden rounded-[10px] bg-bg-soft">
+                  {!isImageLoaded && <div className="absolute inset-0 animate-pulse bg-border" />}
+                  {recordImageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={recordImageUrl}
+                      alt={record.stores.name}
+                      className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${isImageLoaded ? "opacity-100" : "opacity-0"}`}
+                      loading={imagePriority ? "eager" : "lazy"}
+                      fetchPriority={imagePriority ? "high" : "auto"}
+                      decoding="async"
+                      onLoad={() => setLoadedImageUrl(recordImageUrl)}
+                    />
+                  )}
+                </div>
               )}
             </div>
           </div>

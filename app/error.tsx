@@ -18,7 +18,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   }, [error]);
 
   return (
-    <div className="page-container font-sans">
+    <div className="page-container auth-page font-sans md:m-auto md:h-auto md:min-h-[460px] md:max-w-[440px] md:rounded-[26px] md:border md:border-border md:bg-surface">
       {/* 아이콘 + 메시지 */}
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8">
         <div className="flex h-18 w-18 items-center justify-center rounded-[20px] bg-bg">
@@ -33,10 +33,10 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           </svg>
         </div>
 
-        <p className="text-center text-[18px] font-bold tracking-tight text-text-primary">
+        <p className="text-center text-[18px] font-bold text-text-primary">
           화면을 불러올 수 없어요
         </p>
-        <p className="text-center text-[14px] leading-relaxed tracking-tight text-text-secondary">
+        <p className="text-center text-[14px] leading-relaxed text-text-secondary">
           인터넷 연결을 확인 후<br />다시 시도해 주세요.
         </p>
       </div>
