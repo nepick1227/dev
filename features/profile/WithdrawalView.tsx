@@ -90,30 +90,30 @@ export default function WithdrawalView({ onCancel, actionPlacement = "fixed" }: 
         isOpen={showConfirm}
         onClose={() => { if (!isSubmitting) setShowConfirm(false); }}
         variant="dialog"
-        title="정말 탈퇴하시겠어요?"
         footer={
           <div className="flex gap-2.5">
             <Button variant="secondary" fullWidth onClick={() => setShowConfirm(false)} disabled={isSubmitting}>
               취소
             </Button>
-            <Button variant="danger" fullWidth onClick={handleConfirm} disabled={!agreed || isSubmitting} isLoading={isSubmitting}>
+            <Button fullWidth onClick={handleConfirm} disabled={!agreed || isSubmitting} isLoading={isSubmitting}>
               탈퇴하기
             </Button>
           </div>
         }
       >
-        {/* 주의사항 박스 */}
-        <div className="mb-4 rounded-xl bg-bg px-4 py-3.5">
-          <p className="text-left text-[13px] leading-relaxed tracking-tight text-text-secondary">
-            탈퇴 시 동일 계정으로 30일 이내 재가입이 불가하며, 계정 및 모든 데이터는 복구되지 않습니다.
-          </p>
-        </div>
+        <div className="text-[34px] leading-none">😢</div>
+        <h2 className="mt-[14px] text-[17px] font-[800] text-text-primary">
+          정말 탈퇴하시겠어요?
+        </h2>
+        <p className="mt-2 text-[13.5px] leading-[1.6] text-text-description">
+          탈퇴 시 동일 계정으로 30일 이내 재가입이 불가하며, 계정 및 모든 데이터는 복구되지 않습니다.
+        </p>
 
         {/* 동의 체크박스 */}
         <button
           type="button"
           onClick={() => setAgreed((prev) => !prev)}
-          className="flex items-center gap-2.5"
+          className="mt-[18px] flex w-full items-center gap-[9px] rounded-[12px] bg-bg-soft px-[14px] py-3 text-left"
         >
           <div
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-colors ${
@@ -126,18 +126,18 @@ export default function WithdrawalView({ onCancel, actionPlacement = "fixed" }: 
               </svg>
             )}
           </div>
-          <span className="text-[13px] tracking-tight text-text-primary">
+          <span className="text-[13.5px] font-semibold text-text-body">
             위 내용을 확인하였습니다.
           </span>
         </button>
       </Modal>
 
       {/* 탈퇴 사유 선택 */}
-      <div className="app-content-narrow flex flex-1 flex-col px-5 pt-6 pb-32">
-        <h2 className="mb-1.5 text-[18px] font-bold tracking-tight text-text-primary">
+      <div className={`app-content-narrow flex flex-1 flex-col px-5 pb-32 pt-6 md:mt-0 md:!max-w-[432px] md:flex-none md:border-0 md:bg-transparent md:px-0 md:pb-0 md:pt-0 ${actionPlacement === "contained" ? "md:!max-w-none md:px-5 md:pt-6" : ""}`}>
+        <h2 className="mb-1.5 text-[18px] font-[800] text-text-primary">
           탈퇴 사유를 알려주세요
         </h2>
-        <p className="mb-6 text-[13px] tracking-tight text-text-secondary">
+        <p className="mb-6 text-[13px] text-text-description">
           소중한 의견을 담아 더 나은 네픽을 만들겠습니다.
         </p>
 
@@ -164,6 +164,14 @@ export default function WithdrawalView({ onCancel, actionPlacement = "fixed" }: 
             />
           </div>
         )}
+
+        {actionPlacement === "fixed" && (
+          <div className="hidden pt-6 md:block">
+            <Button variant="danger" fullWidth onClick={handleOpenConfirm} disabled={!canProceed}>
+              탈퇴하기
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 하단 버튼 */}
@@ -171,13 +179,15 @@ export default function WithdrawalView({ onCancel, actionPlacement = "fixed" }: 
         className={[
           "app-fixed-bar safe-area-pb-lg flex gap-2.5 border-t border-border bg-surface px-5 pt-3",
           actionPlacement === "fixed"
-            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2 md:hidden"
             : "relative shrink-0",
         ].join(" ")}
       >
-        <Button variant="secondary" fullWidth onClick={handleCancel}>
-          이전
-        </Button>
+        {actionPlacement === "contained" && (
+          <Button variant="secondary" fullWidth onClick={handleCancel}>
+            이전
+          </Button>
+        )}
         <Button variant="danger" fullWidth onClick={handleOpenConfirm} disabled={!canProceed}>
           탈퇴하기
         </Button>
@@ -201,20 +211,18 @@ function ReasonOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl border-[1.5px] px-4 py-3.5 text-left transition-colors ${
-        selected ? "border-primary/30 bg-primary/5" : "border-border bg-bg"
+      className={`flex h-[50px] w-full items-center gap-[11px] rounded-[13px] border-[1.5px] px-4 text-left text-[14.5px] transition-colors ${
+        selected ? "border-primary bg-primary-soft" : "border-border bg-surface"
       }`}
     >
       <div
-        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-          selected ? "border-primary" : "border-border"
+        className={`h-[18px] w-[18px] shrink-0 rounded-full border-[1.5px] transition-colors ${
+          selected
+            ? "border-primary bg-primary shadow-[inset_0_0_0_3px_#fff]"
+            : "border-[#D8DADE] bg-transparent"
         }`}
-      >
-        {selected && (
-          <div className="h-2.5 w-2.5 rounded-full bg-primary opacity-70" />
-        )}
-      </div>
-      <span className={`text-[14px] tracking-tight ${selected ? "font-semibold text-text-primary" : "text-text-primary"}`}>
+      />
+      <span className={selected ? "font-bold text-primary" : "font-semibold text-text-body"}>
         {label}
       </span>
     </button>

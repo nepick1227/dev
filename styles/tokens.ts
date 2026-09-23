@@ -3,22 +3,27 @@ export const colors = {
   // 브랜드
   primary: "#D32F2F",
   primaryDark: "#B71C1C",
-  primarySoft: "#FFF1F1",
+  primarySoft: "#FDECEA",
   primaryBorder: "#F3B4B4",
 
   // 텍스트
-  textPrimary: "#111827",
-  textSecondary: "#6B7280",
-  textTertiary: "#9CA3AF",
+  textPrimary: "#17191C",
+  textBody: "#3A3F45",
+  textSecondary: "#6E7379",
+  textDescription: "#8A9097",
+  textTertiary: "#9AA0A6",
+  textMuted: "#B4B8BD",
 
   // UI
-  border: "#E5E7EB",
-  background: "#FAFAFA",
+  border: "#E6E8EB",
+  divider: "#EEF0F2",
+  background: "#F4F5F7",
+  backgroundSoft: "#F6F7F9",
   surface: "#FFFFFF",
 
   // 비활성
-  disabledBg: "#E5E7EB",
-  disabledText: "#9CA3AF",
+  disabledBg: "#EDEEF0",
+  disabledText: "#B4B8BD",
 
   // 성공
   success: "#10B981",
@@ -46,8 +51,8 @@ export const recommendationEmojis: Record<RecommendationType, string> = {
 
 export const recommendationColors: Record<RecommendationType, string> = {
   recommend: "#D32F2F",
-  neutral: "#6B7280",
-  not_recommend: "#6B7280",
+  neutral: "#6E7379",
+  not_recommend: "#C77700",
 };
 
 export type RecommendationType = "recommend" | "neutral" | "not_recommend";
@@ -68,8 +73,8 @@ export const font = {
     xs: "0.75rem",    // 12px — 캡션, 보조 텍스트
     sm: "0.8125rem",  // 13px — 캡션 variant
     base: "0.875rem", // 14px — 본문 보조
-    md: "1rem",       // 16px — 본문, 입력값
-    lg: "1.0625rem",  // 17px — 버튼, 주요 리스트
+    md: "0.9375rem",  // 15px — 주요 본문, 입력값
+    lg: "0.96875rem", // 15.5px — 강조 본문
     xl: "1.125rem",   // 18px — 섹션 제목
     "2xl": "1.25rem", // 20px — 제목
     "3xl": "1.375rem",// 22px — 앱바 제목
@@ -81,6 +86,7 @@ export const font = {
     medium: 500,
     semibold: 600,
     bold: 700,
+    extrabold: 800,
   },
   letterSpacing: {
     tight: "-0.3px",
@@ -93,7 +99,7 @@ export const layout = {
   maxWidth: "430px",
   pagePadding: "24px",
   headerHeight: "56px",
-  gnbHeight: "72px",
+  gnbHeight: "64px",
 } as const;
 
 // ── 스페이싱 ───────────────────────────────────────────

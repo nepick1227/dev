@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { checkRateLimit } from "@/lib/security/http";
+import { getSafeAuthNextPath } from "@/lib/auth-redirect";
 
 /**
  * 네이버 OAuth 로그인 시작
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
-  const next = requestUrl.searchParams.get("next");
+  const next = getSafeAuthNextPath(requestUrl.searchParams.get("next"));
   const state = crypto.randomUUID(); // CSRF 방지
 
   const params = new URLSearchParams({
@@ -37,15 +38,13 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 10, // 10분
     path: "/",
   });
-  if (next?.startsWith("/") && !next.startsWith("//")) {
-    response.cookies.set("naver_oauth_next", next, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 10,
-      path: "/",
-    });
-  }
+  response.cookies.set("naver_oauth_next", next, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 10,
+    path: "/",
+  });
 
   return response;
 }

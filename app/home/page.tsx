@@ -47,9 +47,41 @@ function ProfileCompletionGuard() {
   return null;
 }
 
+function HomeViewportHeightSync() {
+  useEffect(() => {
+    let frame = 0;
+    const viewport = window.visualViewport;
+    const updateHeight = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const height = Math.round(viewport?.height ?? window.innerHeight);
+        document.documentElement.style.setProperty("--home-viewport-height", `${height}px`);
+      });
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    window.addEventListener("orientationchange", updateHeight);
+    viewport?.addEventListener("resize", updateHeight);
+    viewport?.addEventListener("scroll", updateHeight);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateHeight);
+      window.removeEventListener("orientationchange", updateHeight);
+      viewport?.removeEventListener("resize", updateHeight);
+      viewport?.removeEventListener("scroll", updateHeight);
+      document.documentElement.style.removeProperty("--home-viewport-height");
+    };
+  }, []);
+
+  return null;
+}
+
 export default function HomePage() {
   return (
     <PageContainer className="home-page-container">
+      <HomeViewportHeightSync />
       <Suspense>
         <WelcomeToast />
       </Suspense>

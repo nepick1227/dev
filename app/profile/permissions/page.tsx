@@ -9,9 +9,11 @@ export default function PermissionsPage() {
   const router = useRouter();
 
   return (
-    <PageContainer>
-      <Header title="권한 및 알림 설정" showBack onBack={() => router.back()} />
-      <div className="flex flex-1 flex-col overflow-y-auto">
+    <PageContainer className="settings-page">
+      <div className="md:mx-auto md:w-full md:max-w-[560px]">
+        <Header title="권한 및 알림 설정" showBack onBack={() => router.back()} />
+      </div>
+      <div className="flex flex-1 flex-col overflow-y-auto bg-surface md:bg-transparent">
         <PermissionsView />
       </div>
     </PageContainer>

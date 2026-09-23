@@ -38,7 +38,7 @@ export default function ProfileEditPage() {
   }, [router]);
 
   return (
-    <PageContainer>
+    <PageContainer className="form-page">
       <Modal
         isOpen={showLeaveModal}
         onClose={() => setShowLeaveModal(false)}
@@ -60,12 +60,14 @@ export default function ProfileEditPage() {
         </p>
       </Modal>
 
-      <Header
-        title="프로필 편집"
-        showBack
-        onBack={handleBack}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="md:mx-auto md:w-full md:max-w-[560px]">
+        <Header
+          title="프로필 편집"
+          showBack
+          onBack={handleBack}
+        />
+      </div>
+      <div className="flex flex-1 flex-col overflow-hidden bg-surface md:bg-transparent">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Spinner size={28} />

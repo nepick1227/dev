@@ -2,22 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/http";
-
-const ALLOWED_NEXT_PATHS = new Set(["/home", "/mypick", "/profile", "/record"]);
-
-function getSafeNextPath(next: string, origin: string) {
-  if (!next.startsWith("/") || next.startsWith("//")) return "/home";
-
-  try {
-    const url = new URL(next, origin);
-    if (url.origin !== origin) return "/home";
-    return ALLOWED_NEXT_PATHS.has(url.pathname)
-      ? `${url.pathname}${url.search}`
-      : "/home";
-  } catch {
-    return "/home";
-  }
-}
+import { getSafeAuthNextPath } from "@/lib/auth-redirect";
 
 export async function GET(request: NextRequest) {
   const rateLimited = checkRateLimit(request, "auth-callback", {
@@ -30,6 +15,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const providerError = searchParams.get("error");
   const next = searchParams.get("next") ?? "/home";
+  const safePath = getSafeAuthNextPath(next);
   const supabase = await createClient();
 
   if (providerError) {
@@ -70,12 +56,11 @@ export async function GET(request: NextRequest) {
 
   if (!profile || !profile.nickname) {
     // 신규 유저 또는 프로필 미완성 → 약관 동의 페이지로
-    return NextResponse.redirect(`${origin}/auth/terms`);
+    return NextResponse.redirect(`${origin}/auth/terms?next=${encodeURIComponent(safePath)}`);
   }
 
   // 기존 유저 → 홈으로 (welcome 파라미터로 토스트 트리거)
   // next 파라미터 화이트리스트 검증 (오픈 리다이렉트 방지)
-  const safePath = getSafeNextPath(next, origin);
   const homeUrl = safePath === "/home" ? `${origin}/home?welcome=1` : `${origin}${safePath}`;
   return NextResponse.redirect(homeUrl);
 }

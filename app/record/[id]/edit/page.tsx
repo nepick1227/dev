@@ -68,7 +68,7 @@ export default function RecordEditPage() {
   }, [id, router]);
 
   return (
-    <PageContainer>
+    <PageContainer className="form-page">
       <Modal
         isOpen={showLeaveModal}
         onClose={() => setShowLeaveModal(false)}
@@ -90,7 +90,9 @@ export default function RecordEditPage() {
         </p>
       </Modal>
 
-      <Header title="기록 수정" showBack onBack={handleBack} noBorder />
+      <div className="md:mx-auto md:w-full md:max-w-[600px]">
+        <Header title="기록 수정" showBack onBack={handleBack} noBorder />
+      </div>
       <div className="flex flex-1 flex-col overflow-hidden">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">

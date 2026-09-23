@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import PageContainer from "@/components/layout/PageContainer";
-import Header from "@/components/layout/Header";
-import BottomNav from "@/components/layout/BottomNav";
-import Timeline from "@/features/mypick/Timeline";
+import ResponsiveMyPickPage from "@/features/mypick/ResponsiveMyPickPage";
 import type { RecordWithStore } from "@/types/database";
 
 export default async function MypickPage() {
@@ -21,11 +19,10 @@ export default async function MypickPage() {
 
   return (
     <PageContainer>
-      <Header title="내 픽" />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Timeline initialRecords={initialRecords} />
-      </div>
-      <BottomNav />
+      <ResponsiveMyPickPage
+        isAuthenticated={Boolean(user)}
+        initialRecords={initialRecords}
+      />
     </PageContainer>
   );
 }

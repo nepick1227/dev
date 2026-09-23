@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PageContainer from "@/components/layout/PageContainer";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import ProfileView from "@/features/profile/ProfileView";
 import Spinner from "@/components/ui/Spinner";
+import AuthGate from "@/features/auth/AuthGate";
 import type { Profile } from "@/types/database";
 
 interface RecordStats {
@@ -18,11 +18,11 @@ interface RecordStats {
 }
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<RecordStats>({ total: 0, recommend: 0, neutral: 0, notRecommend: 0 });
   const [providers, setProviders] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -30,9 +30,12 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        router.replace("/auth/login");
+        setIsAuthenticated(false);
+        setIsLoading(false);
         return;
       }
+
+      setIsAuthenticated(true);
 
       const [profileRes, recordsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -61,18 +64,24 @@ export default function ProfilePage() {
     };
 
     load();
-  }, [router]);
+  }, []);
 
   return (
     <PageContainer>
-      <Header title="프로필" />
+      {isAuthenticated === true && (
+        <div className="md:hidden">
+          <Header title="프로필" size="large" />
+        </div>
+      )}
       <div className="flex flex-1 flex-col overflow-hidden">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Spinner size={28} />
           </div>
+        ) : isAuthenticated === false ? (
+          <AuthGate nextPath="/profile" />
         ) : profile ? (
-          <div className="hide-scrollbar flex-1 overflow-y-auto">
+          <div className="hide-scrollbar flex-1 overflow-y-auto bg-surface md:bg-bg">
             <ProfileView profile={profile} stats={stats} providers={providers} />
           </div>
         ) : (

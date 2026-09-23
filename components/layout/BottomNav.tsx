@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { HomeIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
-import { createClient } from "@/lib/supabase/client";
 
 interface NavItem {
   href: string;
@@ -17,66 +15,38 @@ const NAV_ITEMS: NavItem[] = [
     href: "/home",
     label: "홈",
     icon: (active) => (
-      <HomeIcon size={24} color={active ? "var(--color-primary)" : "var(--color-text-tertiary)"} />
+      <HomeIcon size={22} color={active ? "var(--color-primary)" : "var(--color-text-muted)"} />
     ),
   },
   {
     href: "/mypick",
     label: "내 픽",
     icon: (active) => (
-      <BookmarkIcon size={24} color={active ? "var(--color-primary)" : "var(--color-text-tertiary)"} />
+      <BookmarkIcon size={22} color={active ? "var(--color-primary)" : "var(--color-text-muted)"} />
     ),
   },
   {
     href: "/profile",
     label: "프로필",
     icon: (active) => (
-      <UserIcon size={24} color={active ? "var(--color-primary)" : "var(--color-text-tertiary)"} />
+      <UserIcon size={22} color={active ? "var(--color-primary)" : "var(--color-text-muted)"} />
     ),
   },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [desktopActiveHref, setDesktopActiveHref] = useState("/home");
-
-  const handleDesktopPanelNav = async (event: MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (typeof window === "undefined" || !window.matchMedia("(min-width: 768px)").matches) return;
-    if (!pathname.startsWith("/home")) return;
-
-    event.preventDefault();
-    if (href !== "/home") {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push(`/auth/login?next=${encodeURIComponent(href)}`);
-        return;
-      }
-    }
-
-    setDesktopActiveHref(href);
-    window.dispatchEvent(new CustomEvent("nepick:home-panel", {
-      detail: href === "/home" ? "ranking" : href === "/mypick" ? "mypick" : "profile",
-    }));
-  };
 
   return (
-    <nav className="safe-area-pb sticky bottom-0 z-20 border-t border-border bg-surface">
-      <ul className="flex h-18 items-center">
+    <nav className="sticky bottom-0 z-20 border-t border-divider bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+      <ul className="flex h-[76px] items-center">
         {NAV_ITEMS.map((item) => {
-          const isDesktopHome = pathname.startsWith("/home") &&
-            typeof window !== "undefined" &&
-            window.matchMedia("(min-width: 768px)").matches;
-          const isActive = isDesktopHome
-            ? desktopActiveHref === item.href
-            : pathname.startsWith(item.href);
+          const isActive = pathname.startsWith(item.href);
 
           return (
             <li key={item.href} className="flex flex-1 justify-center">
               <Link
                 href={item.href}
-                onClick={(event) => handleDesktopPanelNav(event, item.href)}
                 className="flex h-full w-full flex-col items-center justify-center gap-1 transition-all duration-200"
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
@@ -84,8 +54,8 @@ export default function BottomNav() {
                 {item.icon(isActive)}
                 <span
                   className={[
-                    "text-[12px] font-semibold tracking-tight transition-colors",
-                    isActive ? "text-primary" : "text-text-tertiary",
+                    "text-[11px] font-bold transition-colors",
+                    isActive ? "text-primary" : "text-text-muted",
                   ].join(" ")}
                 >
                   {item.label}
