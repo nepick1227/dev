@@ -49,7 +49,7 @@ function RecordPageContent() {
   }, [router]);
 
   return (
-    <PageContainer>
+    <PageContainer className="form-page">
       <Modal
         isOpen={showLeaveModal}
         onClose={() => setShowLeaveModal(false)}
@@ -71,7 +71,9 @@ function RecordPageContent() {
         </p>
       </Modal>
 
-      <Header title="기록 추가" showBack onBack={handleBack} noBorder />
+      <div className="md:mx-auto md:w-full md:max-w-[600px]">
+        <Header title="기록 추가" showBack onBack={handleBack} noBorder />
+      </div>
       <div className="flex flex-1 flex-col overflow-hidden">
         <RecordForm onContentChange={handleContentChange} initialPlace={initialPlace} />
       </div>

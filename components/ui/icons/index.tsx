@@ -15,7 +15,7 @@ export function HomeIcon({ size = 24, color = "currentColor", className }: IconP
 export function PlusIcon({ size = 24, color = "currentColor", className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M12 5V19M5 12H19" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M12 5V19M5 12H19" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
     </svg>
   );
 }
@@ -131,7 +131,7 @@ export function NaverIcon({ size = 20 }: { size?: number }) {
 export function GoogleIcon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-label="구글">
-      <rect width="20" height="20" rx="6" fill="white" stroke="#E5E7EB" strokeWidth="1" />
+      <rect width="20" height="20" rx="6" fill="white" stroke="#E6E8EB" strokeWidth="1" />
       <path d="M16.5 10.2C16.5 9.7 16.5 9.2 16.4 8.7H10V11.5H13.6C13.5 12.3 13.0 13.0 12.3 13.5V15.2H14.5C15.8 14.0 16.5 12.3 16.5 10.2Z" fill="#4285F4" />
       <path d="M10 16.8C11.8 16.8 13.3 16.2 14.5 15.2L12.3 13.5C11.7 13.9 10.9 14.2 10 14.2C8.3 14.2 6.8 13.0 6.3 11.5H4.0V13.2C5.2 15.6 7.4 16.8 10 16.8Z" fill="#34A853" />
       <path d="M6.3 11.5C6.1 10.9 6.0 10.3 6.0 9.7C6.0 9.1 6.1 8.5 6.3 7.9V6.2H4.0C3.4 7.4 3.0 8.5 3.0 9.7C3.0 10.9 3.4 12.0 4.0 13.2L6.3 11.5Z" fill="#FBBC04" />
@@ -169,8 +169,8 @@ export function ChevronDownIcon({ size = 24, color = "currentColor", className }
 export function CopyIcon({ size = 12, color = "currentColor" }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect x="5" y="5" width="9" height="9" rx="2" stroke={color} strokeWidth="1.3" />
-      <path d="M11 5V3a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2h2" stroke={color} strokeWidth="1.3" />
+      <rect x="5" y="5" width="9" height="9" rx="2" stroke={color} strokeWidth="2" />
+      <path d="M11 5V3a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2h2" stroke={color} strokeWidth="2" />
     </svg>
   );
 }
@@ -179,9 +179,9 @@ export function CopyIcon({ size = 12, color = "currentColor" }: { size?: number;
 export function ShareIcon({ size = 12, color = "currentColor" }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <polyline points="16 6 12 2 8 6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="12" y1="2" x2="12" y2="15" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="16 6 12 2 8 6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="12" y1="2" x2="12" y2="15" stroke={color} strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -204,11 +204,9 @@ export function CalendarIcon({ size = 18, color = "currentColor", className }: I
 export function CafeIcon({ size = 20, color = "currentColor", className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M7 10H15C16.1046 10 17 10.8954 17 12V13C17 15.7614 14.7614 18 12 18H10C7.23858 18 5 15.7614 5 13V12C5 10.8954 5.89543 10 7 10Z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M17 11H18C19.6569 11 21 12.3431 21 14C21 15.6569 19.6569 17 18 17H17" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M8 20H18" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M9 4V7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M13 4V7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M4 9H18V14A5 5 0 0 1 13 19H9A5 5 0 0 1 4 14V9Z" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 10H19.5A2.5 2.5 0 0 1 19.5 15H18" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 4.5C7.2 5.1 7.2 5.9 8 6.5M12 4.5C11.2 5.1 11.2 5.9 12 6.5" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -216,11 +214,7 @@ export function CafeIcon({ size = 20, color = "currentColor", className }: IconP
 export function RestaurantIcon({ size = 20, color = "currentColor", className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M6 3V10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M8 3V10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M10 3V10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M8 10V21" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M16 3C14.8954 3 14 3.89543 14 5V9C14 10.1046 14.8954 11 16 11H18V21" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 4V9.8C5.5 11.3 6.5 12.3 7.8 12.3S9.9 11.3 9.9 9.8V4M7.7 4V20M14.2 4V20M19.5 4C19.5 7.5 16.8 9 16.8 12.3V20" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

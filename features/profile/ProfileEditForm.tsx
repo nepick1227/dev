@@ -10,7 +10,6 @@ import Toast from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
 import Textarea from "@/components/ui/Textarea";
-import { UserIcon, CameraIcon } from "@/components/ui/icons";
 import DatePicker from "@/components/ui/DatePicker";
 import { getStorageImagePath } from "@/lib/supabase/storage";
 import { validateNickname, validateIntro, validateImageFile } from "@/utils/validation";
@@ -242,35 +241,38 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="app-content-narrow hide-scrollbar flex-1 overflow-y-auto px-5 pb-32 pt-6">
+      <div className={`app-content-narrow hide-scrollbar flex-1 overflow-y-auto bg-surface px-5 pb-32 pt-6 md:mt-0 md:rounded-[20px] md:border md:border-divider md:px-7 md:pb-7 md:pt-7 ${actionPlacement === "fixed" ? "md:!max-w-[512px]" : ""}`}>
         {/* 프로필 이미지 편집 */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="relative">
+        <div className="mb-[26px] flex flex-col items-center gap-2.5">
+          <div>
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={previewUrl}
                 alt="프로필 이미지"
-                className="h-24 w-24 rounded-full object-cover ring-2 ring-border"
+                className="h-[84px] w-[84px] rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-bg ring-2 ring-border">
-                <UserIcon size={40} color="var(--color-text-tertiary)" />
+              <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-linear-to-br from-[#FBE3E0] to-bg">
+                <span className="text-[28px] font-[800] text-primary">
+                  {profile.nickname?.trim().charAt(0) || "N"}
+                </span>
               </div>
             )}
-            <button
-              onClick={() => imageInputRef.current?.click()}
-              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary"
-              aria-label="프로필 이미지 변경"
-            >
-              <CameraIcon size={16} color="#fff" />
-            </button>
           </div>
+
+          <button
+            onClick={() => imageInputRef.current?.click()}
+            className="flex h-8 items-center justify-center rounded-full bg-bg px-[14px] text-[12.5px] font-bold text-text-secondary"
+            aria-label="프로필 이미지 변경"
+          >
+            사진 변경
+          </button>
 
           {previewUrl && (
             <button
               onClick={handleRemoveImage}
-              className="text-[12px] tracking-tight text-text-secondary underline underline-offset-2"
+              className="text-[12px] text-text-tertiary underline underline-offset-2"
             >
               이미지 제거
             </button>
@@ -286,8 +288,8 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
         </div>
 
         {/* 닉네임 */}
-        <div className="mb-6">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+        <div className="mb-6 md:mb-5">
+          <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
             닉네임
           </label>
           <div className="relative">
@@ -299,11 +301,11 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
               }}
               placeholder="2~12자"
               className={[
-                "h-14 w-full rounded-2xl border-[1.5px] bg-surface px-5 pr-12 text-[16px] tracking-tight text-text-primary outline-none transition-colors placeholder:text-text-tertiary",
+                "h-[52px] w-full rounded-[12px] border-[1.5px] bg-surface px-[15px] pr-12 text-[15px] text-text-primary outline-none transition-colors placeholder:text-text-muted",
                 nicknameStatus === "available" && !isNicknameOriginal
                   ? "border-success-border focus:border-success-border"
                   : nicknameStatus === "taken" || nicknameStatus === "error" || (nickname.length > 0 && !nicknameValidation.isValid)
-                    ? "border-primary-dark focus:border-primary-dark"
+                    ? "border-primary focus:border-primary"
                     : "border-border focus:border-primary",
               ].join(" ")}
               autoComplete="off"
@@ -332,13 +334,15 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
               status={nicknameStatus}
               isOriginal={isNicknameOriginal}
             />
-            <span className="shrink-0 text-[12px] text-text-secondary">{nickname.length}/12</span>
+            <span className="ml-auto shrink-0 text-[12.5px] font-semibold text-text-description">
+              {nickname.length}/12
+            </span>
           </div>
         </div>
 
         {/* 한줄소개 */}
-        <div className="mb-6">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+        <div className="mb-6 md:mb-5">
+          <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
             한줄소개{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </label>
@@ -355,8 +359,8 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
         </div>
 
         {/* 생년월일 */}
-        <div className="mb-6">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+        <div className="mb-6 md:mb-5">
+          <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
             생년월일{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </label>
@@ -369,8 +373,8 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
         </div>
 
         {/* 성별 */}
-        <div className="mb-6">
-          <p className="mb-3 text-[14px] font-semibold tracking-tight text-text-primary">
+        <div className="mb-6 md:mb-5">
+          <p className="mb-[9px] text-[14.5px] font-bold text-text-primary">
             성별{" "}
             <span className="text-[12px] font-normal text-text-secondary">선택</span>
           </p>
@@ -380,7 +384,7 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
                 key={opt.value}
                 type="button"
                 onClick={() => setGender(opt.value)}
-                className={`flex-1 rounded-xl border py-3 text-[14px] font-semibold tracking-tight transition-colors ${
+                className={`h-11 flex-1 rounded-[11px] border-[1.5px] text-[13.5px] font-semibold transition-colors md:text-[14px] ${
                   gender === opt.value
                     ? "border-primary-border bg-primary-soft text-primary"
                     : "border-border bg-surface text-text-secondary"
@@ -394,6 +398,20 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
 
         {/* 프로필 공개 토글은 현재 RLS 정책상 본인만 조회 가능해 효과가 없어 숨김.
             공개 프로필 기능 도입 시 is_public 컬럼과 함께 복원한다. */}
+
+        {actionPlacement === "fixed" && (
+          <div className="hidden pt-1 md:block">
+            <Button
+              fullWidth
+              isLoading={isSubmitting}
+              disabled={!canSubmit}
+              onClick={handleSubmit}
+              className="h-[54px] rounded-[15px] text-[16px]"
+            >
+              저장하기
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 저장 버튼 */}
@@ -401,7 +419,7 @@ export default function ProfileEditForm({ profile, onSaved, onHasChanges, action
         className={[
           "app-fixed-bar safe-area-pb-lg border-t border-border bg-surface px-5 pt-3",
           actionPlacement === "fixed"
-            ? "fixed bottom-0 left-1/2 -translate-x-1/2"
+            ? "fixed bottom-0 left-1/2 -translate-x-1/2 md:hidden"
             : "relative shrink-0",
         ].join(" ")}
       >
@@ -433,7 +451,7 @@ function NicknameHint({ nickname, formatResult, status, isOriginal }: NicknameHi
   // 포맷 오류 우선 표시
   if (!formatResult.isValid) {
     return (
-      <p className="text-[12px] tracking-tight text-primary">
+      <p className="text-[12px] text-primary">
         {formatResult.message}
       </p>
     );
@@ -444,28 +462,28 @@ function NicknameHint({ nickname, formatResult, status, isOriginal }: NicknameHi
 
   if (status === "checking") {
     return (
-      <p className="text-[12px] tracking-tight text-text-secondary">
+      <p className="text-[12px] text-text-secondary">
         중복 확인 중
       </p>
     );
   }
   if (status === "taken") {
     return (
-      <p className="text-[12px] tracking-tight text-primary">
+      <p className="text-[12px] text-primary">
         이미 사용 중인 닉네임이에요
       </p>
     );
   }
   if (status === "available") {
     return (
-      <p className="text-[12px] tracking-tight text-success-text">
+      <p className="text-[12px] text-success-text">
         사용 가능한 닉네임이에요
       </p>
     );
   }
   if (status === "error") {
     return (
-      <p className="text-[12px] tracking-tight text-primary">
+      <p className="text-[12px] text-primary">
         닉네임 확인에 실패했어요. 다시 시도해 주세요.
       </p>
     );

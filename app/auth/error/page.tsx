@@ -41,7 +41,7 @@ export default function AuthErrorPage() {
 
   if (isRefreshing) {
     return (
-      <div className="page-container items-center justify-center gap-5 font-sans">
+      <div className="page-container auth-page items-center justify-center gap-5 font-sans">
         <NepickLogo size={80} />
         <Spinner />
       </div>
@@ -49,15 +49,15 @@ export default function AuthErrorPage() {
   }
 
   return (
-    <div className="page-container font-sans">
+    <div className="page-container auth-page font-sans">
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8">
         <NepickLogo size={80} />
 
         <div className="mt-2 flex flex-col items-center gap-1.5">
-          <p className="text-center text-[20px] font-bold tracking-tight text-text-primary">
+          <p className="text-center text-[20px] font-bold text-text-primary">
             로그인에 문제가 있나요?
           </p>
-          <p className="text-center text-[14px] leading-relaxed tracking-tight text-text-secondary">
+          <p className="text-center text-[14px] leading-relaxed text-text-secondary">
             일시적인 오류가 발생했어요.<br />잠시 후 다시 시도하거나 문의해 주세요.
           </p>
         </div>
@@ -68,7 +68,7 @@ export default function AuthErrorPage() {
           href="https://furtive-yogurt-135.notion.site/ef6c394bf09483b483c681e5589986a8?pvs=143"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex w-full items-center justify-center rounded-xl border border-border py-4 text-[15px] font-semibold tracking-tight text-text-primary transition-opacity active:opacity-60"
+          className="flex w-full items-center justify-center rounded-xl border border-border py-4 text-[15px] font-semibold text-text-primary transition-opacity active:opacity-60"
         >
           문의하기
         </a>

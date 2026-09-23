@@ -13,8 +13,17 @@ declare namespace kakao.maps {
     getCenter(): LatLng;
     setLevel(level: number): void;
     getLevel(): number;
+    setMaxLevel(maxLevel: number): void;
     panTo(latlng: LatLng): void;
+    setBounds(
+      bounds: LatLngBounds,
+      paddingTop?: number,
+      paddingRight?: number,
+      paddingBottom?: number,
+      paddingLeft?: number
+    ): void;
     getBounds(): LatLngBounds;
+    relayout(): void;
   }
 
   class LatLngBounds {
