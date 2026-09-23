@@ -15,6 +15,13 @@ declare namespace kakao.maps {
     getLevel(): number;
     setMaxLevel(maxLevel: number): void;
     panTo(latlng: LatLng): void;
+    setBounds(
+      bounds: LatLngBounds,
+      paddingTop?: number,
+      paddingRight?: number,
+      paddingBottom?: number,
+      paddingLeft?: number
+    ): void;
     getBounds(): LatLngBounds;
     relayout(): void;
   }

@@ -178,6 +178,7 @@ interface MapViewProps {
 }
 
 export default function MapView({ initialPanel = "ranking" }: MapViewProps) {
+  const mapViewportRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const rankingRef = useRef<RankingSheetHandle>(null);
   const markersRef = useRef<kakao.maps.Marker[]>([]);
@@ -322,6 +323,28 @@ export default function MapView({ initialPanel = "ranking" }: MapViewProps) {
     };
   }, [isDesktopSidebarOpen]);
 
+  const getFitInsets = useCallback(() => {
+    if (isDesktopLayout()) return getDesktopInsets();
+
+    const mapHeight = Math.max(
+      mapViewportRef.current?.getBoundingClientRect().height ?? window.innerHeight,
+      1
+    );
+
+    const top = Math.min(130, Math.round(mapHeight * 0.3));
+    const desiredBottom = snapRef.current === "half"
+      ? Math.round(mapHeight / 2 + 56)
+      : 136;
+    const bottom = Math.min(desiredBottom, Math.max(88, mapHeight - top - 96));
+
+    return {
+      left: 32,
+      right: 32,
+      top,
+      bottom,
+    };
+  }, [getDesktopInsets, isDesktopLayout]);
+
 
   // 사용자에게 실제로 보이는 지도 영역의 bounds 계산
   // 모바일: 바텀시트 가시 영역 기준 / 데스크톱: 좌측 패널과 상단 플로팅을 제외한 실제 지도 영역 기준
@@ -440,15 +463,15 @@ export default function MapView({ initialPanel = "ranking" }: MapViewProps) {
     stores.forEach((store) => {
       extendBounds.extend(new kakao.maps.LatLng(store.lat, store.lng));
     });
-    (map as kakao.maps.Map & { setBounds: (bounds: kakao.maps.LatLngBounds) => void }).setBounds(bounds);
-
-    window.setTimeout(() => {
-      const fitted = map.getBounds();
-      const sw = fitted.getSouthWest();
-      const ne = fitted.getNorthEast();
-      panToVisible(map, (sw.getLat() + ne.getLat()) / 2, (sw.getLng() + ne.getLng()) / 2);
-    }, 120);
-  }, [panToVisible]);
+    const insets = getFitInsets();
+    map.setBounds(
+      bounds,
+      insets.top,
+      insets.right,
+      insets.bottom,
+      insets.left
+    );
+  }, [getFitInsets, panToVisible]);
 
   const loadMyPickStores = useCallback(async () => {
     setIsMyPickLoading(true);
@@ -859,6 +882,21 @@ export default function MapView({ initialPanel = "ranking" }: MapViewProps) {
     myPickStores,
   ]);
 
+  useEffect(() => {
+    if (isDesktopLayout() || !isMyPickOnlyView || snap === "full" || myPickStores.length === 0) {
+      return;
+    }
+
+    const map = mapRef.current;
+    if (!map) return;
+
+    const timer = window.setTimeout(() => {
+      fitStoresToVisibleMap(map, myPickStores);
+    }, 320);
+
+    return () => window.clearTimeout(timer);
+  }, [fitStoresToVisibleMap, isDesktopLayout, isMyPickOnlyView, myPickStores, snap]);
+
   const handleDesktopSidebarToggle = useCallback(() => {
     const nextOpen = !isDesktopSidebarOpen;
     setIsDesktopSidebarOpen(nextOpen);
@@ -907,6 +945,7 @@ export default function MapView({ initialPanel = "ranking" }: MapViewProps) {
   return (
     <>
     <div
+      ref={mapViewportRef}
       className="relative flex-1 overflow-hidden"
       style={{
         "--home-visible-sidebar-width": isDesktopSidebarOpen
