@@ -10,8 +10,10 @@ import Toast from "@/components/ui/Toast";
 import Spinner from "@/components/ui/Spinner";
 import Button from "@/components/ui/Button";
 import Textarea from "@/components/ui/Textarea";
+import { NepickLogo } from "@/components/ui/icons";
 import { validateNickname } from "@/utils/validation";
 import DatePicker from "@/components/ui/DatePicker";
+import { getSafeAuthNextPath } from "@/lib/auth-redirect";
 
 // ── 타입 ─────────────────────────────────────────────
 type Gender = "male" | "female" | "unknown";
@@ -22,6 +24,7 @@ function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const marketingAgree = searchParams.get("marketing") === "1";
+  const nextPath = getSafeAuthNextPath(searchParams.get("next"));
   const { toast, showToast } = useToast();
 
   // 폼 상태
@@ -120,14 +123,14 @@ function SignupContent() {
 
       pushGtmEvent("signup_complete");
       showToast("환영합니다 🎉");
-      setTimeout(() => router.push("/home"), 800);
+      setTimeout(() => router.push(nextPath), 800);
     } catch (err) {
       console.error("[Signup]", err instanceof Error ? err.message : "unknown error");
       showToast("저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSaving(false);
     }
-  }, [nickname, nicknameStatus, birthDate, gender, intro, marketingAgree, isSaving, router, showToast]);
+  }, [nickname, nicknameStatus, birthDate, gender, intro, marketingAgree, isSaving, nextPath, router, showToast]);
 
   // ── 나중에 입력 ──────────────────────────────────────
   const handleSkip = useCallback(async () => {
@@ -159,49 +162,49 @@ function SignupContent() {
 
       pushGtmEvent("signup_skip");
       showToast("환영합니다 🎉");
-      setTimeout(() => router.push("/home"), 800);
+      setTimeout(() => router.push(nextPath), 800);
     } catch (err) {
       console.error("[SignupSkip]", err instanceof Error ? err.message : "unknown error");
       showToast("오류가 발생했습니다. 다시 시도해 주세요.");
     } finally {
       setIsSaving(false);
     }
-  }, [marketingAgree, isSaving, router, showToast]);
+  }, [marketingAgree, isSaving, nextPath, router, showToast]);
 
   // 닉네임 상태별 스타일
   const inputBorderClass =
     nicknameStatus === "ok"
       ? "border-success-border focus:border-success-border"
       : nicknameStatus === "error" || nicknameStatus === "taken"
-        ? "border-primary-dark focus:border-primary-dark"
+        ? "border-primary focus:border-primary"
         : "border-border focus:border-primary";
 
   const msgColorClass =
     nicknameStatus === "ok" ? "text-success-text"
     : nicknameStatus === "checking" ? "text-text-secondary"
-    : "text-primary-dark";
+    : "text-primary";
 
   const canSubmit = nicknameStatus === "ok" && !isSaving;
 
   return (
-    <div className="page-container">
+    <div className="page-container auth-form-page">
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="app-content-narrow hide-scrollbar flex-1 overflow-y-auto px-6 pt-6">
-        {/* 타이틀 */}
-        <div className="nepick-fade-in mb-7">
-          <h2 className="mb-1.5 text-[22px] font-extrabold tracking-tight text-text-primary">
+      <div className="hide-scrollbar flex-1 overflow-y-auto">
+        <main className="mx-auto w-full max-w-[440px] px-5 pb-10 pt-14 md:px-6 md:pb-[60px]">
+        <div className="nepick-fade-in">
+          <NepickLogo size={112} />
+          <h2 className="mt-5 text-[20px] font-[800] text-text-primary md:mt-[22px] md:text-[22px]">
             프로필을 설정해 주세요
           </h2>
-          <p className="text-[14px] leading-relaxed tracking-tight text-text-secondary">
+          <p className="mt-[7px] text-[13.5px] leading-relaxed text-text-description md:mt-2 md:text-[14px]">
             나중에 프로필 탭에서 수정할 수 있어요.
           </p>
         </div>
 
-        {/* ── 닉네임 ── */}
-        <div className="nepick-fade-in mb-6 [animation-delay:50ms]">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
-            닉네임
+        <div className="nepick-fade-in mt-[26px] [animation-delay:50ms] md:mt-7">
+          <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
+            닉네임 <span className="text-primary">*</span>
           </label>
           <div className="relative">
             <input
@@ -210,7 +213,7 @@ function SignupContent() {
               onChange={(e) => handleNicknameChange(e.target.value)}
               placeholder="2~12자, 특수문자는 _ . 만 가능"
               className={[
-                "h-14 w-full rounded-2xl border-[1.5px] bg-surface px-5 pr-12 text-[16px] tracking-tight text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary",
+                "h-[52px] w-full rounded-[12px] border-[1.5px] bg-surface px-[15px] pr-12 text-[15px] text-text-primary outline-none transition-colors duration-200 placeholder:text-text-muted",
                 inputBorderClass,
               ].join(" ")}
               autoComplete="off"
@@ -233,18 +236,19 @@ function SignupContent() {
             </div>
           </div>
           <div className="mt-1.5 flex items-center justify-between px-1">
-            <span className={["text-[12px] tracking-tight", nicknameMessage ? msgColorClass : "text-transparent"].join(" ")}>
+            <span className={["text-[12.5px] font-semibold", nicknameMessage ? msgColorClass : "text-transparent"].join(" ")}>
               {nicknameMessage || "ㅤ"}
             </span>
-            <span className="text-[12px] text-text-secondary">{nickname.length}/12</span>
+            <span className="ml-auto shrink-0 text-[12.5px] font-semibold text-text-description">
+              {nickname.length}/12
+            </span>
           </div>
         </div>
 
-        {/* ── 생년월일 ── */}
-        <div className="nepick-fade-in mb-6 [animation-delay:100ms]">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+        <div className="nepick-fade-in mt-[18px] [animation-delay:100ms] md:mt-5">
+          <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
             생년월일{" "}
-            <span className="text-[12px] font-normal text-text-secondary">선택</span>
+            <span className="font-medium text-text-tertiary">선택</span>
           </label>
           <DatePicker
             value={birthDate}
@@ -254,13 +258,12 @@ function SignupContent() {
           />
         </div>
 
-        {/* ── 성별 ── */}
-        <div className="nepick-fade-in mb-6 [animation-delay:150ms]">
-          <label className="mb-2.5 block text-[14px] font-semibold tracking-tight text-text-primary">
+        <div className="nepick-fade-in mt-[18px] [animation-delay:150ms] md:mt-5">
+          <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
             성별{" "}
-            <span className="text-[12px] font-normal text-text-secondary">선택</span>
+            <span className="font-medium text-text-tertiary">선택</span>
           </label>
-          <div className="flex gap-2.5">
+          <div className="flex gap-2">
             {([
               { value: "male", label: "남성" },
               { value: "female", label: "여성" },
@@ -270,7 +273,7 @@ function SignupContent() {
                 key={opt.value}
                 type="button"
                 onClick={() => setGender(opt.value)}
-                className={`flex-1 rounded-xl border py-3 text-[14px] font-semibold tracking-tight transition-colors ${
+                className={`h-11 flex-1 rounded-[12px] border-[1.5px] text-[13.5px] font-semibold transition-colors md:text-[14px] ${
                   gender === opt.value
                     ? "border-primary-border bg-primary-soft text-primary"
                     : "border-border bg-surface text-text-secondary"
@@ -282,11 +285,10 @@ function SignupContent() {
           </div>
         </div>
 
-        {/* ── 한줄소개 ── */}
-        <div className="nepick-fade-in mb-8 [animation-delay:200ms]">
-          <label className="mb-2 block text-[14px] font-semibold tracking-tight text-text-primary">
+        <div className="nepick-fade-in mt-[18px] [animation-delay:200ms] md:mt-5">
+          <label className="mb-[9px] block text-[14.5px] font-bold text-text-primary">
             한줄소개{" "}
-            <span className="text-[12px] font-normal text-text-secondary">선택</span>
+            <span className="font-medium text-text-tertiary">선택</span>
           </label>
           <Textarea
             value={intro}
@@ -297,18 +299,16 @@ function SignupContent() {
             currentLength={intro.length}
           />
         </div>
-      </div>
 
-      {/* ── CTA ── */}
-      <div className="app-content-narrow nepick-fade-in safe-area-pb-lg border-t border-border bg-surface px-6 pt-3 [animation-delay:250ms]">
-        <div className="mb-2.5">
-          <Button fullWidth onClick={handleSubmit} disabled={!canSubmit} isLoading={isSaving}>
+        <div className="nepick-fade-in mt-[26px] [animation-delay:250ms] md:mt-7">
+          <Button fullWidth onClick={handleSubmit} disabled={!canSubmit} isLoading={isSaving} className="h-[54px] rounded-[15px] text-[16px]">
             시작하기
           </Button>
-        </div>
-        <Button variant="ghost" fullWidth onClick={handleSkip} disabled={isSaving}>
+          <button type="button" onClick={handleSkip} disabled={isSaving} className="mt-2 flex min-h-11 w-full items-center justify-center text-center text-[14px] text-text-tertiary disabled:opacity-40">
           나중에 입력할게요
-        </Button>
+          </button>
+        </div>
+        </main>
       </div>
     </div>
   );

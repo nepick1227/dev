@@ -7,7 +7,7 @@ interface ToastState {
   message: string;
 }
 
-export function useToast(duration = 2000) {
+export function useToast(duration = 2200) {
   const [toast, setToast] = useState<ToastState>({ visible: false, message: "" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

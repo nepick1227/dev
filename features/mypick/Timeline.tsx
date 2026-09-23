@@ -9,6 +9,7 @@ import Toast from "@/components/ui/Toast";
 import MonthFilter from "./MonthFilter";
 import RecordCard from "./RecordCard";
 import Spinner from "@/components/ui/Spinner";
+import FloatingRecordButton from "@/components/ui/FloatingRecordButton";
 import { formatYearMonth, formatDateGroupLabel } from "@/utils/format";
 import type { RecordWithStore } from "@/types/database";
 
@@ -18,6 +19,7 @@ interface TimelineProps {
   initialRecords?: RecordWithStore[];
   onCreateRecord?: () => void;
   onEditRecord?: (recordId: number) => void;
+  desktopPanel?: boolean;
 }
 
 // 날짜 문자열(YYYY-MM-DD) 기준으로 기록 그룹핑, 최신순 정렬
@@ -37,7 +39,12 @@ function groupByDate(records: RecordWithStore[]): [string, RecordWithStore[]][] 
  * 내 픽 타임라인 컴포넌트
  * 타임라인(전체) / 월별 뷰 토글, 날짜별 그룹핑
  */
-export default function Timeline({ initialRecords, onCreateRecord, onEditRecord }: TimelineProps) {
+export default function Timeline({
+  initialRecords,
+  onCreateRecord,
+  onEditRecord,
+  desktopPanel = false,
+}: TimelineProps) {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
@@ -112,38 +119,52 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
     : records;
 
   const grouped = groupByDate(filteredRecords);
+  const priorityImageIds = new Set(
+    filteredRecords
+      .filter((record) => Boolean(record.image_url))
+      .slice(0, 3)
+      .map((record) => record.id)
+  );
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <Toast message={toast.message} visible={toast.visible} />
 
       {/* 상단 헤더 */}
-      <div className={`app-content-readable shrink-0 bg-surface px-5 pt-3 pb-3`}>
+      <div className={`app-content-readable shrink-0 bg-surface px-5 pb-3 pt-3 ${
+        desktopPanel
+          ? "md:px-[22px] md:pb-3 md:pt-3"
+          : "md:mt-2 md:rounded-[18px] md:border md:border-border md:px-6 md:py-5"
+      }`}>
         {/* 타임라인 / 월별 세그먼트 토글 + 추가 버튼 */}
         <div className="flex items-center justify-between">
-          <div className="flex rounded-full border border-border bg-surface p-0.5">
+          <div className="flex gap-2">
             <button
               onClick={() => setViewMode("timeline")}
-              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
+              className={`${desktopPanel ? "h-[34px] text-[13.5px]" : "h-9 text-[14px]"} rounded-full px-[15px] transition-all duration-200 ${
                 viewMode === "timeline"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-text-secondary"
+                  ? "bg-primary font-bold text-white shadow-[0_3px_10px_rgba(211,47,47,0.28)]"
+                  : desktopPanel
+                    ? "bg-bg-soft font-semibold text-text-secondary"
+                    : "border-[1.5px] border-border bg-surface font-semibold text-text-body"
               }`}
             >
               타임라인
             </button>
             <button
               onClick={() => setViewMode("monthly")}
-              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold tracking-tight transition-all duration-200 ${
+              className={`${desktopPanel ? "h-[34px] text-[13.5px]" : "h-9 text-[14px]"} rounded-full px-[15px] transition-all duration-200 ${
                 viewMode === "monthly"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-text-secondary"
+                  ? "bg-primary font-bold text-white shadow-[0_3px_10px_rgba(211,47,47,0.28)]"
+                  : desktopPanel
+                    ? "bg-bg-soft font-semibold text-text-secondary"
+                    : "border-[1.5px] border-border bg-surface font-semibold text-text-body"
               }`}
             >
               월별
             </button>
           </div>
-          <button
+          {!desktopPanel && <button
             onClick={() => {
               pushGtmEvent("record_start_from_mypick");
               if (onCreateRecord) {
@@ -152,17 +173,17 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
                 router.push("/record");
               }
             }}
-            className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-white"
+            className="hidden h-8 items-center gap-1.5 rounded-full bg-primary-soft px-[13px] text-[12.5px] font-bold text-primary md:flex"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M6 1.5V10.5M1.5 6H10.5" stroke="white" strokeWidth="2" strokeLinecap="round" />
+              <path d="M6 1.5V10.5M1.5 6H10.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
             내 픽 추가
-          </button>
+          </button>}
         </div>
 
         {/* 검색 */}
-        <div className="relative mt-3">
+        <div className={`relative ${desktopPanel ? "mt-2.5" : "mt-3"}`}>
           <svg
             className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary"
             width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"
@@ -175,7 +196,7 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="맛집 이름, 후기 검색"
-            className="h-10 w-full rounded-xl border border-border bg-bg pl-10 pr-9 text-[14px] tracking-tight text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary"
+            className={`h-[42px] w-full rounded-[12px] border-0 pl-10 pr-9 text-[14px] text-text-primary outline-none placeholder:text-text-tertiary md:h-10 md:rounded-[11px] md:text-[13.5px] ${desktopPanel ? "bg-bg-soft" : "bg-bg"}`}
           />
           {searchQuery && (
             <button
@@ -192,8 +213,8 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
 
         {/* 월별 모드일 때 월 필터 */}
         {viewMode === "monthly" && (
-          <div className="mt-3 flex justify-center">
-            <MonthFilter value={currentMonth} onChange={setCurrentMonth} />
+          <div className={`flex justify-center ${desktopPanel ? "mt-2.5" : "mt-3"}`}>
+            <MonthFilter value={currentMonth} onChange={setCurrentMonth} compact={desktopPanel} />
           </div>
         )}
       </div>
@@ -207,16 +228,16 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
         <div className="hide-scrollbar flex-1 overflow-y-auto">
           {filteredRecords.length === 0 ? (
             <div className="nepick-fade-in flex flex-col items-center justify-center gap-3 px-5 py-16">
-              <p className="text-[40px]">{searchQuery ? "🔍" : "🗺️"}</p>
+              {!desktopPanel && <p className="text-[40px]">{searchQuery ? "🔍" : "🗺️"}</p>}
               <div className="text-center">
-                <p className="text-[15px] font-semibold tracking-tight text-text-primary">
+                <p className="text-[15px] font-bold text-text-body">
                   {searchQuery
                     ? "검색 결과가 없어요"
                     : viewMode === "monthly"
                       ? "이 달의 기록이 없어요"
                       : "아직 내가 픽한 맛집이 없어요!"}
                 </p>
-                <p className="mt-1 text-[13px] tracking-tight text-text-secondary">
+                <p className="mt-1 text-[13px] text-text-tertiary">
                   {searchQuery
                     ? "다른 키워드로 검색해 보세요"
                     : viewMode === "monthly"
@@ -224,7 +245,7 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
                       : "나만의 맛집을 내 픽에 담아볼까요?"}
                 </p>
               </div>
-              {viewMode === "timeline" && !searchQuery && (
+              {!desktopPanel && viewMode === "timeline" && !searchQuery && (
                 <button
                   onClick={() => {
                     pushGtmEvent("record_start_from_mypick");
@@ -234,7 +255,7 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
                       router.push("/record");
                     }
                   }}
-                  className="mt-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-bold tracking-tight text-white"
+                  className="mt-2 h-[52px] rounded-[14px] bg-primary px-7 text-[15px] font-[800] text-white"
                 >
                   첫 맛집 픽하기
                 </button>
@@ -243,11 +264,12 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
           ) : (
             <>
               {grouped.map(([date, dayRecords]) => (
-                <div key={date} className="app-content-readable px-5 pt-4">
-                  <div className="mb-3">
-                    <span className="text-[15px] font-bold tracking-tight text-text-primary">
+                <div key={date} className={desktopPanel ? "px-5 pt-3" : "app-content-readable px-5 pt-4 md:px-0 md:pt-5"}>
+                  <div className={`mb-3 ${desktopPanel ? "flex items-center gap-2.5" : ""}`}>
+                    <span className="text-[14px] font-[800] text-text-body md:text-[13.5px]">
                       {formatDateGroupLabel(date)}
                     </span>
+                    {desktopPanel && <span className="h-px flex-1 bg-divider" />}
                   </div>
                   {dayRecords.map((record, idx) => (
                     <RecordCard
@@ -257,6 +279,8 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
                       onShowToast={showToast}
                       onDelete={() => fetchRecords(viewMode, currentMonth)}
                       onEdit={onEditRecord}
+                      compact={desktopPanel}
+                      imagePriority={priorityImageIds.has(record.id)}
                     />
                   ))}
                 </div>
@@ -266,6 +290,15 @@ export default function Timeline({ initialRecords, onCreateRecord, onEditRecord 
           <div className="h-6" />
         </div>
       )}
+      <div className="fixed bottom-[96px] right-5 z-20 md:hidden">
+        <FloatingRecordButton
+          onClick={() => {
+            pushGtmEvent("record_start_from_mypick");
+            if (onCreateRecord) onCreateRecord();
+            else router.push("/record");
+          }}
+        />
+      </div>
     </div>
   );
 }
