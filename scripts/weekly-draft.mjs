@@ -26,6 +26,7 @@
 
 import { writeFile, mkdir } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -64,26 +65,101 @@ async function loadSchedule() {
   return JSON.parse(raw);
 }
 
-function buildDiaryDraft({ week, item, targetTuesday, author }) {
-  return `# [개발일기 초안] ${toISODate(targetTuesday)} (${week}주차) — ${AUTHOR_LABEL[author]}
+// item.source는 "2026-03-28" 또는 "2026-04-11 ~ 04-12" / "2026-07-11 ~ 07-12" 형태다.
+// 뒤쪽이 "MM-DD"만 있으면 앞쪽 날짜의 연도를 그대로 물려받는다.
+function parseSourceRange(source) {
+  const [firstRaw, secondRaw] = source.split("~").map((s) => s.trim());
+  const since = firstRaw;
+  let until = firstRaw;
+  if (secondRaw) {
+    until = /^\d{4}-\d{2}-\d{2}$/.test(secondRaw) ? secondRaw : `${firstRaw.slice(0, 4)}-${secondRaw}`;
+  }
+  return { since, until };
+}
+
+// 해당 기간에 그 담당자(git author)가 실제로 남긴 커밋을 가져온다.
+// 실패해도(예: git 없음, 얕은 clone) 초안 생성 자체가 막히지 않도록 빈 배열로 처리한다.
+function getCommitsForRange(author, since, until) {
+  try {
+    const untilNext = toISODate(addDays(new Date(`${until}T00:00:00Z`), 1));
+    const out = execFileSync(
+      "git",
+      [
+        "log",
+        "--all",
+        `--author=${author}`,
+        `--since=${since}T00:00:00`,
+        `--until=${untilNext}T00:00:00`,
+        "--no-merges",
+        "--date=short",
+        "--pretty=format:%h|%ad|%s",
+      ],
+      { cwd: process.cwd(), encoding: "utf-8" }
+    ).trim();
+    if (!out) return [];
+    return out.split("\n").map((line) => {
+      const [hash, date, ...rest] = line.split("|");
+      return { hash, date, message: rest.join("|") };
+    });
+  } catch {
+    return [];
+  }
+}
+
+function buildDiaryDraft({ week, item, targetTuesday, author, commits }) {
+  const label = AUTHOR_LABEL[author];
+  const commitSection =
+    commits.length > 0
+      ? commits.map((c) => `- \`${c.hash}\` (${c.date}) ${c.message}`).join("\n")
+      : "- (자동으로 못 찾았습니다 — git log로 직접 확인해서 채워주세요)";
+
+  return `# [개발일기 초안] ${toISODate(targetTuesday)} (${week}주차) — ${label}
 
 ## ${item.title}
 
+**담당:** ${label}
 **소스 날짜:** ${item.source}
 **카테고리:** ${item.category}
 
-### 왜 (본문 뼈대)
-${item.why}
+---
+
+### 실제 커밋 (참고용, 자동 수집)
+${commitSection}
 
 ---
 
-### 체크리스트
-- [ ] 1인칭으로 실제 그 PR/커밋을 다시 열어보고 세부 디테일 보강
-- [ ] 필터링 규칙 확인 — 키·시크릿·미출시 기능 언급 없는지 (docs/content-bot-briefing.md)
-- [ ] IG용: 훅 한 줄 + 캐러셀 3~4장 또는 릴스로 압축
-- [ ] Threads용: 시행착오 순서대로 짧은 텍스트 2~4개로 쪼개기
+### 초안 구조 제안
 
-*이 초안은 content/schedule.json 대기열에서 자동 생성되었습니다. 발행일은 가이드라인이며 밀리면 순서만 유지한 채 다음 슬롯으로 넘기면 됩니다.*
+**1. 훅 (첫 문장)**
+> (예: "${item.title}" 를 그대로 쓰거나, 더 구체적인 순간으로 바꿔보세요 — 예: 몇 시간/며칠 걸렸는지, 뭘 보고 있었는지)
+
+**2. 배경 — 왜 이 작업을 하게 됐는지**
+- 이 시점에 다른 무엇을 하고 있었는지, 이 문제가 왜 눈에 띄었는지 1~2문단.
+
+**3. 무엇을 시도했고 왜 그렇게 했는지 (핵심)**
+${item.why}
+- 위 대기열 요약을 시작점으로 삼아, 실제 커밋 메시지(위 목록)를 다시 열어보고
+  구체적으로 뭘 바꿨는지, 처음에 뭘 시도했다가 왜 틀어졌는지까지 채워주세요.
+- "무엇을 했나"보다 "왜 그렇게 했나"에 무게를 두세요 (톤 가이드: docs/content-bot-briefing.md).
+
+**4. 결과 / 지금은 어떤가**
+- 지금 화면·코드가 어떻게 됐는지, 그때와 비교해서 달라진 점.
+
+**5. (선택) 다음 이야기 예고**
+- 대기열 다음 항목과 자연스럽게 이어지면 한 줄 정도 예고.
+
+---
+
+### 채널 변환
+- **IG**: 훅 한 줄 + 캐러셀 3~4장(또는 릴스)으로 압축. 비주얼(스크린샷 전/후, 코드 스니펫 등) 먼저.
+- **Threads**: 시행착오 순서 그대로 짧은 텍스트 2~4개로 쪼개기. 캐주얼한 톤, 마지막에 질문이나 다음 예고.
+
+### 체크리스트
+- [ ] 1인칭으로 위 실제 커밋을 다시 열어보고 세부 디테일 보강
+- [ ] 필터링 규칙 확인 — 키·시크릿·미출시 기능 언급 없는지 (docs/content-bot-briefing.md)
+- [ ] 5단계 구조 중 실제로 안 맞는 부분은 자유롭게 빼거나 순서 바꾸기
+
+*이 초안은 content/schedule.json 대기열 + git log에서 자동 생성되었습니다. 발행일은 가이드라인이며 밀리면 순서만 유지한 채 다음 슬롯으로 넘기면 됩니다.*
 `;
 }
 
@@ -195,7 +271,9 @@ async function main() {
   if (!diaryItem) {
     console.log(`[알림] ${AUTHOR_LABEL[diaryAuthor]} 개발일기 대기열이 ${week}주차에서 소진되었습니다. 새 소재를 추가하거나 자동화 봇으로 전환하세요.`);
   } else {
-    const diaryDraft = buildDiaryDraft({ week, item: diaryItem, targetTuesday, author: diaryAuthor });
+    const { since, until } = parseSourceRange(diaryItem.source);
+    const commits = getCommitsForRange(diaryAuthor, since, until);
+    const diaryDraft = buildDiaryDraft({ week, item: diaryItem, targetTuesday, author: diaryAuthor, commits });
     const diaryPath = path.join(DRAFTS_DIR, `${toISODate(targetTuesday)}-${diaryAuthor}-diary.md`);
     await writeFile(diaryPath, diaryDraft, "utf-8");
     console.log(`초안 생성 완료: ${diaryPath}`);
