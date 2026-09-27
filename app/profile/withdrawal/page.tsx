@@ -9,9 +9,11 @@ export default function WithdrawalPage() {
   const router = useRouter();
 
   return (
-    <PageContainer>
-      <Header title="회원탈퇴" showBack onBack={() => router.back()} />
-      <div className="flex flex-1 flex-col overflow-y-auto">
+    <PageContainer className="settings-page">
+      <div className="md:mx-auto md:w-full md:max-w-[480px]">
+        <Header title="회원탈퇴" showBack onBack={() => router.back()} />
+      </div>
+      <div className="flex flex-1 flex-col overflow-y-auto bg-surface md:bg-transparent">
         <WithdrawalView />
       </div>
     </PageContainer>

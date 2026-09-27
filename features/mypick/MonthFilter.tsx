@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 
 interface MonthFilterProps {
   value: Date;
   onChange: (date: Date) => void;
+  compact?: boolean;
 }
 
 /**
  * 내 픽 월별 필터 컴포넌트
  * 이전/다음 달 이동 + 날짜 클릭 시 년/월 피커 모달
  */
-export default function MonthFilter({ value, onChange }: MonthFilterProps) {
+export default function MonthFilter({ value, onChange, compact = false }: MonthFilterProps) {
   const [showPicker, setShowPicker] = useState(false);
 
   const nowY = new Date().getFullYear();
@@ -37,15 +39,15 @@ export default function MonthFilter({ value, onChange }: MonthFilterProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={handlePrev}
-          className="flex h-8 w-8 items-center justify-center rounded-full transition-colors active:bg-bg"
+          className={`flex items-center justify-center rounded-lg bg-bg-soft transition-opacity active:opacity-70 ${compact ? "h-[26px] w-[26px]" : "h-7 w-7"}`}
           aria-label="이전 달"
         >
-          <ChevronLeftIcon size={20} color="var(--color-text-secondary)" />
+          <ChevronLeftIcon size={compact ? 18 : 20} color="var(--color-text-secondary)" />
         </button>
 
         <button
           onClick={() => setShowPicker(true)}
-          className="min-w-22.5 text-center text-[15px] font-bold tracking-tight text-text-primary"
+          className={`${compact ? "min-w-20 text-[13.5px]" : "min-w-22.5 text-[14px]"} text-center font-[800] text-text-primary`}
         >
           {label}
         </button>
@@ -53,10 +55,10 @@ export default function MonthFilter({ value, onChange }: MonthFilterProps) {
         <button
           onClick={handleNext}
           disabled={isCurrentMonth}
-          className="flex h-8 w-8 items-center justify-center rounded-full transition-colors active:bg-bg disabled:opacity-30"
+          className={`flex items-center justify-center rounded-lg bg-bg-soft transition-opacity active:opacity-70 disabled:opacity-30 ${compact ? "h-[26px] w-[26px]" : "h-7 w-7"}`}
           aria-label="다음 달"
         >
-          <ChevronRightIcon size={20} color="var(--color-text-secondary)" />
+          <ChevronRightIcon size={compact ? 18 : 20} color="var(--color-text-secondary)" />
         </button>
       </div>
 
@@ -92,18 +94,21 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
 
   const startYear = nowY - 11;
 
-  return (
+  return createPortal(
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-[rgba(20,20,24,0.4)] md:items-center md:bg-[rgba(20,20,24,0.45)] md:p-6"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-75 rounded-2xl bg-surface p-6"
+        className="w-full rounded-t-[26px] bg-surface px-[22px] pb-[34px] pt-3 md:w-[340px] md:rounded-[20px] md:p-[22px]"
       >
+        <div className="flex justify-center pb-[14px] md:hidden">
+          <div className="h-[5px] w-10 rounded-full bg-[#E2E4E8]" />
+        </div>
         {yearMode ? (
           <>
-            <p className="mb-4 text-center text-[16px] font-bold tracking-tight text-text-primary">
+            <p className="mb-[14px] text-center text-[15.5px] font-[800] text-text-primary">
               년도 선택
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -120,7 +125,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
                         setYearMode(false);
                       }
                     }}
-                    className={`rounded-[10px] py-3 text-[14px] font-semibold tracking-tight transition-colors disabled:opacity-20 ${
+                    className={`h-[38px] rounded-[10px] text-[13.5px] font-semibold transition-colors disabled:opacity-20 ${
                       isSelected
                         ? "bg-primary text-white"
                         : "text-text-primary"
@@ -135,24 +140,24 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
         ) : (
           <>
             {/* 년도 네비게이션 */}
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-[14px] flex items-center justify-between">
               <button
                 onClick={() => setSelYear((y) => y - 1)}
-                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-bg"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-bg-soft active:opacity-70"
                 aria-label="이전 년도"
               >
                 <ChevronLeftIcon size={18} color="var(--color-text-primary)" />
               </button>
               <button
                 onClick={() => setYearMode(true)}
-                className="text-[18px] font-bold tracking-tight text-text-primary"
+                className="text-[15.5px] font-[800] text-text-primary"
               >
                 {selYear}년
               </button>
               <button
                 onClick={() => { if (selYear < nowY) setSelYear((y) => y + 1); }}
                 disabled={selYear >= nowY}
-                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-bg disabled:opacity-30"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-bg-soft active:opacity-70 disabled:opacity-30"
                 aria-label="다음 년도"
               >
                 <ChevronRightIcon size={18} color="var(--color-text-primary)" />
@@ -172,7 +177,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
                     onClick={() => {
                       if (!isFuture) onSelect(selYear, m);
                     }}
-                    className={`rounded-[10px] py-2.5 text-[14px] font-semibold tracking-tight transition-colors disabled:opacity-20 ${
+                    className={`h-[38px] rounded-[10px] text-[13.5px] font-semibold transition-colors disabled:opacity-20 ${
                       isSelected
                         ? "bg-primary text-white"
                         : "text-text-primary"
@@ -186,6 +191,7 @@ function MonthPickerModal({ year, month, onSelect, onClose }: MonthPickerModalPr
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

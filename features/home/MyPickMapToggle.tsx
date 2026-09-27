@@ -20,7 +20,7 @@ export default function MyPickMapToggle({
       disabled={disabled}
       className="flex shrink-0 items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <span className="text-[12px] font-bold tracking-tight text-text-secondary">
+      <span className="text-[12px] font-bold text-text-secondary">
         내 픽만 보기
       </span>
       <span

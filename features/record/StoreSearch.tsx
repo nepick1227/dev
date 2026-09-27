@@ -18,7 +18,7 @@ interface StoreSearchProps {
 export default function StoreSearch({ onSelect }: StoreSearchProps) {
   const [query, setQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
-  const { results, isLoading, searchDebounced, clear } = useKakaoSearch();
+  const { results, isLoading, error, searchDebounced, clear } = useKakaoSearch();
 
   const handleChange = useCallback(
     (value: string) => {
@@ -52,13 +52,13 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           placeholder="가게 이름으로 검색"
-          className="h-14 w-full rounded-2xl border-[1.5px] border-border bg-surface pl-11 pr-10 text-[16px] tracking-tight text-text-primary outline-none transition-colors focus:border-primary placeholder:text-text-tertiary"
+          className="h-[52px] w-full rounded-[12px] border-[1.5px] border-border bg-surface pl-11 pr-10 text-[15px] text-text-primary outline-none transition-colors focus:border-primary placeholder:text-text-muted"
           autoComplete="off"
         />
         {query && (
           <button
             onClick={handleClear}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2"
+            className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center"
             aria-label="검색어 지우기"
           >
             <CloseIcon size={18} color="var(--color-text-tertiary)" />
@@ -73,7 +73,20 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
         </div>
       )}
 
-      {!isLoading && hasSearched && results.length === 0 && (
+      {!isLoading && hasSearched && error && (
+        <div className="nepick-fade-in flex flex-col items-center gap-2 py-6 text-center">
+          <p className="text-[14px] text-text-secondary">{error}</p>
+          <button
+            type="button"
+            onClick={() => searchDebounced(query, 0)}
+            className="min-h-10 rounded-[10px] px-4 text-[13px] font-bold text-primary hover:bg-primary-soft active:bg-primary-soft"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {!isLoading && hasSearched && !error && results.length === 0 && (
         <div className="nepick-fade-in py-8 text-center text-[14px] text-text-secondary">
           검색 결과가 없어요
         </div>
@@ -89,10 +102,10 @@ export default function StoreSearch({ onSelect }: StoreSearchProps) {
               >
                 <MapPinIcon size={16} color="var(--color-primary)" className="mt-0.5 shrink-0" />
                 <div className="flex flex-col gap-0.5 overflow-hidden">
-                  <span className="truncate text-[14px] font-semibold tracking-tight text-text-primary">
+                  <span className="truncate text-[14px] font-semibold text-text-primary">
                     {place.place_name}
                   </span>
-                  <span className="truncate text-[12px] tracking-tight text-text-secondary">
+                  <span className="truncate text-[12px] text-text-secondary">
                     {place.road_address_name || place.address_name}
                   </span>
                 </div>

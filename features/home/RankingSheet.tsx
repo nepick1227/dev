@@ -17,6 +17,7 @@ interface RankingSheetProps {
   isMyPickMode?: boolean;
   showMyPickToggle?: boolean;
   onMyPickToggle?: () => void;
+  userPosition?: { lat: number; lng: number } | null;
 }
 
 export interface RankingSheetHandle {
@@ -25,7 +26,7 @@ export interface RankingSheetHandle {
 }
 
 const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function RankingSheet(
-  { stores, isLoading, onStoreClick, onSnapChange, defaultSnap = "half", regionName, isMyPickMode, showMyPickToggle = false, onMyPickToggle },
+  { stores, isLoading, onStoreClick, onSnapChange, defaultSnap = "half", regionName, isMyPickMode, showMyPickToggle = false, onMyPickToggle, userPosition },
   ref
 ) {
   const sheetRef = useRef<BottomSheetHandle>(null);
@@ -37,22 +38,20 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
 
   const header = (
     <div className="flex items-center justify-between px-1 pb-1 pt-0.5">
-      <div>
-        <p className="text-[11px] font-medium tracking-tight text-text-secondary">
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-bold text-text-tertiary">
           {isMyPickMode ? "내 픽 지도" : "맛집 랭킹"}
         </p>
-        <p className="mt-0.5 text-[17px] font-extrabold tracking-tight text-text-primary leading-snug">
+        <p className="mt-0.5 truncate text-[18px] font-[800] leading-snug text-text-primary">
           {isMyPickMode ? "내가 기록한 맛집" : (regionName ?? "불러오는 중...")}
         </p>
       </div>
-      <div className="ml-auto flex items-center gap-2">
-        {showMyPickToggle && (
-          <MyPickMapToggle
-            checked={!!isMyPickMode}
-            onChange={() => onMyPickToggle?.()}
-          />
-        )}
-      </div>
+      {showMyPickToggle && (
+        <MyPickMapToggle
+          checked={!!isMyPickMode}
+          onChange={() => onMyPickToggle?.()}
+        />
+      )}
     </div>
   );
 
@@ -75,6 +74,7 @@ const RankingSheet = forwardRef<RankingSheetHandle, RankingSheetProps>(function 
                 store={store}
                 rank={idx + 1}
                 onClick={onStoreClick}
+                userPosition={userPosition}
               />
             </li>
           ))}

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { pushGtmEvent } from "@/lib/analytics/gtm";
 import Spinner from "@/components/ui/Spinner";
-import { NepickLogo, MapPinIcon } from "@/components/ui/icons";
+import { MapPinIcon, NepickLogo } from "@/components/ui/icons";
 
 const LAST_PROVIDER_KEY = "nepick_last_provider";
 const ALLOWED_NEXT_PATHS = new Set(["/home", "/mypick", "/profile", "/record"]);
@@ -161,7 +161,7 @@ function LoginBackground() {
 function RecentBadge({ color }: { color: string }) {
   return (
     <div
-      className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold tracking-tight"
+      className="absolute -top-3 right-4 z-10 flex items-center gap-1 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold"
       style={{ borderColor: color, color }}
     >
       <MapPinIcon size={11} /> 최근 로그인
@@ -189,6 +189,15 @@ function LoginContent() {
       setLastProviderState(getLastProvider());
     }, 0);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const resetPendingLogin = () => {
+      setLoadingProvider(null);
+    };
+
+    window.addEventListener("pageshow", resetPendingLogin);
+    return () => window.removeEventListener("pageshow", resetPendingLogin);
   }, []);
 
   useEffect(() => {
@@ -237,15 +246,16 @@ function LoginContent() {
   }, [next]);
 
   return (
-    <div className="page-container">
+    <div className="page-container auth-page">
       <LoginBackground />
 
+      <div className="auth-page-card relative z-10 flex min-h-full w-full flex-col md:min-h-0 md:px-4 md:py-8">
       {/* 로고 & 타이틀 */}
-      <div className="app-content-narrow nepick-fade-in relative flex flex-1 flex-col items-center justify-center px-6">
+      <div className="app-content-narrow nepick-fade-in relative flex flex-1 flex-col items-center justify-center px-6 md:min-h-[230px] md:flex-none">
         <div className="mb-3">
           <NepickLogo size={112} />
         </div>
-        <p className="mb-3 text-center text-[15px] tracking-tight text-text-secondary">
+        <p className="mb-3 text-center text-[14px] leading-[1.55] text-text-description">
           내가 직접 남기는 믿을 만한 맛집 기록
         </p>
       </div>
@@ -265,7 +275,7 @@ function LoginContent() {
           <button
             onClick={() => handleOAuthLogin("kakao")}
             disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#FEE500] py-4 text-[15px] font-semibold tracking-tight text-[#191919] transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-[54px] w-full items-center justify-center gap-[9px] rounded-[14px] bg-[#FEE500] text-[16px] font-bold text-[#191600] transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 md:h-[52px] md:rounded-[13px] md:text-[15.5px]"
             aria-label="카카오로 시작하기"
           >
             {loadingProvider === "kakao" ? (
@@ -299,7 +309,7 @@ function LoginContent() {
               window.location.href = naverUrl.toString();
             }}
             disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#03C75A] py-4 text-[15px] font-semibold tracking-tight text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-[54px] w-full items-center justify-center gap-[9px] rounded-[14px] bg-[#03C75A] text-[16px] font-bold text-white transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 md:h-[52px] md:rounded-[13px] md:text-[15.5px]"
             aria-label="네이버로 시작하기"
           >
             {loadingProvider === "naver" ? (
@@ -323,7 +333,7 @@ function LoginContent() {
           <button
             onClick={() => handleOAuthLogin("google")}
             disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-border bg-white py-4 text-[15px] font-semibold tracking-tight text-text-primary transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-[54px] w-full items-center justify-center gap-[9px] rounded-[14px] border-[1.5px] border-border bg-white text-[16px] font-bold text-text-body transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 md:h-[52px] md:rounded-[13px] md:text-[15.5px]"
             aria-label="구글로 시작하기"
           >
             {loadingProvider === "google" ? (
@@ -347,13 +357,14 @@ function LoginContent() {
           type="button"
           onClick={() => router.push("/home")}
           disabled={isLoading}
-          className="flex w-full items-center justify-center rounded-2xl border border-border bg-surface py-3.5 text-[14px] font-semibold tracking-tight text-text-secondary transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center py-3 text-[14px] text-text-tertiary transition-opacity active:opacity-60 disabled:cursor-not-allowed disabled:opacity-60"
         >
           로그인 없이 둘러보기
         </button>
 
         {/* 버전 */}
         <p className="pt-10 text-center text-[12px] text-text-tertiary">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+      </div>
       </div>
     </div>
   );

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="680" viewBox="0 0 960 680">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#17191C" flood-opacity="0.07"/>
+    </filter>
+    <style>
+      text { font-family: "Pretendard Variable", Pretendard, Arial, sans-serif; fill: #17191C; }
+      .body { font-size: 14px; font-weight: 600; fill: #6E7379; }
+      .caption { font-size: 12px; font-weight: 600; fill: #8A9097; }
+      .label { font-size: 15px; font-weight: 800; }
+      .icon { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+
+    <!-- A: 가이드 기본형 -->
+    <symbol id="a-food" viewBox="0 0 24 24">
+      <g class="icon"><path d="M5 2v7.2c0 1.7 1.1 2.8 2.6 2.8S10 10.9 10 9.2V2M7.5 2v20M14.5 2v20M20 2c0 4.2-3 6-3 10v10"/></g>
+    </symbol>
+    <symbol id="a-cafe" viewBox="0 0 24 24">
+      <g class="icon"><path d="M4 9h14v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z"/><path d="M18 10h1.5a2.5 2.5 0 0 1 0 5H18M8 4.5c-.8.6-.8 1.4 0 2M12 4.5c-.8.6-.8 1.4 0 2"/></g>
+    </symbol>
+
+    <!-- B: 네픽 사선형 -->
+    <symbol id="b-food" viewBox="0 0 24 24">
+      <g class="icon"><circle cx="12" cy="12" r="6.2"/><path d="M4 3v5.5a2 2 0 0 0 4 0V3M6 3v18M20 3c0 3.5-2.5 5-2.5 8v10"/></g>
+      <path d="m10.7 9.7 3.6 3.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="b-cafe" viewBox="0 0 24 24">
+      <g class="icon"><path d="M4 9.5h13.5v4.2a5.3 5.3 0 0 1-5.3 5.3H9.3A5.3 5.3 0 0 1 4 13.7V9.5Z"/><path d="M17.5 10.5h1.8a2.4 2.4 0 0 1 0 4.8h-2M7 5.2l2-2M11 6l2.8-2.8"/></g>
+      <path d="m10.2 12 2.9 2.9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- C: 장소 핀형 -->
+    <symbol id="c-food" viewBox="0 0 24 24">
+      <g class="icon"><path d="M19 10.2c0 5.1-7 11-7 11s-7-5.9-7-11a7 7 0 1 1 14 0Z"/><path d="M8.3 8v3.2c0 1 .7 1.7 1.7 1.7s1.7-.7 1.7-1.7V8M10 8v6M15.2 8c0 1.8-1.3 2.7-1.3 4.2V14"/></g>
+    </symbol>
+    <symbol id="c-cafe" viewBox="0 0 24 24">
+      <g class="icon"><path d="M19 10.2c0 5.1-7 11-7 11s-7-5.9-7-11a7 7 0 1 1 14 0Z"/><path d="M8.2 9.3h7.2v2.2a2.8 2.8 0 0 1-2.8 2.8H11a2.8 2.8 0 0 1-2.8-2.8V9.3Z"/><path d="M15.4 10h.7a1.3 1.3 0 0 1 0 2.6h-.8M10.4 6.7c-.5.4-.5.9 0 1.3"/></g>
+    </symbol>
+  </defs>
+
+  <rect width="960" height="680" fill="#F4F5F7"/>
+  <text x="40" y="52" font-size="26" font-weight="800" letter-spacing="-0.5">네픽 음식점·카페 아이콘 시안</text>
+  <text x="40" y="80" class="body">24px · 2.2px stroke · 라운드 캡 · 브랜드 레드 / 중성 먹색 대응</text>
+
+  <g transform="translate(40 108)" filter="url(#shadow)">
+    <rect width="880" height="156" rx="18" fill="#fff"/>
+    <text x="24" y="34" class="caption">OPTION 01</text>
+    <text x="24" y="61" class="label">균형형</text>
+    <text x="24" y="84" class="caption">가이드 원형을 정돈한 기본안</text>
+    <rect x="215" y="28" width="72" height="72" rx="18" fill="#FDECEA"/>
+    <use href="#a-food" x="235" y="48" width="32" height="32" color="#D32F2F"/>
+    <rect x="303" y="28" width="72" height="72" rx="18" fill="#F6F7F9"/>
+    <use href="#a-cafe" x="323" y="48" width="32" height="32" color="#3A3F45"/>
+    <g transform="translate(407 36)"><rect width="120" height="36" rx="18" fill="#D32F2F"/><use href="#a-food" x="14" y="8" width="20" height="20" color="#fff"/><text x="42" y="24" font-size="14" font-weight="700" fill="#fff">음식점</text></g>
+    <g transform="translate(539 36)"><rect width="104" height="36" rx="18" fill="#fff" stroke="#E6E8EB" stroke-width="1.5"/><use href="#a-cafe" x="14" y="8" width="20" height="20" color="#3A3F45"/><text x="42" y="24" font-size="14" font-weight="600" fill="#3A3F45">카페</text></g>
+    <use href="#a-food" x="700" y="39" width="24" height="24" color="#3A3F45"/><use href="#a-cafe" x="742" y="39" width="24" height="24" color="#3A3F45"/>
+    <text x="700" y="91" class="caption">가독성 우선 · 가장 안정적</text>
+  </g>
+
+  <g transform="translate(40 282)" filter="url(#shadow)">
+    <rect width="880" height="156" rx="18" fill="#fff"/>
+    <text x="24" y="34" class="caption">OPTION 02</text>
+    <text x="24" y="61" class="label">네픽 사선형</text>
+    <text x="24" y="84" class="caption">포크 로고의 사선 리듬을 반영</text>
+    <rect x="215" y="28" width="72" height="72" rx="18" fill="#FDECEA"/>
+    <use href="#b-food" x="235" y="48" width="32" height="32" color="#D32F2F"/>
+    <rect x="303" y="28" width="72" height="72" rx="18" fill="#F6F7F9"/>
+    <use href="#b-cafe" x="323" y="48" width="32" height="32" color="#3A3F45"/>
+    <g transform="translate(407 36)"><rect width="120" height="36" rx="18" fill="#D32F2F"/><use href="#b-food" x="14" y="8" width="20" height="20" color="#fff"/><text x="42" y="24" font-size="14" font-weight="700" fill="#fff">음식점</text></g>
+    <g transform="translate(539 36)"><rect width="104" height="36" rx="18" fill="#fff" stroke="#E6E8EB" stroke-width="1.5"/><use href="#b-cafe" x="14" y="8" width="20" height="20" color="#3A3F45"/><text x="42" y="24" font-size="14" font-weight="600" fill="#3A3F45">카페</text></g>
+    <use href="#b-food" x="700" y="39" width="24" height="24" color="#3A3F45"/><use href="#b-cafe" x="742" y="39" width="24" height="24" color="#3A3F45"/>
+    <text x="700" y="91" class="caption">브랜드 개성 · 추천안</text>
+  </g>
+
+  <g transform="translate(40 456)" filter="url(#shadow)">
+    <rect width="880" height="156" rx="18" fill="#fff"/>
+    <text x="24" y="34" class="caption">OPTION 03</text>
+    <text x="24" y="61" class="label">장소 핀형</text>
+    <text x="24" y="84" class="caption">지도 서비스 성격을 강하게 표현</text>
+    <rect x="215" y="28" width="72" height="72" rx="18" fill="#FDECEA"/>
+    <use href="#c-food" x="235" y="48" width="32" height="32" color="#D32F2F"/>
+    <rect x="303" y="28" width="72" height="72" rx="18" fill="#F6F7F9"/>
+    <use href="#c-cafe" x="323" y="48" width="32" height="32" color="#3A3F45"/>
+    <g transform="translate(407 36)"><rect width="120" height="36" rx="18" fill="#D32F2F"/><use href="#c-food" x="14" y="8" width="20" height="20" color="#fff"/><text x="42" y="24" font-size="14" font-weight="700" fill="#fff">음식점</text></g>
+    <g transform="translate(539 36)"><rect width="104" height="36" rx="18" fill="#fff" stroke="#E6E8EB" stroke-width="1.5"/><use href="#c-cafe" x="14" y="8" width="20" height="20" color="#3A3F45"/><text x="42" y="24" font-size="14" font-weight="600" fill="#3A3F45">카페</text></g>
+    <use href="#c-food" x="700" y="39" width="24" height="24" color="#3A3F45"/><use href="#c-cafe" x="742" y="39" width="24" height="24" color="#3A3F45"/>
+    <text x="700" y="91" class="caption">지도 연계 · 작은 크기는 복잡</text>
+  </g>
+
+  <text x="40" y="648" class="caption">평가 아이콘(👍 😐 👎)은 README 지침에 따라 이모지를 유지합니다.</text>
+</svg>

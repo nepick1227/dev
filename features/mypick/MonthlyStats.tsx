@@ -20,13 +20,13 @@ export default function MonthlyStats({ records }: MonthlyStatsProps) {
 
   return (
     <div className="px-5 pt-4 pb-1">
-      <div className="flex h-9 items-center justify-center rounded-full bg-gray-50 px-4">
+      <div className="flex h-9 items-center justify-center rounded-full bg-bg px-4">
         {stats.map(({ label, count, unit, emoji, highlight }, idx) => (
           <div key={label} className="flex items-center">
             {idx > 0 && (
-              <span className="mx-3 text-[13px] text-gray-300 select-none">·</span>
+              <span className="mx-3 select-none text-[13px] text-border">·</span>
             )}
-            <span className="flex items-center gap-1 text-[13px] tracking-tight">
+            <span className="flex items-center gap-1 text-[13px]">
               {emoji && <span className="text-[13px] leading-none">{emoji}</span>}
               <span className="text-text-secondary">{label}</span>
               <span className={`font-bold ${highlight ? "text-primary" : "text-text-primary"}`}>{count}{unit}</span>

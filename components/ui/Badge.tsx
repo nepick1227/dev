@@ -5,21 +5,24 @@ import { recommendationLabels, recommendationEmojis, categoryLabels } from "@/st
 interface RecommendationBadgeProps {
   type: RecommendationType;
   showEmoji?: boolean;
+  compact?: boolean;
 }
 
 const recommendationStyles: Record<RecommendationType, string> = {
   recommend:     "bg-primary-soft text-primary",
-  neutral:       "bg-bg text-text-secondary",
-  not_recommend: "bg-bg text-text-secondary",
+  neutral:       "bg-rating-neutral-soft text-text-secondary",
+  not_recommend: "bg-rating-negative-soft text-rating-negative",
 };
 
-export function RecommendationBadge({ type, showEmoji = true }: RecommendationBadgeProps) {
+export function RecommendationBadge({ type, showEmoji = true, compact = false }: RecommendationBadgeProps) {
   return (
     <span className={[
-      "inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold tracking-tight",
+      compact
+        ? "inline-flex shrink-0 items-center gap-[3px] rounded-[7px] px-[7px] py-[3px] text-[11px] font-bold"
+        : "inline-flex shrink-0 items-center gap-1 rounded-[9px] px-[9px] py-[5px] text-[12px] font-bold",
       recommendationStyles[type],
     ].join(" ")}>
-      {showEmoji && <span className="inline-flex h-3.5 w-3.5 items-center justify-center leading-none">{recommendationEmojis[type]}</span>}
+      {showEmoji && <span className={`inline-flex items-center justify-center leading-none ${compact ? "h-3 w-3" : "h-3.5 w-3.5"}`}>{recommendationEmojis[type]}</span>}
       {recommendationLabels[type]}
     </span>
   );
@@ -32,7 +35,7 @@ interface CategoryBadgeProps {
 
 export function CategoryBadge({ category }: CategoryBadgeProps) {
   return (
-    <span className="inline-flex items-center rounded-full bg-bg px-2.5 py-0.5 text-[12px] font-medium tracking-tight text-text-secondary">
+    <span className="inline-flex items-center rounded-full bg-bg px-2.5 py-0.5 text-[12px] font-medium text-text-secondary">
       {categoryLabels[category]}
     </span>
   );

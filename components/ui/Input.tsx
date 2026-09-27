@@ -16,7 +16,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-[14px] font-semibold tracking-tight text-text-primary"
+            className="text-[14px] font-semibold text-text-primary"
           >
             {label}
           </label>
@@ -26,10 +26,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={[
-              "h-14 w-full rounded-2xl border-[1.5px] bg-surface px-5 text-[16px] tracking-tight text-text-primary outline-none transition-colors duration-200",
-              "placeholder:text-text-tertiary",
+              "h-[52px] w-full rounded-[12px] border-[1.5px] bg-surface px-[15px] text-[15px] text-text-primary outline-none transition-colors duration-200",
+              "placeholder:text-text-muted",
               error
-                ? "border-primary-dark focus:border-primary-dark"
+                ? "border-primary focus:border-primary"
                 : "border-border focus:border-primary",
               rightElement ? "pr-11" : "",
               className,
@@ -43,10 +43,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error && (
-          <p className="text-[13px] tracking-tight text-primary-dark">{error}</p>
+          <p className="text-[12.5px] font-semibold text-primary">{error}</p>
         )}
         {hint && !error && (
-          <p className="text-[13px] tracking-tight text-text-secondary">{hint}</p>
+          <p className="text-[12.5px] font-semibold text-text-description">{hint}</p>
         )}
       </div>
     );

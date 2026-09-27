@@ -12,18 +12,14 @@ import PermissionsView from "@/features/profile/PermissionsView";
 import WithdrawalView from "@/features/profile/WithdrawalView";
 import RecordForm from "@/features/record/RecordForm";
 import RecordEditForm from "@/features/record/RecordEditForm";
-import MyPickMapToggle from "./MyPickMapToggle";
 import { createClient } from "@/lib/supabase/client";
+import { pushGtmEvent } from "@/lib/analytics/gtm";
 import type { Profile, RecordWithStore } from "@/types/database";
 
 type PanelView = "ranking" | "mypick" | "profile";
 
 interface HomePanelContentProps {
   view: PanelView;
-  isMyPickMapMode?: boolean;
-  onMyPickMapToggle?: () => void;
-  isMyPickLoading?: boolean;
-  showMyPickMapToggle?: boolean;
 }
 
 interface RecordStats {
@@ -37,10 +33,6 @@ export type { PanelView };
 
 export default function HomePanelContent({
   view,
-  isMyPickMapMode = false,
-  onMyPickMapToggle,
-  isMyPickLoading = false,
-  showMyPickMapToggle = false,
 }: HomePanelContentProps) {
   const router = useRouter();
   const [subview, setSubview] = useState<string>("main");
@@ -67,12 +59,8 @@ export default function HomePanelContent({
     return (
       <MypickPanel
         key={reloadKey}
-        onCreateRecord={() => setSubview("record-new")}
-        onEditRecord={(recordId) => setSubview(`record-edit:${recordId}`)}
-        isMyPickMapMode={isMyPickMapMode}
-        onMyPickMapToggle={onMyPickMapToggle}
-        isMyPickLoading={isMyPickLoading}
-        showMyPickMapToggle={showMyPickMapToggle}
+        onCreateRecord={() => router.push("/record")}
+        onEditRecord={(recordId) => router.push(`/record/${recordId}/edit`)}
       />
     );
   }
@@ -111,17 +99,9 @@ export default function HomePanelContent({
 function MypickPanel({
   onCreateRecord,
   onEditRecord,
-  isMyPickMapMode,
-  onMyPickMapToggle,
-  isMyPickLoading,
-  showMyPickMapToggle,
 }: {
   onCreateRecord: () => void;
   onEditRecord: (recordId: number) => void;
-  isMyPickMapMode: boolean;
-  onMyPickMapToggle?: () => void;
-  isMyPickLoading: boolean;
-  showMyPickMapToggle: boolean;
 }) {
   const [records, setRecords] = useState<RecordWithStore[] | null>(null);
 
@@ -157,20 +137,28 @@ function MypickPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-end justify-between gap-3 border-b border-border px-5 pb-4 pt-6">
+      <div className="flex shrink-0 items-start justify-between gap-3 px-[22px] pt-5">
         <div>
-          <p className="text-[11px] font-medium tracking-tight text-text-secondary">내 기록</p>
-          <h2 className="mt-0.5 text-[20px] font-extrabold tracking-tight text-text-primary">내 픽</h2>
+          <p className="text-[11px] font-bold text-text-tertiary">내 기록</p>
+          <h2 className="mt-0.5 text-[18px] font-[800] leading-snug text-text-primary">내 픽</h2>
         </div>
-        {showMyPickMapToggle && (
-          <MyPickMapToggle
-            checked={isMyPickMapMode}
-            onChange={() => onMyPickMapToggle?.()}
-            disabled={isMyPickLoading}
-          />
-        )}
+        <button
+          type="button"
+          onClick={() => {
+            pushGtmEvent("record_start_from_mypick");
+            onCreateRecord();
+          }}
+          className="h-8 shrink-0 rounded-full bg-primary-soft px-[13px] text-[12.5px] font-bold text-primary"
+        >
+          + 내 픽 추가
+        </button>
       </div>
-      <Timeline initialRecords={records} onCreateRecord={onCreateRecord} onEditRecord={onEditRecord} />
+      <Timeline
+        initialRecords={records}
+        onCreateRecord={onCreateRecord}
+        onEditRecord={onEditRecord}
+        desktopPanel
+      />
     </div>
   );
 }
@@ -231,12 +219,12 @@ function ProfilePanel({ onNavigate }: { onNavigate: (href: string) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border px-5 pb-4 pt-6">
-        <p className="text-[11px] font-medium tracking-tight text-text-secondary">내 정보</p>
-        <h2 className="mt-0.5 text-[20px] font-extrabold tracking-tight text-text-primary">프로필</h2>
+        <p className="text-[11px] font-medium text-text-secondary">내 정보</p>
+        <h2 className="mt-0.5 text-[20px] font-extrabold text-text-primary">프로필</h2>
       </div>
       {profile ? (
         <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
-          <ProfileView profile={profile} stats={stats} providers={providers} onNavigate={onNavigate} />
+          <ProfileView profile={profile} stats={stats} providers={providers} onNavigate={onNavigate} compact />
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center px-5 text-center text-text-secondary">
@@ -447,7 +435,7 @@ function PanelShell({ title, onBack, children }: { title: string; onBack: () => 
         >
           뒤로
         </button>
-        <h2 className="text-[17px] font-extrabold tracking-tight text-text-primary">{title}</h2>
+        <h2 className="text-[17px] font-extrabold text-text-primary">{title}</h2>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>

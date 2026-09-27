@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from "@/components/ui/icons";
 
@@ -39,53 +39,6 @@ export default function DatePicker({
   const [yearRangeStart, setYearRangeStart] = useState(() =>
     getYearRangeStart(parsed?.getFullYear() ?? new Date().getFullYear())
   );
-  const ref = useRef<HTMLDivElement>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
-  // 팝업을 body로 포털해 스크롤 컨테이너의 overflow 클리핑을 회피 (fixed 위치)
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; up: boolean } | null>(null);
-
-  const POPUP_MAX_H = 360;
-  const updatePosition = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - r.bottom;
-    const up = spaceBelow < POPUP_MAX_H && r.top > spaceBelow;
-    setPos({
-      left: r.left,
-      width: r.width,
-      top: up ? r.top - 6 : r.bottom + 6,
-      up,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [isOpen, updatePosition]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const onDown = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        ref.current && !ref.current.contains(target) &&
-        popupRef.current && !popupRef.current.contains(target)
-      ) {
-        setIsOpen(false);
-        setViewMode("day");
-      }
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [isOpen]);
-
   const maxDate = max ? new Date(max + "T00:00:00") : null;
   const minDate = min ? new Date(min + "T00:00:00") : null;
 
@@ -113,8 +66,6 @@ export default function DatePicker({
     const m = String(view.month + 1).padStart(2, "0");
     const d = String(day).padStart(2, "0");
     onChange(`${view.year}-${m}-${d}`);
-    setIsOpen(false);
-    setViewMode("day");
   };
 
   // ── Month view helpers ────────────────────────────────
@@ -182,41 +133,44 @@ export default function DatePicker({
     : "";
 
   return (
-    <div ref={ref} className="relative w-full">
+    <div className="relative w-full">
       {/* 트리거 버튼 */}
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className={`flex w-full items-center justify-between rounded-2xl border-[1.5px] bg-white px-4 py-3.5 text-left text-[15px] tracking-tight transition-colors ${
+        className={`flex h-[52px] w-full items-center justify-between rounded-[12px] border-[1.5px] bg-white px-[15px] text-left text-[15px] transition-colors ${
           isOpen ? "border-primary" : "border-border"
         }`}
       >
-        <span className={display ? "text-text-primary" : "text-text-secondary"}>
+        <span className={display ? "text-text-primary" : "text-text-muted"}>
           {display || placeholder}
         </span>
-        <CalendarIcon size={18} color="#9CA3AF" />
+        <CalendarIcon size={18} color="var(--color-text-tertiary)" />
       </button>
 
-      {isOpen && pos && createPortal(
-        <div
-          ref={popupRef}
-          style={{
-            position: "fixed",
-            left: pos.left,
-            top: pos.top,
-            width: pos.width,
-            transform: pos.up ? "translateY(-100%)" : undefined,
-          }}
-          className="z-50 max-h-90 overflow-y-auto rounded-xl border border-border bg-white p-4 shadow-lg">
+      {isOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-[rgba(20,20,24,0.4)] md:bg-[rgba(20,20,24,0.45)]"
+            onClick={() => { setIsOpen(false); setViewMode("day"); }}
+            aria-label="날짜 선택 닫기"
+          />
+          <div className="nepick-fade-in relative w-full rounded-t-[26px] bg-surface px-[22px] pb-[34px] pt-3 md:w-[340px] md:rounded-[20px] md:p-[22px]">
+          <div className="flex justify-center pb-[14px] md:hidden">
+            <div className="h-[5px] w-10 rounded-full bg-[#E2E4E8]" />
+          </div>
           {/* 헤더 */}
-          <div className="mb-3 flex items-center justify-between">
-            <button type="button" onClick={handlePrev} className="rounded-lg p-1 active:bg-bg">
-              <ChevronLeftIcon size={18} color="#6B7280" />
+          <div className="flex items-center justify-between">
+              <button type="button" onClick={handlePrev} className="-m-[5px] flex h-10 w-10 items-center justify-center active:opacity-70">
+              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-bg-soft">
+                <ChevronLeftIcon size={18} color="var(--color-text-secondary)" />
+              </span>
             </button>
             <button
               type="button"
               onClick={handleHeaderClick}
-              className="text-[15px] font-semibold text-text-primary active:opacity-70"
+              className="text-[15.5px] font-[800] text-text-primary active:opacity-70"
             >
               {headerLabel}
             </button>
@@ -224,28 +178,28 @@ export default function DatePicker({
               type="button"
               onClick={handleNext}
               disabled={!!isNextDisabled}
-              className={`rounded-lg p-1 transition-opacity ${isNextDisabled ? "cursor-not-allowed opacity-25" : "active:bg-bg"}`}
-            >
-              <ChevronRightIcon size={18} color="#6B7280" />
+                className={`-m-[5px] flex h-10 w-10 items-center justify-center transition-opacity ${isNextDisabled ? "cursor-not-allowed opacity-25" : "active:opacity-70"}`}
+              >
+              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-bg-soft">
+                <ChevronRightIcon size={18} color="var(--color-text-secondary)" />
+              </span>
             </button>
           </div>
 
           {/* ── Day view ── */}
           {viewMode === "day" && (
             <>
-              <div className="mb-1 grid grid-cols-7">
-                {DOW.map((d, i) => (
+              <div className="mt-[14px] grid grid-cols-7 gap-0.5">
+                {DOW.map((d) => (
                   <div
                     key={d}
-                    className={`py-1 text-center text-[12px] font-medium ${
-                      i === 0 ? "text-primary" : "text-text-secondary"
-                    }`}
+                    className="flex h-6 items-center justify-center text-center text-[12px] font-bold text-text-muted"
                   >
                     {d}
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7">
+              <div className="mt-1 grid grid-cols-7 gap-0.5">
                 {Array.from({ length: firstDow }).map((_, i) => <div key={`e-${i}`} />)}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
@@ -254,21 +208,21 @@ export default function DatePicker({
                   const today = isToday(day);
                   const isSun = (firstDow + i) % 7 === 0;
                   return (
-                    <div key={day} className="flex justify-center py-0.5">
+                    <div key={day} className="flex justify-center">
                       <button
                         type="button"
                         disabled={disabled}
                         onClick={() => handleDay(day)}
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-[14px] transition-colors ${
+                        className={`flex h-[34px] w-full items-center justify-center rounded-[10px] text-[13.5px] transition-colors ${
                           selected
-                            ? "bg-primary font-semibold text-white"
+                            ? "bg-primary font-[800] text-white"
                             : disabled
                             ? "cursor-not-allowed text-[#D1D5DB]"
                             : today
-                            ? "font-semibold text-primary"
+                            ? "font-bold text-primary"
                             : isSun
                             ? "text-primary/60 active:bg-bg"
-                            : "text-text-primary active:bg-bg"
+                            : "font-semibold text-text-body active:bg-bg"
                         }`}
                       >
                         {day}
@@ -339,6 +293,15 @@ export default function DatePicker({
               })}
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={() => { setIsOpen(false); setViewMode("day"); }}
+            className="mt-4 h-[50px] w-full rounded-[14px] bg-primary text-[15px] font-bold text-white md:mt-[18px] md:h-12 md:rounded-[13px]"
+          >
+            확인
+          </button>
+          </div>
         </div>,
         document.body
       )}

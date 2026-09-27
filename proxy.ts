@@ -4,6 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_ASSET_PATHS = new Set([
   "/",
   "/home",
+  "/mypick",
+  "/profile",
   "/robots.txt",
   "/sitemap.xml",
   "/site.webmanifest",

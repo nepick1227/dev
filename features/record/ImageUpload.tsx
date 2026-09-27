@@ -56,7 +56,7 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
       />
 
       {value && previewUrl ? (
-        <div className="relative w-full overflow-hidden rounded-xl">
+        <div className="relative w-full overflow-hidden rounded-[13px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
@@ -69,14 +69,14 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-[0_2px_8px_rgba(17,24,39,0.10)] transition-colors"
               aria-label="이미지 변경"
             >
-              <EditIcon size={18} color="#374151" />
+              <EditIcon size={18} color="var(--color-text-body)" />
             </button>
             <button
               onClick={handleRemove}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-[0_2px_8px_rgba(17,24,39,0.10)] transition-colors"
               aria-label="이미지 제거"
             >
-              <TrashIcon size={18} color="#374151" />
+              <TrashIcon size={18} color="var(--color-text-body)" />
             </button>
           </div>
         </div>
@@ -84,10 +84,10 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
         <div>
           <button
             onClick={() => inputRef.current?.click()}
-            className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-border py-8 transition-colors active:bg-bg"
+            className="flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-[13px] border-[1.5px] border-dashed border-[#D8DADE] transition-colors active:bg-bg"
           >
-            <CameraIcon size={28} color="var(--color-text-tertiary)" />
-            <span className="text-[13px] tracking-tight text-text-secondary">
+            <CameraIcon size={26} color="var(--color-text-tertiary)" />
+            <span className="text-[13px] text-text-tertiary">
               사진을 추가해 보세요
             </span>
             <span className="text-[11px] text-text-secondary opacity-70">

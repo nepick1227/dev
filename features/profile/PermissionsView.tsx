@@ -48,14 +48,14 @@ const ITEMS = [
     label: "위치",
     description: "내 주변 맛집 탐색과 랭킹 확인에 필요해요.",
     icon: <MapPinIcon size={20} color="#D32F2F" />,
-    iconBg: "#FEE2E2",
+    iconClass: "bg-bg-soft",
   },
   {
     key: "camera" as const,
     label: "카메라",
     description: "방문 기록에 사진을 남길 때 필요해요.",
-    icon: <CameraIcon size={20} color="#2563EB" />,
-    iconBg: "#DBEAFE",
+    icon: <CameraIcon size={20} color="var(--color-text-body)" />,
+    iconClass: "bg-bg-soft",
   },
   // 알림 권한 항목은 출시 정책 확정 전까지 비노출 (QA 07 2-1)
   // {
@@ -115,32 +115,28 @@ export default function PermissionsView() {
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <div className="flex flex-1 flex-col px-5 pt-6">
-        <p className="mb-6 text-[14px] leading-relaxed tracking-tight text-text-secondary">
-          더 편한 네픽 사용을 위해 아래 권한을 허용해 주세요.
-        </p>
-
+      <div className="app-content-narrow flex flex-1 flex-col px-5 pt-6 md:mt-0 md:!max-w-[512px] md:flex-none md:bg-transparent md:px-0 md:pb-0 md:pt-0">
         {/* 권한 목록 */}
-        <div className="flex flex-col gap-3">
+        <div className="overflow-hidden md:rounded-[20px] md:border md:border-divider md:bg-surface md:p-2">
+          <p className="mb-6 text-[14px] leading-relaxed text-text-description md:mb-0 md:px-4 md:pb-2 md:pt-3">
+            더 편한 네픽 사용을 위해 아래 권한을 허용해 주세요.
+          </p>
           {ITEMS.map((item) => (
             <div
               key={item.key}
-              className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-4"
+              className="flex items-center gap-[13px] border-b border-divider px-1.5 py-4 last:border-b-0 md:gap-[14px] md:px-4 md:py-[18px]"
             >
               {/* 아이콘 */}
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: item.iconBg }}
-              >
+              <div className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[12px] md:h-11 md:w-11 ${item.iconClass}`}>
                 {item.icon}
               </div>
 
               {/* 텍스트 */}
               <div className="flex-1">
-                <p className="text-[15px] font-semibold tracking-tight text-text-primary">
+                <p className="text-[15px] font-bold text-text-primary">
                   {item.label}
                 </p>
-                <p className="mt-0.5 text-[12px] tracking-tight text-text-secondary">
+                <p className="mt-0.5 text-[12px] text-text-description">
                   {item.description}
                 </p>
               </div>
@@ -152,8 +148,8 @@ export default function PermissionsView() {
         </div>
 
         {/* 설정 버튼 */}
-        <div className="mt-8">
-          <Button fullWidth onClick={handleRequest}>
+        <div className="safe-area-pb-lg -mx-5 mt-auto border-t border-divider px-5 pt-3 md:mx-0 md:mt-5 md:border-0 md:px-0 md:pb-0 md:pt-0">
+          <Button fullWidth onClick={handleRequest} className="shadow-none">
             설정하러 가기
           </Button>
         </div>
@@ -167,20 +163,20 @@ export default function PermissionsView() {
 function StatusBadge({ status }: { status: PermStatus }) {
   if (status === "granted") {
     return (
-      <span className="shrink-0 rounded-full bg-success-soft px-3 py-1 text-[12px] font-semibold text-success-text">
+      <span className="shrink-0 rounded-lg bg-[#EAF7EE] px-[11px] py-[5px] text-[12px] font-bold text-[#1E9E4C]">
         허용
       </span>
     );
   }
   if (status === "denied") {
     return (
-      <span className="shrink-0 rounded-full bg-primary-soft px-3 py-1 text-[12px] font-semibold text-primary">
+      <span className="shrink-0 rounded-lg bg-primary-soft px-[11px] py-[5px] text-[12px] font-bold text-primary">
         거부
       </span>
     );
   }
   return (
-    <span className="shrink-0 rounded-full bg-bg px-3 py-1 text-[12px] font-semibold text-text-secondary">
+    <span className="shrink-0 rounded-lg bg-bg px-[11px] py-[5px] text-[12px] font-bold text-text-tertiary">
       미설정
     </span>
   );

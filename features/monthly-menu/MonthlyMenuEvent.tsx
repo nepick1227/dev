@@ -144,10 +144,10 @@ export default function MonthlyMenuEvent({
             className="flex w-full items-center justify-between rounded-xl border border-primary/25 bg-primary-soft px-4 py-3 text-left disabled:opacity-60"
           >
             <div>
-              <p className="text-[14px] font-bold tracking-tight text-primary">
+              <p className="text-[14px] font-bold text-primary">
                 {status?.title ?? "전월의 메뉴판"}
               </p>
-              <p className="mt-0.5 text-[12px] tracking-tight text-text-secondary">
+              <p className="mt-0.5 text-[12px] text-text-secondary">
                 사진 기록 2~3개를 골라 공유 카드를 만들어보세요
               </p>
             </div>
@@ -159,12 +159,12 @@ export default function MonthlyMenuEvent({
       )}
 
       {isOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
-          <div className="relative flex max-h-[92dvh] w-full max-w-[760px] flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
-            <header className="flex shrink-0 items-center border-b border-border px-5 py-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(20,20,24,0.4)] p-4 md:bg-[rgba(20,20,24,0.45)]">
+          <div className="relative flex max-h-[92dvh] w-full max-w-[760px] flex-col overflow-hidden rounded-[20px] bg-surface shadow-[0_16px_40px_rgba(23,25,28,0.16)]">
+            <header className="flex shrink-0 items-center border-b border-divider px-5 py-4">
               <div>
                 <p className="text-[11px] font-semibold text-primary">MONTHLY MENU</p>
-                <h2 className="text-[20px] font-extrabold tracking-tight text-text-primary">
+                <h2 className="text-[20px] font-extrabold text-text-primary">
                   {result?.title ?? status?.title ?? "전월의 메뉴판"}
                 </h2>
               </div>
@@ -203,7 +203,7 @@ export default function MonthlyMenuEvent({
               )}
             </div>
 
-            <footer className="shrink-0 border-t border-border bg-surface px-5 py-4">
+            <footer className="shrink-0 border-t border-divider bg-surface px-5 py-4">
               {result ? (
                 <div className="flex gap-2.5">
                   <Button
@@ -286,7 +286,7 @@ function SelectionView({
     <>
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <p className="text-[15px] font-bold tracking-tight text-text-primary">
+          <p className="text-[15px] font-bold text-text-primary">
             사진 기록을 2~3개 골라주세요
           </p>
           <p className="mt-1 text-[12px] text-text-secondary">
@@ -355,7 +355,7 @@ function GeneratedView({ result }: { result: MonthlyMenuResult }) {
         <div className="flex h-full flex-col p-[6%]">
           <div className="shrink-0 border-b-2 border-primary pb-[4%]">
             <p className="text-[10px] font-bold tracking-[0.18em] text-primary">NEPICK MONTHLY MENU</p>
-            <h3 className="mt-1 text-[clamp(24px,6vw,38px)] font-black leading-none tracking-tight text-text-primary">
+            <h3 className="mt-1 text-[clamp(24px,6vw,38px)] font-black leading-none tracking-[-0.5px] text-text-primary">
               {result.title}
             </h3>
             <p className="mt-2 text-[clamp(11px,2.5vw,14px)] text-text-secondary">{result.subtitle}</p>
@@ -414,11 +414,11 @@ async function downloadMonthlyMenu(result: MonthlyMenuResult) {
   context.font = "700 24px Pretendard, sans-serif";
   context.fillText("NEPICK MONTHLY MENU", 72, 82);
 
-  context.fillStyle = "#111827";
+  context.fillStyle = "#17191C";
   context.font = "900 66px Pretendard, sans-serif";
   context.fillText(result.title, 72, 160);
 
-  context.fillStyle = "#6B7280";
+  context.fillStyle = "#6E7379";
   context.font = "400 28px Pretendard, sans-serif";
   context.fillText(result.subtitle, 72, 210);
 
@@ -434,7 +434,7 @@ async function downloadMonthlyMenu(result: MonthlyMenuResult) {
   result.items.forEach((item, index) => {
     const x = 72 + index * (itemWidth + gap);
 
-    context.fillStyle = "#111827";
+    context.fillStyle = "#17191C";
     context.font = "800 27px Pretendard, sans-serif";
     drawWrappedText(context, item.storeName, x, 820, itemWidth, 34, 2);
 
@@ -442,12 +442,12 @@ async function downloadMonthlyMenu(result: MonthlyMenuResult) {
     context.font = "700 20px Pretendard, sans-serif";
     context.fillText(formatMonthlyMenuDate(item.visitedAt), x, 890);
 
-    context.fillStyle = "#6B7280";
+    context.fillStyle = "#6E7379";
     context.font = "400 20px Pretendard, sans-serif";
     drawWrappedText(context, item.caption, x, 925, itemWidth, 27, 2);
   });
 
-  context.strokeStyle = "#E5E7EB";
+  context.strokeStyle = "#E6E8EB";
   context.beginPath();
   context.moveTo(72, 1000);
   context.lineTo(width - 72, 1000);
@@ -456,7 +456,7 @@ async function downloadMonthlyMenu(result: MonthlyMenuResult) {
   context.fillStyle = "#D32F2F";
   context.font = "800 18px Pretendard, sans-serif";
   context.fillText("NEPICK", 72, 1042);
-  context.fillStyle = "#9CA3AF";
+  context.fillStyle = "#9AA0A6";
   context.textAlign = "right";
   context.font = "400 18px Pretendard, sans-serif";
   context.fillText("나의 지난달 맛집 기록", width - 72, 1042);

@@ -10,6 +10,7 @@ interface HeaderProps {
   /** 투명 배경 (지도 페이지용) */
   transparent?: boolean;
   noBorder?: boolean;
+  size?: "default" | "large";
 }
 
 /**
@@ -23,12 +24,14 @@ export default function Header({
   rightAction,
   transparent = false,
   noBorder = false,
+  size = "default",
 }: HeaderProps) {
   return (
     <header
       className={[
-        "sticky top-0 z-10 flex h-14 items-center justify-between px-4",
-        transparent ? "bg-transparent" : noBorder ? "bg-surface" : "border-b border-border bg-surface",
+        "sticky top-0 z-10 flex shrink-0 items-center justify-between md:relative md:mx-auto md:h-auto md:w-full md:max-w-[720px] md:px-6 md:pb-6 md:pt-9",
+        size === "large" ? "h-[68px] px-5 pt-3" : "h-14 px-4",
+        transparent ? "bg-transparent" : noBorder ? "bg-surface md:bg-transparent" : "border-b border-divider bg-surface md:border-0 md:bg-transparent",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -44,7 +47,7 @@ export default function Header({
           </button>
         )}
         {title && (
-          <h1 className="text-[18px] font-bold tracking-tight text-text-primary">{title}</h1>
+          <h1 className={size === "large" ? "text-[26px] font-[800] tracking-[-0.5px] text-text-primary md:text-[22px]" : "text-[18px] font-[800] text-text-primary md:text-[22px]"}>{title}</h1>
         )}
       </div>
 

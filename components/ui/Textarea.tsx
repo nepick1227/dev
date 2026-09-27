@@ -29,7 +29,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="text-[14px] font-semibold tracking-tight text-text-primary"
+            className="text-[14px] font-semibold text-text-primary"
           >
             {label}
           </label>
@@ -41,10 +41,10 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             maxLength={limit}
             onChange={handleChange}
             className={[
-              "w-full rounded-2xl border-[1.5px] bg-surface px-5 py-4 text-[16px] tracking-tight text-text-primary outline-none transition-colors duration-200 resize-none",
-              "placeholder:text-text-tertiary",
+              "min-h-[52px] w-full resize-none rounded-[12px] border-[1.5px] bg-surface p-[14px] text-[14px] text-text-primary outline-none transition-colors duration-200",
+              "placeholder:text-text-muted",
               error || isOverLimit
-                ? "border-primary-dark focus:border-primary-dark"
+                ? "border-primary focus:border-primary"
                 : "border-border focus:border-primary",
               className,
             ]
@@ -55,14 +55,14 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         </div>
         <div className="flex items-start justify-between gap-2">
           <p className={[
-            "text-[13px] tracking-tight",
-            error ? "text-primary-dark" : "text-text-secondary",
+            "text-[12.5px] font-semibold",
+            error ? "text-primary" : "text-text-description",
           ].join(" ")}>
             {error ?? hint ?? ""}
           </p>
           <span className={[
-            "shrink-0 text-[13px] tracking-tight",
-            isOverLimit ? "text-primary-dark" : "text-text-secondary",
+            "shrink-0 text-[12.5px] font-semibold",
+            isOverLimit ? "text-primary" : "text-text-description",
           ].join(" ")}>
             {count}/{limit}
           </span>

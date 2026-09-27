@@ -1,3 +1,6 @@
+import DesktopTopBar from "./DesktopTopBar";
+import LoginPromptHost from "@/features/auth/LoginPromptHost";
+
 interface PageContainerProps {
   children: React.ReactNode;
   className?: string;
@@ -10,7 +13,9 @@ interface PageContainerProps {
 export default function PageContainer({ children, className = "" }: PageContainerProps) {
   return (
     <div className={`page-container ${className}`}>
+      <DesktopTopBar />
       {children}
+      <LoginPromptHost />
     </div>
   );
 }
