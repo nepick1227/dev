@@ -52,7 +52,7 @@ export default function DesktopTopBar() {
     <header className="desktop-top-bar hidden h-16 shrink-0 items-center gap-[22px] border-b border-divider bg-surface px-6 md:flex">
       <Link href="/home" className="flex h-11 shrink-0 items-center" aria-label="네픽 홈">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/nepick-fork.svg" alt="" className="h-[18px] w-auto" aria-hidden="true" />
+        <img src="/brand/nepick-logo-badge.svg" alt="" className="h-9 w-9" aria-hidden="true" />
       </Link>
 
       <nav className="ml-1 flex h-full items-center gap-0.5" aria-label="주요 메뉴">
