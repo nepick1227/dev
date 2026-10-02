@@ -2,21 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { SearchIcon, CloseIcon, CafeIcon, RestaurantIcon } from "@/components/ui/icons";
-import Spinner from "@/components/ui/Spinner";
 import Chip from "@/components/ui/Chip";
-import { useKakaoSearch, type KakaoSearchResult } from "@/hooks/use-kakao-search";
+import { useKakaoSearch } from "@/hooks/use-kakao-search";
+import MobileSearchScreen from "./MobileSearchScreen";
+import SearchResultList, { type PlaceResult } from "./SearchResultList";
 import type { Category } from "./types";
-
-function formatDistance(meters: string | undefined): string | null {
-  const m = Number(meters);
-  if (!meters || isNaN(m)) return null;
-  return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
-}
-
-type PlaceResult = Pick<
-  KakaoSearchResult,
-  "id" | "place_name" | "category_name" | "category_group_code" | "road_address_name" | "address_name" | "phone" | "x" | "y" | "distance"
->;
 
 interface MapOverlayProps {
   category: Category;
@@ -45,8 +35,11 @@ export default function MapOverlay({
   desktopVisible = true,
 }: MapOverlayProps) {
   const searchAreaRef = useRef<HTMLDivElement>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const historyPushedRef = useRef(false);
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const { results, isLoading, error, searchDebounced, clear } = useKakaoSearch();
 
   const openDropdown = useCallback(() => {
@@ -89,6 +82,10 @@ export default function MapOverlay({
     closeDropdown();
   }, [clear, closeDropdown]);
 
+  const handleRetry = useCallback(() => {
+    searchDebounced(query, 0, searchPosition);
+  }, [query, searchDebounced, searchPosition]);
+
   const handleSelect = useCallback(
     (place: PlaceResult) => {
       onPlaceSelect(place);
@@ -98,6 +95,77 @@ export default function MapOverlay({
     },
     [onPlaceSelect, clear, closeDropdown]
   );
+
+  // ── 모바일 전체화면 검색 ──
+  const openMobileSearch = useCallback(() => {
+    // iOS에서 키보드가 올라오도록 탭 이벤트 안에서 바로 포커스
+    mobileInputRef.current?.focus({ preventScroll: true });
+    onSearchOpen?.();
+    setIsMobileSearchOpen(true);
+    window.history.pushState(window.history.state, "");
+    historyPushedRef.current = true;
+    if (query.trim() && results.length === 0) {
+      searchDebounced(query, 0, searchPosition);
+    }
+  }, [onSearchOpen, query, results.length, searchDebounced, searchPosition]);
+
+  // 화면만 닫고, 검색 화면용으로 쌓은 히스토리를 되돌림
+  const dismissMobileSearch = useCallback(() => {
+    mobileInputRef.current?.blur();
+    setIsMobileSearchOpen(false);
+    if (historyPushedRef.current) {
+      historyPushedRef.current = false;
+      window.history.back();
+    }
+  }, []);
+
+  const handleMobileBack = useCallback(() => {
+    dismissMobileSearch();
+    onSearchClose?.();
+  }, [dismissMobileSearch, onSearchClose]);
+
+  const handleMobileQueryChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      if (!value.trim()) {
+        clear();
+        return;
+      }
+      searchDebounced(value, 400, searchPosition);
+    },
+    [clear, searchDebounced, searchPosition]
+  );
+
+  const handleMobileClear = useCallback(() => {
+    setQuery("");
+    clear();
+    mobileInputRef.current?.focus();
+  }, [clear]);
+
+  const handleMobileSelect = useCallback(
+    (place: PlaceResult) => {
+      dismissMobileSearch();
+      onPlaceSelect(place);
+      setQuery(place.place_name);
+      clear();
+    },
+    [dismissMobileSearch, onPlaceSelect, clear]
+  );
+
+  // 휴대폰/브라우저 뒤로가기로 검색 화면 닫기
+  useEffect(() => {
+    if (!isMobileSearchOpen) return;
+
+    const handlePopState = () => {
+      historyPushedRef.current = false;
+      mobileInputRef.current?.blur();
+      setIsMobileSearchOpen(false);
+      onSearchClose?.();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isMobileSearchOpen, onSearchClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -128,8 +196,33 @@ export default function MapOverlay({
         desktopVisible ? "md:flex" : "md:hidden",
       ].join(" ")}
     >
-      {/* 검색바 */}
-      <div ref={searchAreaRef} className="pointer-events-auto relative z-10">
+      {/* 모바일 검색바: 탭하면 전체화면 검색 화면으로 전환 */}
+      <div className="pointer-events-auto relative md:hidden">
+        <button
+          type="button"
+          onClick={openMobileSearch}
+          className="flex h-12 w-full items-center gap-2.5 rounded-[14px] bg-bg pl-4 pr-10 text-left"
+          aria-label="장소 검색"
+        >
+          <SearchIcon size={17} color="var(--color-text-tertiary)" />
+          <span className={["truncate text-[15px]", query ? "text-text-primary" : "text-text-tertiary"].join(" ")}>
+            {query || "장소 검색"}
+          </span>
+        </button>
+        {query && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center"
+            aria-label="검색어 지우기"
+          >
+            <CloseIcon size={17} color="var(--color-text-tertiary)" />
+          </button>
+        )}
+      </div>
+
+      {/* 데스크탑 검색바 + 드롭다운 */}
+      <div ref={searchAreaRef} className="pointer-events-auto relative z-10 hidden md:block">
         <div className="absolute left-4 top-1/2 -translate-y-1/2">
           <SearchIcon size={17} color="var(--color-text-tertiary)" />
         </div>
@@ -140,7 +233,7 @@ export default function MapOverlay({
           onFocus={handleFocus}
           onClick={handleFocus}
           placeholder="장소 검색"
-          className="h-12 w-full rounded-[14px] border-0 bg-bg py-3 pl-10 pr-10 text-[15px] text-text-primary outline-none placeholder:text-text-tertiary md:h-11 md:rounded-xl md:py-0 md:text-[14.5px]"
+          className="h-11 w-full rounded-xl border-0 bg-bg py-0 pl-10 pr-10 text-[14.5px] text-text-primary outline-none placeholder:text-text-tertiary"
           autoComplete="off"
         />
         {query && (
@@ -153,59 +246,15 @@ export default function MapOverlay({
           </button>
         )}
 
-        {/* 검색 결과 드롭다운 */}
         {isOpen && (
-          <div className="nepick-fade-in absolute left-0 right-0 top-full mt-2 min-h-[174px] max-h-60 overflow-y-auto rounded-[14px] bg-surface p-2 shadow-[0_12px_32px_rgba(0,0,0,0.16)] md:p-2.5">
-            {isLoading ? (
-              <div className="flex justify-center py-5">
-                <Spinner size={22} />
-              </div>
-            ) : error ? (
-              <div className="flex min-h-[152px] flex-col items-center justify-center gap-2 text-center md:min-h-[154px]">
-                <p className="text-[13px] text-text-secondary">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => searchDebounced(query, 0, searchPosition)}
-                  className="min-h-10 rounded-[10px] px-4 text-[13px] font-bold text-primary hover:bg-primary-soft active:bg-primary-soft"
-                >
-                  다시 시도
-                </button>
-              </div>
-            ) : results.length === 0 ? (
-              <p className="nepick-fade-in flex min-h-[152px] items-center justify-center text-[13px] text-text-secondary md:min-h-[154px]">검색 결과가 없어요</p>
-            ) : (
-              <ul>
-                {results.map((place) => (
-                  <li key={place.id} className="border-b border-border last:border-none">
-                    <button
-                      onClick={() => handleSelect(place)}
-                      data-gtm-event="search_select"
-                      className="flex w-full items-center gap-3 rounded-[10px] px-2 py-2.5 text-left hover:bg-bg-soft active:bg-bg"
-                    >
-                      <span className={[
-                        "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px]",
-                        place.category_group_code === "CE7" ? "bg-bg-soft text-text-body" : "bg-primary-soft text-primary",
-                      ].join(" ")}>
-                        {place.category_group_code === "CE7"
-                          ? <CafeIcon size={17} />
-                          : <RestaurantIcon size={17} />}
-                      </span>
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className="truncate text-[14px] font-bold text-text-primary">{place.place_name}</p>
-                        <p className="truncate text-[12px] text-text-tertiary">
-                          {place.road_address_name || place.address_name}
-                        </p>
-                      </div>
-                      {formatDistance(place.distance) && (
-                        <span className="shrink-0 text-[11px] text-text-tertiary">
-                          {formatDistance(place.distance)}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="nepick-fade-in absolute left-0 right-0 top-full mt-2 min-h-[174px] max-h-60 overflow-y-auto rounded-[14px] bg-surface p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.16)]">
+            <SearchResultList
+              results={results}
+              isLoading={isLoading}
+              error={error}
+              onRetry={handleRetry}
+              onSelect={handleSelect}
+            />
           </div>
         )}
       </div>
@@ -227,6 +276,20 @@ export default function MapOverlay({
           />
         ))}
       </div>
+
+      <MobileSearchScreen
+        isOpen={isMobileSearchOpen}
+        inputRef={mobileInputRef}
+        query={query}
+        onQueryChange={handleMobileQueryChange}
+        onClear={handleMobileClear}
+        onBack={handleMobileBack}
+        results={results}
+        isLoading={isLoading}
+        error={error}
+        onRetry={handleRetry}
+        onSelect={handleMobileSelect}
+      />
     </div>
   );
 }
