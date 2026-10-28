@@ -23,7 +23,7 @@ export const colors = {
 
   // 비활성
   disabledBg: "#EDEEF0",
-  disabledText: "#B4B8BD",
+  disabledText: "#9AA0A6",
 
   // 성공
   success: "#10B981",
