@@ -49,9 +49,9 @@ npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
 
 ## 아키텍처 개요
 
-- **인증 게이트 (`proxy.ts`)**: Next.js 16의 `middleware.ts` 대체 파일로, 모든 요청이 이 파일을 거칩니다. Supabase 쿠키에서 세션을 읽어 `/auth/*`, `/api/auth/*`, `/api/kakao-search`를 제외한 모든 경로에서 비로그인 사용자를 `/auth/login`으로 리다이렉트합니다. 새 공개 라우트를 추가하면 `PUBLIC_ASSET_PATHS`나 경로 허용 목록도 함께 갱신해야 합니다.
+- **인증 게이트 (`proxy.ts`)**: Next.js 16의 `middleware.ts` 대체 파일로, 모든 요청이 이 파일을 거칩니다. Supabase 쿠키에서 세션을 읽어 `/auth/*`, `/api/auth/*`, `/api/kakao-search`, `/api/cron/*`(route 내부에서 `CRON_SECRET` 인증)를 제외한 모든 경로에서 비로그인 사용자를 `/auth/login`으로 리다이렉트합니다. 새 공개 라우트를 추가하면 `PUBLIC_ASSET_PATHS`나 경로 허용 목록도 함께 갱신해야 합니다.
 - **보안 헤더 (`next.config.ts`)**: 프로덕션 빌드에서만 CSP 등 보안 헤더를 주입합니다(`isDev`일 때는 미적용). 카카오맵/Supabase/GA 등 새 외부 도메인을 쓰면 이 파일의 CSP allowlist(`script-src`, `img-src`, `connect-src` 등)도 함께 수정해야 하며, 브라우저 Console/Network로 차단 여부를 확인합니다.
-- **API 라우트 (`app/api/`)**: `auth/naver`(OAuth 시작/콜백), `kakao-search`(카카오 장소 검색 프록시), `monthly-menu/generate`(Gemini 기반 월간 메뉴 생성), `stores/resolve`(카카오 place → `stores` 테이블 upsert). 비밀 API 키(`KAKAO_REST_API_KEY`, `NAVER_CLIENT_SECRET`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)는 이 서버 라우트들에서만 다루고 프론트로 내려보내지 않습니다.
+- **API 라우트 (`app/api/`)**: `auth/naver`(OAuth 시작/콜백), `kakao-search`(카카오 장소 검색 프록시), `monthly-menu/generate`(Gemini 기반 월간 메뉴 생성), `stores/resolve`(카카오 place → `stores` 테이블 upsert), `cron/keepalive`(Vercel Cron이 하루 1회 호출, Supabase 무료 플랜 일시정지 방지). 비밀 API 키(`KAKAO_REST_API_KEY`, `NAVER_CLIENT_SECRET`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)는 이 서버 라우트들에서만 다루고 프론트로 내려보내지 않습니다.
 - **Supabase 스키마/RLS (`supabase/migrations/`)**: DB 스키마와 RLS 정책의 단일 소스입니다. 새 정책은 기존 migration을 수정하지 말고 새 파일을 추가합니다. `docs/security-qa-handoff.md`에 로컬 코드는 통과했지만 운영 DB에 아직 적용 안 됐을 수 있는 migration 목록이 있으니, 보안 관련 작업 전에 먼저 확인합니다.
 - **데이터/훅 레이어**: `features/*/api.ts`가 Supabase 쿼리를 감싸고(에러는 throw), `hooks/`(`use-kakao-map`, `use-kakao-search`, `use-map-stores`, `use-signed-image-url`, `use-toast`)가 지도·검색·서명 URL·토스트 등 여러 페이지에서 재사용하는 상태를 관리합니다.
 
@@ -68,7 +68,8 @@ nepick/
 │   │   ├── auth/naver/callback/route.ts  # 네이버 OAuth 콜백
 │   │   ├── kakao-search/route.ts         # 카카오 장소 검색 프록시
 │   │   ├── monthly-menu/generate/route.ts # Gemini 기반 월간 메뉴 생성
-│   │   └── stores/resolve/route.ts       # 카카오 place → stores upsert
+│   │   ├── stores/resolve/route.ts       # 카카오 place → stores upsert
+│   │   └── cron/keepalive/route.ts       # Supabase 일시정지 방지 (Vercel Cron)
 │   ├── auth/
 │   │   ├── login/page.tsx
 │   │   ├── callback/route.ts
