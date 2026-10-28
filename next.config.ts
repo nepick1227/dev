@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
           "'unsafe-eval'",
           "https://dapi.kakao.com",
           "https://*.daumcdn.net",
+          "https://*.kakaocdn.net",
           "https://www.googletagmanager.com",
           "https://*.googlesyndication.com",
           "https://*.doubleclick.net",
