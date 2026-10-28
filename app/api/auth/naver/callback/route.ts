@@ -80,7 +80,7 @@ function redirectWithClearedState(url: string) {
 /**
  * 네이버 OAuth 콜백 처리
  * 1. 네이버에서 받은 code로 액세스 토큰 발급
- * 2. 네이버 유저 정보 조회 (이메일, 닉네임, 프로필 사진)
+ * 2. 네이버 유저 정보 조회 (이용자 식별자, 별명)
  * 3. Supabase에 유저 생성 또는 확인
  * 4. 로그인 세션 생성 후 리다이렉트
  */
@@ -143,15 +143,14 @@ export async function GET(request: NextRequest) {
     const userData = await userRes.json();
     const naverUser = userData.response as {
       id: string;
-      email?: string;
       nickname?: string;
-      profile_image?: string;
     };
 
     if (!naverUser?.id) throw new Error("유저 정보 없음");
 
-    // 이메일이 없을 경우 네이버 ID 기반으로 생성 (Supabase 계정 식별용)
-    const email = naverUser.email ?? `naver.${naverUser.id}@auth.nepick.kr`;
+    // 네이버 이메일은 받지 않음 — 네이버 ID 기반 고정 이메일로 Supabase 계정 식별
+    // (Supabase가 이메일을 소문자로 저장하므로 동일하게 정규화)
+    const email = `naver.${naverUser.id}@auth.nepick.kr`.toLowerCase();
 
     // ── 3. Supabase admin으로 유저 생성/확인 ─────────
     const adminClient = createAdminClient(
@@ -167,7 +166,6 @@ export async function GET(request: NextRequest) {
         provider: "naver",
         naver_id: naverUser.id,
         full_name: naverUser.nickname,
-        avatar_url: naverUser.profile_image,
       },
     });
 
