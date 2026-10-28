@@ -22,6 +22,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Vercel Cron 호출 — 세션 대신 route 내부에서 CRON_SECRET으로 인증
+  if (pathname.startsWith("/api/cron/")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
