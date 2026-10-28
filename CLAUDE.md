@@ -34,6 +34,16 @@ git checkout -b feat/<기능명>
 - **배포**: Vercel (nepick.kr)
 - **경로 별칭**: `@/*` → 프로젝트 루트 (`./`)
 
+## UI/UX 작업 필수 규칙
+
+UI, 반응형 레이아웃, 디자인 토큰, 공통 컴포넌트, 화면 문구를 변경하기 전에 `docs/design-system.md`를 먼저 확인합니다.
+
+- UI의 최종 기준은 최신 `main`의 실제 코드입니다. 과거 HTML 디자인 가이드와 목업은 참고 자료입니다.
+- 판단 우선순위는 현재 사용자 요구사항 → 실제 공통 컴포넌트와 화면 코드 → `docs/design-system.md` → 과거 목업 순서입니다.
+- 디자인을 적용하면서 기존 기능, 필드, 문구, 데이터 순서, 인증 흐름을 임의로 삭제하거나 바꾸지 않습니다.
+- 공통 규격이 바뀌면 화면별 스타일을 복제하지 말고 토큰 또는 공통 컴포넌트를 수정하고 `docs/design-system.md`도 같은 변경에서 갱신합니다.
+- 모바일과 태블릿 사이의 화면 크기 변경으로 다른 라우트로 이동시키지 않습니다. 현재 코드의 `768px` 반응형 기준을 유지합니다.
+
 ## 개발 명령어
 
 ```bash
@@ -49,9 +59,9 @@ npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
 
 ## 아키텍처 개요
 
-- **인증 게이트 (`proxy.ts`)**: Next.js 16의 `middleware.ts` 대체 파일로, 모든 요청이 이 파일을 거칩니다. Supabase 쿠키에서 세션을 읽어 `/auth/*`, `/api/auth/*`, `/api/kakao-search`를 제외한 모든 경로에서 비로그인 사용자를 `/auth/login`으로 리다이렉트합니다. 새 공개 라우트를 추가하면 `PUBLIC_ASSET_PATHS`나 경로 허용 목록도 함께 갱신해야 합니다.
+- **인증 게이트 (`proxy.ts`)**: Next.js 16의 `middleware.ts` 대체 파일로, 모든 요청이 이 파일을 거칩니다. Supabase 쿠키에서 세션을 읽어 `/auth/*`, `/api/auth/*`, `/api/kakao-search`, `/api/cron/*`(route 내부에서 `CRON_SECRET` 인증)를 제외한 모든 경로에서 비로그인 사용자를 `/auth/login`으로 리다이렉트합니다. 새 공개 라우트를 추가하면 `PUBLIC_ASSET_PATHS`나 경로 허용 목록도 함께 갱신해야 합니다.
 - **보안 헤더 (`next.config.ts`)**: 프로덕션 빌드에서만 CSP 등 보안 헤더를 주입합니다(`isDev`일 때는 미적용). 카카오맵/Supabase/GA 등 새 외부 도메인을 쓰면 이 파일의 CSP allowlist(`script-src`, `img-src`, `connect-src` 등)도 함께 수정해야 하며, 브라우저 Console/Network로 차단 여부를 확인합니다.
-- **API 라우트 (`app/api/`)**: `auth/naver`(OAuth 시작/콜백), `kakao-search`(카카오 장소 검색 프록시), `monthly-menu/generate`(Gemini 기반 월간 메뉴 생성), `stores/resolve`(카카오 place → `stores` 테이블 upsert). 비밀 API 키(`KAKAO_REST_API_KEY`, `NAVER_CLIENT_SECRET`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)는 이 서버 라우트들에서만 다루고 프론트로 내려보내지 않습니다.
+- **API 라우트 (`app/api/`)**: `auth/naver`(OAuth 시작/콜백), `kakao-search`(카카오 장소 검색 프록시), `monthly-menu/generate`(Gemini 기반 월간 메뉴 생성), `stores/resolve`(카카오 place → `stores` 테이블 upsert), `cron/keepalive`(Vercel Cron이 하루 1회 호출, Supabase 무료 플랜 일시정지 방지). 비밀 API 키(`KAKAO_REST_API_KEY`, `NAVER_CLIENT_SECRET`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)는 이 서버 라우트들에서만 다루고 프론트로 내려보내지 않습니다.
 - **Supabase 스키마/RLS (`supabase/migrations/`)**: DB 스키마와 RLS 정책의 단일 소스입니다. 새 정책은 기존 migration을 수정하지 말고 새 파일을 추가합니다. `docs/security-qa-handoff.md`에 로컬 코드는 통과했지만 운영 DB에 아직 적용 안 됐을 수 있는 migration 목록이 있으니, 보안 관련 작업 전에 먼저 확인합니다.
 - **데이터/훅 레이어**: `features/*/api.ts`가 Supabase 쿼리를 감싸고(에러는 throw), `hooks/`(`use-kakao-map`, `use-kakao-search`, `use-map-stores`, `use-signed-image-url`, `use-toast`)가 지도·검색·서명 URL·토스트 등 여러 페이지에서 재사용하는 상태를 관리합니다.
 
@@ -68,7 +78,8 @@ nepick/
 │   │   ├── auth/naver/callback/route.ts  # 네이버 OAuth 콜백
 │   │   ├── kakao-search/route.ts         # 카카오 장소 검색 프록시
 │   │   ├── monthly-menu/generate/route.ts # Gemini 기반 월간 메뉴 생성
-│   │   └── stores/resolve/route.ts       # 카카오 place → stores upsert
+│   │   ├── stores/resolve/route.ts       # 카카오 place → stores upsert
+│   │   └── cron/keepalive/route.ts       # Supabase 일시정지 방지 (Vercel Cron)
 │   ├── auth/
 │   │   ├── login/page.tsx
 │   │   ├── callback/route.ts
@@ -180,17 +191,22 @@ export default function StoreCard({ store, onClick }: StoreCardProps) {
 /* 브랜드 */
 primary:         #D32F2F   주요 액션, 에러 상태
 primary-dark:    #B71C1C   호버/강조
-primary-soft:    #FFF1F1   선택된 항목 배경
+primary-soft:    #FDECEA   선택된 항목 배경
 primary-border:  #F3B4B4   선택된 항목 테두리
 
 /* 텍스트 */
-text-primary:    #111827   본문
-text-secondary:  #6B7280   보조
-text-tertiary:   #9CA3AF   비활성/플레이스홀더
+text-primary:    #17191C   제목·주요 본문
+text-body:       #3A3F45   일반 본문
+text-secondary:  #6E7379   보조
+text-description:#8A9097   설명
+text-tertiary:   #9AA0A6   비활성
+text-muted:      #B4B8BD   플레이스홀더
 
 /* UI */
-border:          #E5E7EB   선/구분선
-bg:              #FAFAFA   페이지 배경
+border:          #E6E8EB   선
+divider:         #EEF0F2   구분선
+bg:              #F4F5F7   페이지 배경
+bg-soft:         #F6F7F9   보조 배경
 surface:         #FFFFFF   카드/시트 배경
 
 /* 성공 */
@@ -200,8 +216,8 @@ success-border:  #34D399   성공 테두리
 success-soft:    #ECFDF5   성공 배경
 
 /* 비활성 */
-disabled-bg:     #E5E7EB
-disabled-text:   #9CA3AF
+disabled-bg:     #EDEEF0
+disabled-text:   #9AA0A6
 ```
 
 ### 추천 배지 색상
@@ -210,8 +226,8 @@ disabled-text:   #9CA3AF
 
 ```
 추천(👍):   bg-primary-soft text-primary
-보통(😐):   bg-bg text-text-secondary
-비추(👎):   bg-bg text-text-secondary
+보통(😐):   bg-rating-neutral-soft text-text-secondary
+비추(👎):   bg-rating-negative-soft text-rating-negative
 ```
 
 ### CSS 유틸리티 클래스 (globals.css)
@@ -308,6 +324,7 @@ chore: Supabase SDK 버전 업데이트
 
 ## 참고 문서
 
+- 실제 구현 기준 디자인 시스템: `docs/design-system.md`
 - 상세 작업 리스트 및 전체 가이드: `NePick_작업리스트_코드규칙가이드.md`
 - DB 스키마 / 정책정의서: `NePick_정책정의서_v0.2.2.xlsx`
 - 보안/QA 인수인계 체크리스트: `docs/security-qa-handoff.md`
