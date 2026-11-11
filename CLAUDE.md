@@ -11,6 +11,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **2인 팀**으로 개발 중 (팀원 각자 feature 브랜치에서 작업 후 PR)
 - Claude Code는 팀원 중 한 명처럼 동작 — `develop` 기반 feature 브랜치에서만 작업
 - 코드 리뷰는 PR을 통해 진행
+- AI 에이전트용 규칙 파일은 이 `CLAUDE.md` 하나만 유지합니다. 같은 내용을 다른 파일(`AGENTS.md` 등)에 복제하지 않습니다.
+
+## 에이전트
+
+단계별 에이전트 설명서는 `.claude/agents/`에 있습니다. 모든 에이전트는 이 파일의 규칙을 먼저 따릅니다.
+
+| 단계 | 무엇을 쓰나 | 결과가 남는 곳 |
+|------|-------------|----------------|
+| 기획 | 사람 + `write-spec` 스킬 | Notion → GitHub 이슈 |
+| 개발 | 공식 `feature-dev` 플러그인 | feature 브랜치, PR |
+| 코드 리뷰 | 공식 `code-review` 플러그인 (`/code-review`) — 개발한 대화창이 아닌 새 세션에서 실행 | PR 댓글 |
+| QA | `.claude/agents/qa.md` | PR 댓글 |
+| 배포 확인 | `.claude/agents/deploy-check.md` | PR 댓글 또는 이슈 |
+| 운영 모니터링 | `.claude/agents/ops-monitor.md` (주 1회) | 이슈 `주간 운영 점검 YYYY-MM-DD` |
+| 콘텐츠 | `.claude/agents/content-writer.md` (주 1회) | `content/drafts/` PR |
+
+**에이전트가 하지 않는 일 (사람만 함):**
+- `main` 머지, 운영 배포, 롤백
+- 운영 DB와 사용자 데이터 변경, migration 운영 적용
+- 네이버·카카오·구글·Vercel·Supabase 콘솔 설정 변경
+- 외부 채널(스레드, 인스타그램, 블로그) 게시
+- 결제, 플랜 변경
+
+## 코드 리뷰 기준
+
+리뷰는 확실한 문제만 지적합니다. 아래 항목은 발견하면 반드시 지적합니다.
+
+- 비밀키(`SUPABASE_SERVICE_ROLE_KEY`, `NAVER_CLIENT_SECRET`, `KAKAO_REST_API_KEY`, `GEMINI_API_KEY`, `CRON_SECRET`)를 클라이언트 컴포넌트에서 읽거나 `NEXT_PUBLIC_`로 노출하는 변경
+- 기존 `supabase/migrations/` 파일을 수정하는 변경 (새 migration 파일로 추가해야 함)
+- RLS 정책 없이 새 table/view를 추가하는 변경, `auth.uid()` 검사 없는 `SECURITY DEFINER` 함수
+- 브라우저 코드에서 `stores`를 직접 insert/update하는 변경
+- 새 공개 라우트를 추가하면서 `proxy.ts` 허용 목록을 갱신하지 않은 변경
+- 새 외부 도메인을 쓰면서 `next.config.ts`의 CSP allowlist를 갱신하지 않은 변경
+- 입력 크기 제한·값 검증·요청 제한 없이 외부 API(카카오, Gemini, 네이버)를 호출하는 새 서버 라우트
+- `main`을 대상으로 한 feature PR (`feature → develop`이어야 함)
+- 요구사항에 없는데 기존 기능, 필드, 문구, 인증 흐름을 삭제하거나 바꾼 변경
+
+아래는 지적하지 않습니다: 코드 스타일과 포맷(ESLint·Prettier가 처리), 파일 길이 권장치, 취향 차이인 리팩터링 제안.
 
 ## Git 브랜치 규칙 (필수)
 
@@ -59,7 +97,7 @@ npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
 
 ## 아키텍처 개요
 
-- **인증 게이트 (`proxy.ts`)**: Next.js 16의 `middleware.ts` 대체 파일로, 모든 요청이 이 파일을 거칩니다. Supabase 쿠키에서 세션을 읽어 `/auth/*`, `/api/auth/*`, `/api/kakao-search`, `/api/cron/*`(route 내부에서 `CRON_SECRET` 인증)를 제외한 모든 경로에서 비로그인 사용자를 `/auth/login`으로 리다이렉트합니다. 새 공개 라우트를 추가하면 `PUBLIC_ASSET_PATHS`나 경로 허용 목록도 함께 갱신해야 합니다.
+- **인증 게이트 (`proxy.ts`)**: Next.js 16의 `middleware.ts` 대체 파일로, 모든 요청이 이 파일을 거칩니다. Supabase 쿠키에서 세션을 읽어 `/`, `/home`, `/mypick`, `/profile`(이 네 화면은 비로그인도 열리고, 로그인이 필요한 동작은 화면 안에서 로그인 안내를 띄움), `/auth/*`, `/api/auth/*`, `/api/kakao-search`, `/api/cron/*`(route 내부에서 `CRON_SECRET` 인증)를 제외한 모든 경로에서 비로그인 사용자를 `/auth/login`으로 리다이렉트합니다. 새 공개 라우트를 추가하면 `PUBLIC_ASSET_PATHS`나 경로 허용 목록도 함께 갱신해야 합니다.
 - **보안 헤더 (`next.config.ts`)**: 프로덕션 빌드에서만 CSP 등 보안 헤더를 주입합니다(`isDev`일 때는 미적용). 카카오맵/Supabase/GA 등 새 외부 도메인을 쓰면 이 파일의 CSP allowlist(`script-src`, `img-src`, `connect-src` 등)도 함께 수정해야 하며, 브라우저 Console/Network로 차단 여부를 확인합니다.
 - **API 라우트 (`app/api/`)**: `auth/naver`(OAuth 시작/콜백), `kakao-search`(카카오 장소 검색 프록시), `monthly-menu/generate`(Gemini 기반 월간 메뉴 생성), `stores/resolve`(카카오 place → `stores` 테이블 upsert), `cron/keepalive`(Vercel Cron이 하루 1회 호출, Supabase 무료 플랜 일시정지 방지). 비밀 API 키(`KAKAO_REST_API_KEY`, `NAVER_CLIENT_SECRET`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)는 이 서버 라우트들에서만 다루고 프론트로 내려보내지 않습니다.
 - **Supabase 스키마/RLS (`supabase/migrations/`)**: DB 스키마와 RLS 정책의 단일 소스입니다. 새 정책은 기존 migration을 수정하지 말고 새 파일을 추가합니다. `docs/security-qa-handoff.md`에 로컬 코드는 통과했지만 운영 DB에 아직 적용 안 됐을 수 있는 migration 목록이 있으니, 보안 관련 작업 전에 먼저 확인합니다.
@@ -71,7 +109,7 @@ npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
 nepick/
 ├── app/                    # Next.js App Router (페이지 라우팅만)
 │   ├── layout.tsx
-│   ├── page.tsx            # 랜딩 (→ /auth/login 리다이렉트)
+│   ├── page.tsx            # 랜딩 (→ /home 리다이렉트)
 │   ├── error.tsx           # Next.js 전역 에러 바운더리
 │   ├── api/
 │   │   ├── auth/naver/route.ts           # 네이버 OAuth 시작
@@ -86,6 +124,7 @@ nepick/
 │   │   ├── terms/page.tsx
 │   │   ├── signup/page.tsx
 │   │   ├── error/page.tsx       # 인증 오류 안내
+│   │   ├── signout/route.ts     # 로그아웃
 │   │   └── naver/verify/page.tsx
 │   ├── home/page.tsx
 │   ├── record/
@@ -103,6 +142,7 @@ nepick/
 │   ├── layout/             # Header, BottomNav, PageContainer
 │   └── map/                # KakaoMap, MapMarker, BottomSheet
 ├── features/               # 페이지별 비즈니스 로직 + 전용 컴포넌트
+│   ├── auth/               # AuthGate, LoginPromptHost
 │   ├── home/               # MapView, RankingSheet, StoreCard
 │   ├── record/             # RecordForm, StoreSearch, ImageUpload
 │   ├── mypick/             # Timeline, RecordCard, MonthFilter
@@ -117,9 +157,12 @@ nepick/
 ├── lib/                    # 외부 서비스 클라이언트
 │   ├── supabase/
 │   │   ├── client.ts       # 브라우저용 (CSR)
-│   │   └── server.ts       # 서버용 (SSR/RSC)
-│   └── kakao/
-│       └── map.ts          # SDK 로드 + 유틸
+│   │   ├── server.ts       # 서버용 (SSR/RSC)
+│   │   └── storage.ts      # 이미지 저장소
+│   ├── kakao/
+│   │   └── map.ts          # SDK 로드 + 유틸
+│   ├── analytics/gtm.ts    # GTM 이벤트
+│   └── security/http.ts    # 요청 제한·입력 검증 유틸
 ├── styles/
 │   └── tokens.ts           # 디자인 토큰 (색상, 폰트, 레이아웃)
 ├── types/
@@ -127,7 +170,8 @@ nepick/
 │   └── kakao.d.ts          # 카카오맵 SDK 전역 타입
 └── utils/
     ├── format.ts           # 날짜·텍스트 포맷
-    └── validation.ts       # 입력값 검증
+    ├── validation.ts       # 입력값 검증
+    └── banned-words.ts     # 금칙어
 ```
 
 ## 네이밍 규칙
@@ -260,8 +304,8 @@ export async function fetchRecords(userId: string) {
 }
 ```
 
-- `service_role` 키는 Edge Function에서만 사용합니다.
-- 카카오 REST API 키는 Edge Function(`supabase/functions/kakao-search/`)을 통해서만 사용합니다.
+- `service_role` 키는 서버 라우트(`app/api/`)에서만 사용합니다.
+- 카카오 REST API 키는 서버 라우트(`app/api/kakao-search/`, `app/api/stores/resolve/`)를 통해서만 사용합니다.
 - `NEXT_PUBLIC_` 접두사 변수만 프론트엔드에서 사용 가능합니다.
 
 ## 보안 / QA 필수 가드레일
@@ -319,12 +363,12 @@ chore: Supabase SDK 버전 업데이트
 ## 보안 규칙
 
 - `.env.local`은 절대 git commit 하지 않음
-- `KAKAO_REST_API_KEY`는 Edge Function 환경변수로만 설정
+- `KAKAO_REST_API_KEY`는 서버 환경변수(Vercel)로만 설정
 - 이미지 업로드 시 MIME 타입 검사 + 5MB 이하 제한
 
 ## 참고 문서
 
 - 실제 구현 기준 디자인 시스템: `docs/design-system.md`
-- 상세 작업 리스트 및 전체 가이드: `NePick_작업리스트_코드규칙가이드.md`
-- DB 스키마 / 정책정의서: `NePick_정책정의서_v0.2.2.xlsx`
+- 상세 작업 리스트 및 전체 가이드: `NePick_작업리스트_코드규칙가이드.md` (저장소에 없음)
+- DB 스키마 / 정책정의서: `NePick_정책정의서_v0.2.2.xlsx` (저장소에 없음)
 - 보안/QA 인수인계 체크리스트: `docs/security-qa-handoff.md`
