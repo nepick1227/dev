@@ -9,6 +9,7 @@ import MapView from "@/features/home/MapView";
 import { useToast } from "@/hooks/use-toast";
 import Toast from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
+import MonthlyMenuEvent from "@/features/monthly-menu/MonthlyMenuEvent";
 
 function WelcomeToast() {
   const searchParams = useSearchParams();
@@ -86,6 +87,7 @@ export default function HomePage() {
         <WelcomeToast />
       </Suspense>
       <ProfileCompletionGuard />
+      <MonthlyMenuEvent autoOpen />
       <div className="flex flex-1 flex-col overflow-hidden">
         <MapView />
       </div>
