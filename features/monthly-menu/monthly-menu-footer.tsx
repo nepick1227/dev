@@ -7,6 +7,7 @@ interface MonthlyMenuFooterProps {
   selectedCount: number;
   /** 이번 달 남은 횟수가 있는지 */
   canMake: boolean;
+  /** 이번 달 횟수가 남아 다시 만들 수 있는지. 0회면 수정·다시 고르기 버튼을 숨긴다 */
   canStartOver: boolean;
   /** 이미 만든 메뉴판이 있어 횟수 차감 없이 미리보기로 돌아갈 수 있는지 */
   hasCollage: boolean;
@@ -68,16 +69,18 @@ export default function MonthlyMenuFooter({
                 미리보기로 돌아가기
               </Button>
             )}
-            <Button
-              variant="secondary"
-              size="sm"
-              fullWidth
-              onClick={onBack}
-              disabled={isBuilding || !canStartOver}
-              className="h-11 whitespace-nowrap"
-            >
-              내픽 다시 고르기
-            </Button>
+            {canStartOver && (
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                onClick={onBack}
+                disabled={isBuilding}
+                className="h-11 whitespace-nowrap"
+              >
+                내픽 다시 고르기
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -87,27 +90,29 @@ export default function MonthlyMenuFooter({
           <Button size="md" fullWidth onClick={onShare} disabled={isSharing}>
             공유하기
           </Button>
-          <div className="flex flex-col gap-2.5 min-[400px]:flex-row">
-            <Button
-              variant="secondary"
-              size="sm"
-              fullWidth
-              onClick={onEditMenus}
-              className="h-11 whitespace-nowrap"
-            >
-              추천 메뉴 고치기
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              fullWidth
-              onClick={onStartOver}
-              disabled={!canStartOver}
-              className="h-11 whitespace-nowrap"
-            >
-              내픽 다시 고르기
-            </Button>
-          </div>
+          {/* 이번 달 횟수를 다 썼으면 다시 만들 수 없으므로 수정·다시 고르기 버튼을 보여 주지 않는다 */}
+          {canStartOver && (
+            <div className="flex flex-col gap-2.5 min-[400px]:flex-row">
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                onClick={onEditMenus}
+                className="h-11 whitespace-nowrap"
+              >
+                추천 메뉴 고치기
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                onClick={onStartOver}
+                className="h-11 whitespace-nowrap"
+              >
+                내픽 다시 고르기
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </footer>
