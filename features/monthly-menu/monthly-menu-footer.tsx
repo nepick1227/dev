@@ -55,7 +55,7 @@ export default function MonthlyMenuFooter({
           <Button size="md" fullWidth onClick={onMake} isLoading={isBuilding} disabled={!canMake}>
             메뉴판 만들기 (1회 차감)
           </Button>
-          <div className="flex gap-2.5">
+          <div className="flex flex-col gap-2.5 min-[400px]:flex-row">
             {hasCollage && (
               <Button
                 variant="secondary"
@@ -73,7 +73,7 @@ export default function MonthlyMenuFooter({
               size="sm"
               fullWidth
               onClick={onBack}
-              disabled={isBuilding}
+              disabled={isBuilding || !canStartOver}
               className="h-11 whitespace-nowrap"
             >
               내픽 다시 고르기
@@ -87,7 +87,7 @@ export default function MonthlyMenuFooter({
           <Button size="md" fullWidth onClick={onShare} disabled={isSharing}>
             공유하기
           </Button>
-          <div className="flex gap-2.5">
+          <div className="flex flex-col gap-2.5 min-[400px]:flex-row">
             <Button
               variant="secondary"
               size="sm"
