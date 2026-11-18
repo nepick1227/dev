@@ -3,7 +3,6 @@ import {
   MONTHLY_MENU_MAX_GENERATIONS,
   type MonthlyMenuStatus,
 } from "@/lib/monthly-menu";
-import GenerationNotice from "./generation-notice";
 
 interface RecordSelectionViewProps {
   status: MonthlyMenuStatus;
@@ -54,8 +53,6 @@ export default function RecordSelectionView({
           {selectedIds.length}/3
         </span>
       </div>
-
-      <GenerationNotice remaining={status.remainingGenerations} isUnlimited={status.isUnlimited} />
 
       <div className="grid auto-rows-fr grid-cols-2 items-stretch gap-3 sm:grid-cols-3">
         {status.records.map((record) => {

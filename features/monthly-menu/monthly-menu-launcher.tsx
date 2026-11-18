@@ -17,10 +17,10 @@ export default function MonthlyMenuLauncher({ status, disabled, onOpen }: Monthl
       >
         <div>
           <p className="text-[14px] font-bold text-primary">
-            {status?.title ?? "지난달 메뉴판"}
+            {status?.title ?? "지난달의 메뉴판"}
           </p>
           <p className="mt-0.5 text-[12px] text-text-secondary">
-            사진 기록 2~3개를 골라 공유 카드를 만들어보세요
+            내픽 기록 2~3개를 골라 공유 카드를 만들어보세요
           </p>
         </div>
         <span className="text-[12px] font-semibold text-primary">

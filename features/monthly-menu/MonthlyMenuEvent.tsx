@@ -6,6 +6,7 @@ import Spinner from "@/components/ui/Spinner";
 import { CloseIcon } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import type { MonthlyMenuClaimResult, MonthlyMenuStatus } from "@/lib/monthly-menu";
+import CloseConfirmModal from "./close-confirm-modal";
 import CollagePreview from "./collage-preview";
 import MenuEditView from "./menu-edit-view";
 import MonthlyMenuFooter, { type MonthlyMenuStep } from "./monthly-menu-footer";
@@ -30,6 +31,7 @@ export default function MonthlyMenuEvent({
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [menus, setMenus] = useState<Record<number, string>>({});
   const [error, setError] = useState("");
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
 
   const handleClaimed = useCallback((claim: MonthlyMenuClaimResult) => {
     setStatus((current) => current ? {
@@ -92,10 +94,20 @@ export default function MonthlyMenuEvent({
   }, [startOver]);
 
   const close = useCallback(() => {
-    if (isBuilding) return;
+    setIsCloseConfirmOpen(false);
     setIsOpen(false);
     setError("");
-  }, [isBuilding]);
+  }, []);
+
+  /** 만든 메뉴판이 있으면 닫기 전에 다시 볼 수 없다고 확인한다 */
+  const requestClose = useCallback(() => {
+    if (isBuilding) return;
+    if (collage) {
+      setIsCloseConfirmOpen(true);
+      return;
+    }
+    close();
+  }, [close, collage, isBuilding]);
 
   const toggleRecord = useCallback((recordId: number) => {
     setError("");
@@ -115,7 +127,7 @@ export default function MonthlyMenuEvent({
     setError("");
     try {
       await build({
-        title: status.title,
+        title: status.collageTitle,
         items: selectedRecords.map((record) => ({ record, menu: menus[record.id] ?? "" })),
       });
       setStep("preview");
@@ -143,11 +155,11 @@ export default function MonthlyMenuEvent({
               <div>
                 <p className="text-[11px] font-semibold text-primary">MONTHLY MENU</p>
                 <h2 className="text-[20px] font-extrabold text-text-primary">
-                  {status?.title ?? "지난달 메뉴판"}
+                  {status?.title ?? "지난달의 메뉴판"}
                 </h2>
               </div>
               <button
-                onClick={close}
+                onClick={requestClose}
                 className="ml-auto rounded-full p-2 hover:bg-bg"
                 aria-label="닫기"
               >
@@ -165,13 +177,11 @@ export default function MonthlyMenuEvent({
                   전월 기록을 불러오지 못했어요. 잠시 후 화면을 새로고침해 주세요.
                 </p>
               ) : step === "preview" && collage ? (
-                <CollagePreview imageUrl={collage.objectUrl} title={status.title} />
+                <CollagePreview imageUrl={collage.objectUrl} title={status.collageTitle} />
               ) : step === "edit" ? (
                 <MenuEditView
                   records={selectedRecords}
                   menus={menus}
-                  remainingGenerations={status.remainingGenerations}
-                  isUnlimited={status.isUnlimited}
                   onMenuChange={changeMenu}
                 />
               ) : (
@@ -203,6 +213,11 @@ export default function MonthlyMenuEvent({
               onShare={() => void share()}
             />
           </div>
+          <CloseConfirmModal
+            isOpen={isCloseConfirmOpen}
+            onKeepViewing={() => setIsCloseConfirmOpen(false)}
+            onClose={close}
+          />
         </div>,
         document.body
       )}

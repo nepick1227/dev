@@ -1,12 +1,9 @@
 import Input from "@/components/ui/Input";
 import { MAX_RECOMMENDED_MENU_LENGTH, type MonthlyMenuRecord } from "@/lib/monthly-menu";
-import GenerationNotice from "./generation-notice";
 
 interface MenuEditViewProps {
   records: MonthlyMenuRecord[];
   menus: Record<number, string>;
-  remainingGenerations: number;
-  isUnlimited: boolean;
   onMenuChange: (recordId: number, menu: string) => void;
 }
 
@@ -14,8 +11,6 @@ interface MenuEditViewProps {
 export default function MenuEditView({
   records,
   menus,
-  remainingGenerations,
-  isUnlimited,
   onMenuChange,
 }: MenuEditViewProps) {
   return (
@@ -57,10 +52,6 @@ export default function MenuEditView({
           </li>
         ))}
       </ul>
-
-      <div className="mt-4">
-        <GenerationNotice remaining={remainingGenerations} isUnlimited={isUnlimited} />
-      </div>
     </>
   );
 }

@@ -82,7 +82,10 @@ export function formatMonthlyMenuDate(isoDate: string) {
 export interface MonthlyMenuStatus {
   sourceMonth: string;
   monthLabel: string;
+  /** 화면 제목. 예: "10월의 메뉴판" */
   title: string;
+  /** 이미지에 그리는 제목. 예: "리나의 10월 메뉴판" */
+  collageTitle: string;
   records: MonthlyMenuRecord[];
   generationCount: number;
   remainingGenerations: number;

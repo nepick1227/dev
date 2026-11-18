@@ -98,7 +98,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     sourceMonth: month.sourceMonth,
     monthLabel: month.monthLabel,
-    title: formatMonthlyMenuTitle(month.monthLabel, profile?.nickname),
+    title: `${month.monthLabel}의 메뉴판`,
+    collageTitle: formatMonthlyMenuTitle(month.monthLabel, profile?.nickname),
     records,
     generationCount,
     remainingGenerations,
