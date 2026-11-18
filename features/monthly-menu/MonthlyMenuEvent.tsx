@@ -134,8 +134,9 @@ export default function MonthlyMenuEvent({
     } catch (buildError) {
       const message = buildError instanceof Error ? buildError.message : PHOTO_LOAD_ERROR;
       setError(message);
-      // 시트를 오래 열어 두면 사진 signed URL(1시간)이 만료되므로, 다시 시도할 때 쓸 새 URL을 받아 둔다
-      if (message === PHOTO_LOAD_ERROR) void fetchStatus();
+      // 사진 실패: signed URL(1시간) 만료일 수 있어 새 URL을 받아 둔다
+      // 그 밖의 실패(횟수 초과 등): 화면의 남은 횟수를 서버 값으로 맞춘다
+      void fetchStatus();
     }
   }, [build, fetchStatus, menus, selectedRecords, status]);
 
@@ -200,12 +201,17 @@ export default function MonthlyMenuEvent({
               selectedCount={selectedIds.length}
               canMake={canGenerate}
               canStartOver={canGenerate}
+              hasCollage={collage !== null}
               isBuilding={isBuilding}
               isSharing={isSharing}
               onNext={() => setStep("edit")}
               onBack={() => {
                 setError("");
                 setStep("select");
+              }}
+              onBackToPreview={() => {
+                setError("");
+                setStep("preview");
               }}
               onMake={() => void makeCollage()}
               onEditMenus={() => setStep("edit")}

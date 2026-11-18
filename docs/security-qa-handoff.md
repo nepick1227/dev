@@ -99,6 +99,20 @@ where routine_schema = 'public'
   );
 ```
 
+```sql
+-- 20261118000000 적용 확인: 월간 메뉴판 한 달 3회
+select pg_get_constraintdef(oid)
+from pg_constraint
+where conrelid = 'public.monthly_menu_usage'::regclass
+  and contype = 'c'
+  and pg_get_constraintdef(oid) like '%generation_count%';
+-- 기대값: CHECK (((generation_count >= 0) AND (generation_count <= 3)))
+
+select position('generation_count < 3' in pg_get_functiondef('public.claim_monthly_menu_generation(date)'::regprocedure)) > 0
+  as is_three_generations;
+-- 기대값: true
+```
+
 ## 운영 QA 체크리스트
 
 - 로그인: 카카오, 구글, 네이버 로그인 성공/실패 흐름 확인

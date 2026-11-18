@@ -53,7 +53,7 @@ export async function drawMonthlyMenuCollage(title: string, items: CollageItem[]
   context.fillText(BRAND_TEXT, MARGIN_X, SAFE_TOP + 30);
 
   context.fillStyle = COLOR.textPrimary;
-  context.font = `900 ${fitFontSize(context, title, 900, 84, 56, CONTENT_WIDTH)}px ${FONT}`;
+  context.font = `900 ${fitFontSize(context, title, 900, 84, 40, CONTENT_WIDTH)}px ${FONT}`;
   context.fillText(title, MARGIN_X, SAFE_TOP + 118);
 
   context.fillStyle = COLOR.primary;

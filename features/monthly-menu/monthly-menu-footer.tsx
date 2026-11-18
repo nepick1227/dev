@@ -8,10 +8,13 @@ interface MonthlyMenuFooterProps {
   /** 이번 달 남은 횟수가 있는지 */
   canMake: boolean;
   canStartOver: boolean;
+  /** 이미 만든 메뉴판이 있어 횟수 차감 없이 미리보기로 돌아갈 수 있는지 */
+  hasCollage: boolean;
   isBuilding: boolean;
   isSharing: boolean;
   onNext: () => void;
   onBack: () => void;
+  onBackToPreview: () => void;
   onMake: () => void;
   onEditMenus: () => void;
   onStartOver: () => void;
@@ -23,10 +26,12 @@ export default function MonthlyMenuFooter({
   selectedCount,
   canMake,
   canStartOver,
+  hasCollage,
   isBuilding,
   isSharing,
   onNext,
   onBack,
+  onBackToPreview,
   onMake,
   onEditMenus,
   onStartOver,
@@ -50,16 +55,30 @@ export default function MonthlyMenuFooter({
           <Button size="md" fullWidth onClick={onMake} isLoading={isBuilding} disabled={!canMake}>
             메뉴판 만들기 (1회 차감)
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            fullWidth
-            onClick={onBack}
-            disabled={isBuilding}
-            className="h-11 whitespace-nowrap"
-          >
-            내픽 다시 고르기
-          </Button>
+          <div className="flex gap-2.5">
+            {hasCollage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                onClick={onBackToPreview}
+                disabled={isBuilding}
+                className="h-11 whitespace-nowrap"
+              >
+                미리보기로 돌아가기
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              fullWidth
+              onClick={onBack}
+              disabled={isBuilding}
+              className="h-11 whitespace-nowrap"
+            >
+              내픽 다시 고르기
+            </Button>
+          </div>
         </div>
       )}
 
