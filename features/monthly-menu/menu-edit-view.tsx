@@ -1,14 +1,23 @@
 import Input from "@/components/ui/Input";
 import { MAX_RECOMMENDED_MENU_LENGTH, type MonthlyMenuRecord } from "@/lib/monthly-menu";
+import GenerationNotice from "./generation-notice";
 
 interface MenuEditViewProps {
   records: MonthlyMenuRecord[];
   menus: Record<number, string>;
+  remainingGenerations: number;
+  isUnlimited: boolean;
   onMenuChange: (recordId: number, menu: string) => void;
 }
 
 /** 고른 기록마다 가게명·위치(자동, 수정 불가)와 추천 메뉴(선택 입력)를 보여 준다 */
-export default function MenuEditView({ records, menus, onMenuChange }: MenuEditViewProps) {
+export default function MenuEditView({
+  records,
+  menus,
+  remainingGenerations,
+  isUnlimited,
+  onMenuChange,
+}: MenuEditViewProps) {
   return (
     <>
       <div className="mb-4">
@@ -48,6 +57,10 @@ export default function MenuEditView({ records, menus, onMenuChange }: MenuEditV
           </li>
         ))}
       </ul>
+
+      <div className="mt-4">
+        <GenerationNotice remaining={remainingGenerations} isUnlimited={isUnlimited} />
+      </div>
     </>
   );
 }

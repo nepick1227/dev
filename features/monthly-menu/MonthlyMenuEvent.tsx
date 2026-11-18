@@ -11,7 +11,7 @@ import MenuEditView from "./menu-edit-view";
 import MonthlyMenuFooter, { type MonthlyMenuStep } from "./monthly-menu-footer";
 import MonthlyMenuLauncher from "./monthly-menu-launcher";
 import RecordSelectionView from "./record-selection-view";
-import { PHOTO_LOAD_ERROR, toRecordKey, useMonthlyMenuCollage } from "./use-monthly-menu-collage";
+import { PHOTO_LOAD_ERROR, useMonthlyMenuCollage } from "./use-monthly-menu-collage";
 
 interface MonthlyMenuEventProps {
   autoOpen?: boolean;
@@ -39,7 +39,7 @@ export default function MonthlyMenuEvent({
       canGenerate: claim.isUnlimited || claim.remainingGenerations > 0,
     } : current);
   }, []);
-  const { collage, claimedKey, isBuilding, isSharing, build, reset, share } = useMonthlyMenuCollage(handleClaimed);
+  const { collage, isBuilding, isSharing, build, reset, share } = useMonthlyMenuCollage(handleClaimed);
 
   const fetchStatus = useCallback(async () => {
     setIsStatusLoading(true);
@@ -76,7 +76,6 @@ export default function MonthlyMenuEvent({
     return selectedIds.flatMap((id) => byId.get(id) ?? []);
   }, [selectedIds, status]);
 
-  const isRedraw = claimedKey !== null && claimedKey === toRecordKey(selectedIds);
   const canGenerate = Boolean(status?.canGenerate);
 
   const startOver = useCallback(() => {
@@ -144,7 +143,7 @@ export default function MonthlyMenuEvent({
               <div>
                 <p className="text-[11px] font-semibold text-primary">MONTHLY MENU</p>
                 <h2 className="text-[20px] font-extrabold text-text-primary">
-                  {status?.title ?? "전월의 메뉴판"}
+                  {status?.title ?? "지난달 메뉴판"}
                 </h2>
               </div>
               <button
@@ -168,7 +167,13 @@ export default function MonthlyMenuEvent({
               ) : step === "preview" && collage ? (
                 <CollagePreview imageUrl={collage.objectUrl} title={status.title} />
               ) : step === "edit" ? (
-                <MenuEditView records={selectedRecords} menus={menus} onMenuChange={changeMenu} />
+                <MenuEditView
+                  records={selectedRecords}
+                  menus={menus}
+                  remainingGenerations={status.remainingGenerations}
+                  isUnlimited={status.isUnlimited}
+                  onMenuChange={changeMenu}
+                />
               ) : (
                 <RecordSelectionView status={status} selectedIds={selectedIds} onToggle={toggleRecord} />
               )}
@@ -183,9 +188,8 @@ export default function MonthlyMenuEvent({
             <MonthlyMenuFooter
               step={step}
               selectedCount={selectedIds.length}
-              canMake={canGenerate || isRedraw}
+              canMake={canGenerate}
               canStartOver={canGenerate}
-              isRedraw={isRedraw}
               isBuilding={isBuilding}
               isSharing={isSharing}
               onNext={() => setStep("edit")}

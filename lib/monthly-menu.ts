@@ -13,8 +13,14 @@ export interface MonthlyMenuClaimResult {
   isUnlimited: boolean;
 }
 
-export const MONTHLY_MENU_MAX_GENERATIONS = 2;
+export const MONTHLY_MENU_MAX_GENERATIONS = 3;
 export const MAX_RECOMMENDED_MENU_LENGTH = 20;
+
+/** 예: "리나의 10월 메뉴판". 닉네임이 없으면 "10월 메뉴판" */
+export function formatMonthlyMenuTitle(monthLabel: string, nickname: string | null | undefined) {
+  const name = nickname?.trim();
+  return name ? `${name}의 ${monthLabel} 메뉴판` : `${monthLabel} 메뉴판`;
+}
 
 export function formatStoreArea(address: string | null | undefined) {
   if (!address) return "";

@@ -53,7 +53,7 @@ export async function drawMonthlyMenuCollage(title: string, items: CollageItem[]
   context.fillText(BRAND_TEXT, MARGIN_X, SAFE_TOP + 30);
 
   context.fillStyle = COLOR.textPrimary;
-  context.font = `900 84px ${FONT}`;
+  context.font = `900 ${fitFontSize(context, title, 900, 84, 56, CONTENT_WIDTH)}px ${FONT}`;
   context.fillText(title, MARGIN_X, SAFE_TOP + 118);
 
   context.fillStyle = COLOR.primary;
@@ -171,6 +171,22 @@ function drawLabels(
     context.font = `700 30px ${FONT}`;
     drawWrappedText(context, `추천 메뉴 · ${menu}`, x, nextY, maxWidth, 38, 2);
   }
+}
+
+/** 닉네임이 길어도 제목이 한 줄에 들어가도록 maxSize부터 minSize까지 줄여 본다 */
+function fitFontSize(
+  context: CanvasRenderingContext2D,
+  text: string,
+  weight: number,
+  maxSize: number,
+  minSize: number,
+  maxWidth: number
+) {
+  for (let size = maxSize; size > minSize; size -= 2) {
+    context.font = `${weight} ${size}px ${FONT}`;
+    if (context.measureText(text).width <= maxWidth) return size;
+  }
+  return minSize;
 }
 
 /** 글꼴 파일을 미리 받기 위해 그릴 글자를 모은다 */

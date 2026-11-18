@@ -87,7 +87,11 @@ export async function POST(req: NextRequest) {
   if (claimError) {
     const isLimit = claimError.message.includes("monthly_menu_limit_reached");
     return NextResponse.json(
-      { error: isLimit ? "이번 달 생성 횟수 2회를 모두 사용했습니다." : "생성 횟수를 확인하지 못했습니다." },
+      {
+        error: isLimit
+          ? `이번 달 생성 횟수 ${MONTHLY_MENU_MAX_GENERATIONS}회를 모두 사용했습니다.`
+          : "생성 횟수를 확인하지 못했습니다.",
+      },
       { status: isLimit ? 429 : 500 }
     );
   }

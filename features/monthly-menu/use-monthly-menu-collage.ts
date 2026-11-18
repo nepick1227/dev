@@ -13,11 +13,6 @@ interface Collage {
   file: File;
 }
 
-/** 기록 조합 비교용 키. 고른 순서와 무관하다 */
-export function toRecordKey(recordIds: number[]) {
-  return [...recordIds].sort((a, b) => a - b).join(",");
-}
-
 interface BuildParams {
   title: string;
   items: CollageItem[];
@@ -25,12 +20,12 @@ interface BuildParams {
 
 /**
  * 콜라주를 먼저 그린 뒤 성공했을 때만 서버에서 횟수를 차감한다.
- * 같은 기록 조합으로 다시 그리는 경우(추천 메뉴만 수정)는 추가로 차감하지 않는다.
+ * "메뉴판 만들기"를 누를 때마다 1회 차감한다 (추천 메뉴만 고쳐 다시 만들어도 차감).
+ * 공유하기, 화면 이동에서는 차감하지 않는다.
  */
 export function useMonthlyMenuCollage(onClaimed: (result: MonthlyMenuClaimResult) => void) {
   const [collage, setCollage] = useState<Collage | null>(null);
   const [isBuilding, setIsBuilding] = useState(false);
-  const [claimedKey, setClaimedKey] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const isSharingRef = useRef(false);
   const objectUrlRef = useRef<string | null>(null);
@@ -57,40 +52,34 @@ export function useMonthlyMenuCollage(onClaimed: (result: MonthlyMenuClaimResult
       }
 
       const recordIds = items.map((item) => item.record.id);
-      const key = toRecordKey(recordIds);
-      if (claimedKey !== key) {
-        let response: Response;
-        try {
-          response = await fetch("/api/monthly-menu/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ recordIds }),
-          });
-        } catch {
-          // 브라우저 원문 오류("Failed to fetch", "Load failed")를 화면에 보이지 않는다
-          throw new Error(NETWORK_ERROR);
-        }
-        const data = await response.json().catch(() => ({})) as Partial<MonthlyMenuClaimResult> & { error?: string };
-        if (!response.ok) throw new Error(data.error ?? GENERATE_ERROR);
-
-        setClaimedKey(key);
-        pushGtmEvent("monthly_menu_generate");
-        onClaimed({
-          remainingGenerations: data.remainingGenerations ?? 0,
-          isUnlimited: Boolean(data.isUnlimited),
+      let response: Response;
+      try {
+        response = await fetch("/api/monthly-menu/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recordIds }),
         });
+      } catch {
+        // 브라우저 원문 오류("Failed to fetch", "Load failed")를 화면에 보이지 않는다
+        throw new Error(NETWORK_ERROR);
       }
+      const data = await response.json().catch(() => ({})) as Partial<MonthlyMenuClaimResult> & { error?: string };
+      if (!response.ok) throw new Error(data.error ?? GENERATE_ERROR);
+
+      pushGtmEvent("monthly_menu_generate");
+      onClaimed({
+        remainingGenerations: data.remainingGenerations ?? 0,
+        isUnlimited: Boolean(data.isUnlimited),
+      });
 
       const file = new File([blob], `${title.replace(/\s/g, "-")}.png`, { type: "image/png" });
       replaceCollage({ objectUrl: URL.createObjectURL(blob), file });
     } finally {
       setIsBuilding(false);
     }
-  }, [claimedKey, onClaimed, replaceCollage]);
+  }, [onClaimed, replaceCollage]);
 
-  /** 사진을 다시 고르면 새로 만드는 것이므로 차감 기록도 비운다 */
   const reset = useCallback(() => {
-    setClaimedKey(null);
     replaceCollage(null);
   }, [replaceCollage]);
 
@@ -110,5 +99,5 @@ export function useMonthlyMenuCollage(onClaimed: (result: MonthlyMenuClaimResult
     }
   }, [collage]);
 
-  return { collage, claimedKey, isBuilding, isSharing, build, reset, share };
+  return { collage, isBuilding, isSharing, build, reset, share };
 }

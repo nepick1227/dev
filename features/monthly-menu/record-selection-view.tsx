@@ -1,4 +1,9 @@
-import { formatMonthlyMenuDate, type MonthlyMenuStatus } from "@/lib/monthly-menu";
+import {
+  formatMonthlyMenuDate,
+  MONTHLY_MENU_MAX_GENERATIONS,
+  type MonthlyMenuStatus,
+} from "@/lib/monthly-menu";
+import GenerationNotice from "./generation-notice";
 
 interface RecordSelectionViewProps {
   status: MonthlyMenuStatus;
@@ -28,7 +33,7 @@ export default function RecordSelectionView({
       <div className="flex min-h-72 flex-col items-center justify-center text-center">
         <p className="text-[16px] font-bold text-text-primary">이번 달 메뉴판을 모두 만들었어요</p>
         <p className="mt-2 text-[13px] text-text-secondary">
-          월간 메뉴판은 한 달에 2번까지 생성할 수 있습니다.
+          월간 메뉴판은 한 달에 {MONTHLY_MENU_MAX_GENERATIONS}번까지 생성할 수 있습니다.
         </p>
       </div>
     );
@@ -39,18 +44,18 @@ export default function RecordSelectionView({
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
           <p className="text-[15px] font-bold text-text-primary">
-            사진 기록을 2~3개 골라주세요
+            내픽 기록을 2~3개 골라주세요
           </p>
           <p className="mt-1 text-[12px] text-text-secondary">
-            전월 이미지 기록 {status.records.length}개 · {status.isUnlimited
-              ? "개발 환경 무제한"
-              : `이번 달 ${status.remainingGenerations}회 남음`}
+            전월 이미지 기록 {status.records.length}개
           </p>
         </div>
         <span className="shrink-0 text-[13px] font-bold text-primary">
           {selectedIds.length}/3
         </span>
       </div>
+
+      <GenerationNotice remaining={status.remainingGenerations} isUnlimited={status.isUnlimited} />
 
       <div className="grid auto-rows-fr grid-cols-2 items-stretch gap-3 sm:grid-cols-3">
         {status.records.map((record) => {

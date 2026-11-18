@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
+  formatMonthlyMenuTitle,
   formatStoreArea,
   getPreviousMonthWindow,
   MONTHLY_MENU_MAX_GENERATIONS,
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
   }
 
   const month = getPreviousMonthWindow();
-  const [{ data: recordRows, error: recordsError }, { data: usage }] = await Promise.all([
+  const [{ data: recordRows, error: recordsError }, { data: usage }, { data: profile }] = await Promise.all([
     supabase
       .from("records")
       .select("id, visited_at, comment, image_url, stores(name, address)")
@@ -75,6 +76,11 @@ export async function GET(req: NextRequest) {
       .select("prompt_seen_at, generation_count")
       .eq("user_id", user.id)
       .eq("source_month", month.sourceMonth)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("nickname")
+      .eq("id", user.id)
       .maybeSingle(),
   ]);
 
@@ -92,7 +98,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     sourceMonth: month.sourceMonth,
     monthLabel: month.monthLabel,
-    title: `${month.monthLabel}의 메뉴판`,
+    title: formatMonthlyMenuTitle(month.monthLabel, profile?.nickname),
     records,
     generationCount,
     remainingGenerations,

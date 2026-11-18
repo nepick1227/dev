@@ -5,10 +5,9 @@ export type MonthlyMenuStep = "select" | "edit" | "preview";
 interface MonthlyMenuFooterProps {
   step: MonthlyMenuStep;
   selectedCount: number;
-  /** 남은 횟수가 있거나, 이미 차감한 같은 기록 조합이라 다시 그리기만 하면 되는지 */
+  /** 이번 달 남은 횟수가 있는지 */
   canMake: boolean;
   canStartOver: boolean;
-  isRedraw: boolean;
   isBuilding: boolean;
   isSharing: boolean;
   onNext: () => void;
@@ -24,7 +23,6 @@ export default function MonthlyMenuFooter({
   selectedCount,
   canMake,
   canStartOver,
-  isRedraw,
   isBuilding,
   isSharing,
   onNext,
@@ -48,12 +46,19 @@ export default function MonthlyMenuFooter({
       )}
 
       {step === "edit" && (
-        <div className="flex gap-2.5">
-          <Button variant="secondary" size="md" fullWidth onClick={onBack} disabled={isBuilding}>
-            다시 고르기
-          </Button>
+        <div className="flex flex-col gap-2.5">
           <Button size="md" fullWidth onClick={onMake} isLoading={isBuilding} disabled={!canMake}>
-            {isRedraw ? "다시 그리기" : "메뉴판 만들기"}
+            메뉴판 만들기 (1회 차감)
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            fullWidth
+            onClick={onBack}
+            disabled={isBuilding}
+            className="h-11 whitespace-nowrap"
+          >
+            내픽 다시 고르기
           </Button>
         </div>
       )}
@@ -64,11 +69,24 @@ export default function MonthlyMenuFooter({
             공유하기
           </Button>
           <div className="flex gap-2.5">
-            <Button variant="secondary" size="md" fullWidth onClick={onEditMenus}>
+            <Button
+              variant="secondary"
+              size="sm"
+              fullWidth
+              onClick={onEditMenus}
+              className="h-11 whitespace-nowrap"
+            >
               추천 메뉴 고치기
             </Button>
-            <Button variant="secondary" size="md" fullWidth onClick={onStartOver} disabled={!canStartOver}>
-              사진 다시 고르기
+            <Button
+              variant="secondary"
+              size="sm"
+              fullWidth
+              onClick={onStartOver}
+              disabled={!canStartOver}
+              className="h-11 whitespace-nowrap"
+            >
+              내픽 다시 고르기
             </Button>
           </div>
         </div>

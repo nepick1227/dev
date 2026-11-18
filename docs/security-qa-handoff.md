@@ -41,6 +41,7 @@
 - `20260628006000_lock_store_inserts.sql`: 브라우저 직접 store insert 차단
 - `20260628007000_harden_store_rankings_view.sql`: `store_rankings` view `security_invoker`
 - `20260628008000_harden_select_policies.sql`: select 정책 role 명시
+- `20261118000000_monthly_menu_three_generations.sql`: 월간 메뉴판 한 달 생성 횟수 2회 → 3회 (CHECK 제약과 `claim_monthly_menu_generation` 교체). **이 PR을 운영에 배포하기 전에 적용**해야 3번째 생성이 막히지 않음
 
 ## 운영 DB 확인 SQL
 
