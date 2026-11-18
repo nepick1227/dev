@@ -15,7 +15,7 @@ export default function CollagePreview({ imageUrl, title }: CollagePreviewProps)
       />
       <p className="mt-3 text-center text-[12px] leading-relaxed text-text-description">
         공유 창이 뜨지 않으면 이미지가 저장돼요.<br />
-        저장도 안 되면 이미지를 길게 눌러 저장해 주세요.
+        저장이 안 되면 이미지를 길게 눌러 저장해 주세요.
       </p>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Spinner from "@/components/ui/Spinner";
 import { CloseIcon } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
@@ -135,7 +136,8 @@ export default function MonthlyMenuEvent({
         <MonthlyMenuLauncher status={status} disabled={isStatusLoading} onOpen={open} />
       )}
 
-      {isOpen && (
+      {/* PC에서는 내 픽 패널 안에서 렌더링되므로 body로 올려 패널 열고 닫기 버튼 등 지도 위 요소보다 위에 보이게 한다 */}
+      {isOpen && createPortal(
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(20,20,24,0.4)] p-4 md:bg-[rgba(20,20,24,0.45)]">
           <div className="relative flex max-h-[92dvh] w-full max-w-[760px] flex-col overflow-hidden rounded-[20px] bg-surface shadow-[0_16px_40px_rgba(23,25,28,0.16)]">
             <header className="flex shrink-0 items-center border-b border-divider px-5 py-4">
@@ -197,7 +199,8 @@ export default function MonthlyMenuEvent({
               onShare={() => void share()}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
