@@ -21,11 +21,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |------|-------------|----------------|
 | 기획 | 사람 + `write-spec` 스킬 | Notion → GitHub 이슈 |
 | 개발 | 공식 `feature-dev` 플러그인 | feature 브랜치, PR |
-| 코드 리뷰 | 공식 `code-review` 플러그인 (`/code-review`) — 개발한 대화창이 아닌 새 세션에서 실행 | PR 댓글 |
-| QA | `.claude/agents/qa.md` | PR 댓글 |
+| 코드 리뷰 | develop 대상 PR이 열리면 GitHub Action이 자동 실행(`.github/workflows/claude-pr-review.yml`). 직접 돌릴 때는 공식 `code-review` 플러그인(`/code-review`)을 개발한 대화창이 아닌 새 세션에서 실행 | PR 댓글 |
+| QA | 위 Action이 `.claude/agents/qa.md`대로 자동 실행. 직접 돌릴 때는 "qa 에이전트로 PR #번호 검증해 줘" | PR 댓글 |
 | 배포 확인 | `.claude/agents/deploy-check.md` | PR 댓글 또는 이슈 |
 | 운영 모니터링 | `.claude/agents/ops-monitor.md` (주 1회) | 이슈 `주간 운영 점검 YYYY-MM-DD` |
 | 콘텐츠 | `.claude/agents/content-writer.md` (주 1회) | `content/drafts/` PR |
+
+**자동 리뷰·QA 다시 돌리기:** PR에 `re-review` 라벨을 붙이면 다시 실행됩니다. draft PR은 건너뛰고 "Ready for review"로 바꿀 때 실행됩니다. 저장소 Secret `ANTHROPIC_API_KEY`가 있어야 동작하며, 실행할 때마다 API 비용이 듭니다.
 
 **에이전트가 하지 않는 일 (사람만 함):**
 - `main` 머지, 운영 배포, 롤백
