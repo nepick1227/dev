@@ -4,20 +4,21 @@ export interface MonthlyMenuRecord {
   comment: string;
   imageUrl: string;
   storeName: string;
+  /** 지번 주소 앞 두 마디 (예: "서울 성동구"). 주소가 없으면 빈 문자열 */
+  storeArea: string;
 }
 
-export interface MonthlyMenuGeneratedItem extends MonthlyMenuRecord {
-  caption: string;
-}
-
-export interface MonthlyMenuResult {
-  title: string;
-  subtitle: string;
-  sourceMonth: string;
+export interface MonthlyMenuClaimResult {
   remainingGenerations: number;
   isUnlimited: boolean;
-  artworkUrl: string;
-  items: MonthlyMenuGeneratedItem[];
+}
+
+export const MONTHLY_MENU_MAX_GENERATIONS = 2;
+export const MAX_RECOMMENDED_MENU_LENGTH = 20;
+
+export function formatStoreArea(address: string | null | undefined) {
+  if (!address) return "";
+  return address.trim().split(/\s+/).slice(0, 2).join(" ");
 }
 
 interface MonthWindow {
@@ -69,4 +70,17 @@ export function formatMonthlyMenuDate(isoDate: string) {
     month: "numeric",
     day: "numeric",
   }).format(new Date(isoDate)).replace(/\s/g, "");
+}
+
+/** GET /api/monthly-menu 응답 */
+export interface MonthlyMenuStatus {
+  sourceMonth: string;
+  monthLabel: string;
+  title: string;
+  records: MonthlyMenuRecord[];
+  generationCount: number;
+  remainingGenerations: number;
+  isUnlimited: boolean;
+  canGenerate: boolean;
+  shouldAutoOpen: boolean;
 }

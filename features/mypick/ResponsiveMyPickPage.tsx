@@ -6,6 +6,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import Spinner from "@/components/ui/Spinner";
 import AuthGate from "@/features/auth/AuthGate";
 import MapView from "@/features/home/MapView";
+import MonthlyMenuEvent from "@/features/monthly-menu/MonthlyMenuEvent";
 import Timeline from "./Timeline";
 import type { RecordWithStore } from "@/types/database";
 
@@ -52,7 +53,10 @@ export default function ResponsiveMyPickPage({
       {isAuthenticated && <Header title="내 픽" size="large" />}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {isAuthenticated ? (
-          <Timeline initialRecords={initialRecords} />
+          <>
+            <MonthlyMenuEvent showLauncher />
+            <Timeline initialRecords={initialRecords} />
+          </>
         ) : (
           <AuthGate nextPath="/mypick" />
         )}
