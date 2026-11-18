@@ -1,4 +1,5 @@
 import type { MonthlyMenuRecord } from "@/lib/monthly-menu";
+import { drawCoverImage, drawWrappedText, loadCanvasImage, loadFonts } from "./canvas-utils";
 
 export interface CollageItem {
   record: MonthlyMenuRecord;
@@ -10,11 +11,14 @@ const WIDTH = 1080;
 const HEIGHT = 1920;
 const MARGIN_X = 72;
 const CONTENT_WIDTH = WIDTH - MARGIN_X * 2;
-// 인스타그램 스토리 UI(상단 프로필, 하단 답장 입력)에 가리지 않도록 중요한 글자는 이 사이에 둔다
+// 인스타그램 스토리 UI(상단 프로필, 하단 답장 입력)에 가리지 않도록 위아래 약 250px에는 글자를 두지 않는다
 const SAFE_TOP = 260;
 const CONTENT_TOP = 460;
-const CONTENT_BOTTOM = 1610;
-const FOOTER_LINE_Y = 1640;
+const CONTENT_BOTTOM = 1580;
+const FOOTER_LINE_Y = 1610;
+const FOOTER_TEXT_Y = 1650;
+const FOOTER_TEXT = "나의 지난달 맛집 기록";
+const BRAND_TEXT = "NEPICK MONTHLY MENU";
 const FONT = '"Pretendard Variable", Pretendard, -apple-system, sans-serif';
 
 const COLOR = {
@@ -31,7 +35,7 @@ const COLOR = {
 export async function drawMonthlyMenuCollage(title: string, items: CollageItem[]) {
   const [images] = await Promise.all([
     Promise.all(items.map((item) => loadCanvasImage(item.record.imageUrl))),
-    loadFonts(),
+    loadFonts(FONT, ["400", "500", "700", "800", "900"], collectText(title, items)),
   ]);
 
   const canvas = document.createElement("canvas");
@@ -46,7 +50,7 @@ export async function drawMonthlyMenuCollage(title: string, items: CollageItem[]
 
   context.fillStyle = COLOR.primary;
   context.font = `700 26px ${FONT}`;
-  context.fillText("NEPICK MONTHLY MENU", MARGIN_X, SAFE_TOP + 30);
+  context.fillText(BRAND_TEXT, MARGIN_X, SAFE_TOP + 30);
 
   context.fillStyle = COLOR.textPrimary;
   context.font = `900 84px ${FONT}`;
@@ -70,11 +74,11 @@ export async function drawMonthlyMenuCollage(title: string, items: CollageItem[]
 
   context.fillStyle = COLOR.primary;
   context.font = `800 26px ${FONT}`;
-  context.fillText("NEPICK", MARGIN_X, FOOTER_LINE_Y + 44);
+  context.fillText("NEPICK", MARGIN_X, FOOTER_TEXT_Y);
   context.fillStyle = COLOR.textTertiary;
   context.textAlign = "right";
   context.font = `400 24px ${FONT}`;
-  context.fillText("나의 지난달 맛집 기록", WIDTH - MARGIN_X, FOOTER_LINE_Y + 44);
+  context.fillText(FOOTER_TEXT, WIDTH - MARGIN_X, FOOTER_TEXT_Y);
   context.textAlign = "left";
 
   return new Promise<Blob>((resolve, reject) => {
@@ -169,81 +173,8 @@ function drawLabels(
   }
 }
 
-/** canvas는 화면에 아직 안 쓰인 굵기를 자동으로 받지 않으므로 미리 불러 둔다. 실패하면 대체 글꼴로 그린다 */
-async function loadFonts() {
-  if (!document.fonts) return;
-  await Promise.allSettled(
-    ["400", "500", "700", "800", "900"].map((weight) => document.fonts.load(`${weight} 40px ${FONT}`))
-  );
-}
-
-async function loadCanvasImage(url: string) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("image_fetch_failed");
-  const blob = await response.blob();
-  const objectUrl = URL.createObjectURL(blob);
-
-  try {
-    const image = new Image();
-    image.src = objectUrl;
-    await image.decode();
-    return image;
-  } finally {
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-  }
-}
-
-/** 칸을 꽉 채우도록 가운데 기준으로 잘라 그린다 */
-function drawCoverImage(
-  context: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number
-) {
-  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
-  const sourceWidth = width / scale;
-  const sourceHeight = height / scale;
-  const sourceX = (image.naturalWidth - sourceWidth) / 2;
-  const sourceY = (image.naturalHeight - sourceHeight) / 2;
-  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
-}
-
-/** 글자 단위로 줄바꿈하고 maxLines를 넘으면 마지막 줄 끝을 "…"로 자른다. 그린 줄 수를 돌려준다 */
-function drawWrappedText(
-  context: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number,
-  maxLines: number
-) {
-  const lines: string[] = [];
-  let line = "";
-
-  for (const character of Array.from(text)) {
-    const nextLine = line + character;
-    if (context.measureText(nextLine).width > maxWidth && line) {
-      lines.push(line.trimEnd());
-      // 줄바꿈한 줄이 공백으로 시작하지 않게 한다
-      line = character.trim() ? character : "";
-    } else {
-      line = nextLine;
-    }
-  }
-  if (line) lines.push(line);
-
-  const visible = lines.slice(0, maxLines);
-  if (lines.length > maxLines) {
-    let last = visible[maxLines - 1];
-    while (last && context.measureText(`${last}…`).width > maxWidth) {
-      last = Array.from(last).slice(0, -1).join("");
-    }
-    visible[maxLines - 1] = `${last}…`;
-  }
-
-  visible.forEach((value, index) => context.fillText(value, x, y + index * lineHeight));
-  return Math.max(visible.length, 1);
+/** 글꼴 파일을 미리 받기 위해 그릴 글자를 모은다 */
+function collectText(title: string, items: CollageItem[]) {
+  const labels = items.flatMap((item) => [item.record.storeName, item.record.storeArea, item.menu]);
+  return [BRAND_TEXT, title, FOOTER_TEXT, "NEPICK 추천 메뉴 · …", ...labels].join("");
 }

@@ -10,6 +10,7 @@ interface MonthlyMenuFooterProps {
   canStartOver: boolean;
   isRedraw: boolean;
   isBuilding: boolean;
+  isSharing: boolean;
   onNext: () => void;
   onBack: () => void;
   onMake: () => void;
@@ -25,6 +26,7 @@ export default function MonthlyMenuFooter({
   canStartOver,
   isRedraw,
   isBuilding,
+  isSharing,
   onNext,
   onBack,
   onMake,
@@ -58,7 +60,7 @@ export default function MonthlyMenuFooter({
 
       {step === "preview" && (
         <div className="flex flex-col gap-2.5">
-          <Button size="md" fullWidth onClick={onShare}>
+          <Button size="md" fullWidth onClick={onShare} disabled={isSharing}>
             공유하기
           </Button>
           <div className="flex gap-2.5">

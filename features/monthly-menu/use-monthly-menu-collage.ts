@@ -5,6 +5,8 @@ import { drawMonthlyMenuCollage, type CollageItem } from "./draw-collage";
 import { shareOrDownloadImage } from "./share-image";
 
 export const PHOTO_LOAD_ERROR = "사진을 불러오지 못했어요. 다시 시도해 주세요";
+const NETWORK_ERROR = "네트워크 연결을 확인하고 다시 시도해 주세요";
+const GENERATE_ERROR = "메뉴판을 만들지 못했어요. 잠시 후 다시 시도해 주세요";
 
 interface Collage {
   objectUrl: string;
@@ -29,6 +31,8 @@ export function useMonthlyMenuCollage(onClaimed: (result: MonthlyMenuClaimResult
   const [collage, setCollage] = useState<Collage | null>(null);
   const [isBuilding, setIsBuilding] = useState(false);
   const [claimedKey, setClaimedKey] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const isSharingRef = useRef(false);
   const objectUrlRef = useRef<string | null>(null);
 
   const replaceCollage = useCallback((next: Collage | null) => {
@@ -55,13 +59,19 @@ export function useMonthlyMenuCollage(onClaimed: (result: MonthlyMenuClaimResult
       const recordIds = items.map((item) => item.record.id);
       const key = toRecordKey(recordIds);
       if (claimedKey !== key) {
-        const response = await fetch("/api/monthly-menu/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recordIds }),
-        });
+        let response: Response;
+        try {
+          response = await fetch("/api/monthly-menu/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ recordIds }),
+          });
+        } catch {
+          // 브라우저 원문 오류("Failed to fetch", "Load failed")를 화면에 보이지 않는다
+          throw new Error(NETWORK_ERROR);
+        }
         const data = await response.json().catch(() => ({})) as Partial<MonthlyMenuClaimResult> & { error?: string };
-        if (!response.ok) throw new Error(data.error ?? "메뉴판 생성에 실패했습니다.");
+        if (!response.ok) throw new Error(data.error ?? GENERATE_ERROR);
 
         setClaimedKey(key);
         pushGtmEvent("monthly_menu_generate");
@@ -84,13 +94,21 @@ export function useMonthlyMenuCollage(onClaimed: (result: MonthlyMenuClaimResult
     replaceCollage(null);
   }, [replaceCollage]);
 
+  /** 공유 창이 열려 있는 동안 다시 누르면 무시한다 (두 번 눌러 다운로드까지 되는 것 방지) */
   const share = useCallback(async () => {
-    if (!collage) return;
-    const outcome = await shareOrDownloadImage(collage.file, collage.objectUrl);
-    if (outcome !== "cancelled") {
-      pushGtmEvent("monthly_menu_share", { method: outcome === "shared" ? "share_sheet" : "download" });
+    if (!collage || isSharingRef.current) return;
+    isSharingRef.current = true;
+    setIsSharing(true);
+    try {
+      const outcome = await shareOrDownloadImage(collage.file, collage.objectUrl);
+      if (outcome !== "cancelled") {
+        pushGtmEvent("monthly_menu_share", { method: outcome === "shared" ? "share_sheet" : "download" });
+      }
+    } finally {
+      isSharingRef.current = false;
+      setIsSharing(false);
     }
   }, [collage]);
 
-  return { collage, claimedKey, isBuilding, build, reset, share };
+  return { collage, claimedKey, isBuilding, isSharing, build, reset, share };
 }

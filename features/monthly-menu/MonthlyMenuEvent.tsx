@@ -8,8 +8,9 @@ import type { MonthlyMenuClaimResult, MonthlyMenuStatus } from "@/lib/monthly-me
 import CollagePreview from "./collage-preview";
 import MenuEditView from "./menu-edit-view";
 import MonthlyMenuFooter, { type MonthlyMenuStep } from "./monthly-menu-footer";
+import MonthlyMenuLauncher from "./monthly-menu-launcher";
 import RecordSelectionView from "./record-selection-view";
-import { toRecordKey, useMonthlyMenuCollage } from "./use-monthly-menu-collage";
+import { PHOTO_LOAD_ERROR, toRecordKey, useMonthlyMenuCollage } from "./use-monthly-menu-collage";
 
 interface MonthlyMenuEventProps {
   autoOpen?: boolean;
@@ -37,7 +38,7 @@ export default function MonthlyMenuEvent({
       canGenerate: claim.isUnlimited || claim.remainingGenerations > 0,
     } : current);
   }, []);
-  const { collage, claimedKey, isBuilding, build, reset, share } = useMonthlyMenuCollage(handleClaimed);
+  const { collage, claimedKey, isBuilding, isSharing, build, reset, share } = useMonthlyMenuCollage(handleClaimed);
 
   const fetchStatus = useCallback(async () => {
     setIsStatusLoading(true);
@@ -119,34 +120,19 @@ export default function MonthlyMenuEvent({
       });
       setStep("preview");
     } catch (buildError) {
-      setError(buildError instanceof Error ? buildError.message : "메뉴판 생성에 실패했습니다.");
+      const message = buildError instanceof Error ? buildError.message : PHOTO_LOAD_ERROR;
+      setError(message);
+      // 시트를 오래 열어 두면 사진 signed URL(1시간)이 만료되므로, 다시 시도할 때 쓸 새 URL을 받아 둔다
+      if (message === PHOTO_LOAD_ERROR) void fetchStatus();
     }
-  }, [build, menus, selectedRecords, status]);
+  }, [build, fetchStatus, menus, selectedRecords, status]);
 
   if (!showLauncher && !isOpen) return null;
 
   return (
     <>
       {showLauncher && (
-        <div className="app-content-readable shrink-0 px-5 pt-3">
-          <button
-            onClick={open}
-            disabled={isStatusLoading}
-            className="flex w-full items-center justify-between rounded-xl border border-primary/25 bg-primary-soft px-4 py-3 text-left disabled:opacity-60"
-          >
-            <div>
-              <p className="text-[14px] font-bold text-primary">
-                {status?.title ?? "전월의 메뉴판"}
-              </p>
-              <p className="mt-0.5 text-[12px] text-text-secondary">
-                사진 기록 2~3개를 골라 공유 카드를 만들어보세요
-              </p>
-            </div>
-            <span className="text-[12px] font-semibold text-primary">
-              {status ? (status.isUnlimited ? "DEV 무제한" : `${status.remainingGenerations}/2회 남음`) : "확인"}
-            </span>
-          </button>
-        </div>
+        <MonthlyMenuLauncher status={status} disabled={isStatusLoading} onOpen={open} />
       )}
 
       {isOpen && (
@@ -199,6 +185,7 @@ export default function MonthlyMenuEvent({
               canStartOver={canGenerate}
               isRedraw={isRedraw}
               isBuilding={isBuilding}
+              isSharing={isSharing}
               onNext={() => setStep("edit")}
               onBack={() => {
                 setError("");

@@ -12,8 +12,11 @@ export async function shareOrDownloadImage(file: File, objectUrl: string): Promi
       await navigator.share({ files: [file] });
       return "shared";
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return "cancelled";
-      // 권한 거부 등 그 밖의 실패는 다운로드로 대신한다
+      // AbortError: 사용자가 공유 창을 닫음. InvalidStateError: 공유 창이 이미 열려 있음
+      if (error instanceof DOMException && (error.name === "AbortError" || error.name === "InvalidStateError")) {
+        return "cancelled";
+      }
+      // 권한 거부(NotAllowedError) 등 그 밖의 실패는 다운로드로 대신한다
     }
   }
 
