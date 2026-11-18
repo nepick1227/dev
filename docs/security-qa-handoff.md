@@ -25,7 +25,7 @@
 - 프로필 테이블은 본인 row만 조회 가능해야 합니다.
 - 닉네임 중복 확인은 프로필 row 조회가 아니라 `is_active_nickname_available` RPC를 사용합니다.
 - 외부 API route는 입력 검증, body 크기 제한, 요청 제한을 유지합니다.
-- AI/Gemini 프롬프트에는 사용자 코멘트를 기록 내용으로만 취급하라는 방어 문구를 유지합니다.
+- AI/Gemini 프롬프트를 다시 도입하면 사용자 코멘트를 기록 내용으로만 취급하라는 방어 문구를 넣습니다. (월간 메뉴판은 2026-11 개편으로 Gemini 호출을 제거했고, 현재 코드에서 Gemini를 호출하는 곳은 없습니다.)
 - 새 dependency 또는 버전 변경 후 `npm audit` 결과가 0 vulnerabilities인지 확인합니다.
 
 ## 적용해야 하는 Supabase migration
@@ -36,11 +36,12 @@
 - `20260628001000_lock_store_updates.sql`: 공용 가게 직접 update 차단
 - `20260628002000_unique_active_nickname.sql`: 활성 계정 닉네임만 unique
 - `20260628003000_harden_rls_policies.sql`: insert/update/delete RLS 보강
-- `20260628004000_release_monthly_menu_generation.sql`: 월간 메뉴 실패 시 횟수 복구 함수
+- `20260628004000_release_monthly_menu_generation.sql`: 월간 메뉴 실패 시 횟수 복구 함수 (2026-11 개편 후 앱은 호출하지 않음. 콜라주를 먼저 그리고 성공하면 차감)
 - `20260628005000_private_profile_select.sql`: 프로필 select 잠금, 닉네임 확인 RPC
 - `20260628006000_lock_store_inserts.sql`: 브라우저 직접 store insert 차단
 - `20260628007000_harden_store_rankings_view.sql`: `store_rankings` view `security_invoker`
 - `20260628008000_harden_select_policies.sql`: select 정책 role 명시
+- `20261118000000_monthly_menu_three_generations.sql`: 월간 메뉴판 한 달 생성 횟수 2회 → 3회 (CHECK 제약과 `claim_monthly_menu_generation` 교체). **이 PR을 운영에 배포하기 전에 적용**해야 3번째 생성이 막히지 않음
 
 ## 운영 DB 확인 SQL
 
@@ -98,6 +99,20 @@ where routine_schema = 'public'
   );
 ```
 
+```sql
+-- 20261118000000 적용 확인: 월간 메뉴판 한 달 3회
+select pg_get_constraintdef(oid)
+from pg_constraint
+where conrelid = 'public.monthly_menu_usage'::regclass
+  and contype = 'c'
+  and pg_get_constraintdef(oid) like '%generation_count%';
+-- 기대값: CHECK (((generation_count >= 0) AND (generation_count <= 3)))
+
+select position('generation_count < 3' in pg_get_functiondef('public.claim_monthly_menu_generation(date)'::regprocedure)) > 0
+  as is_three_generations;
+-- 기대값: true
+```
+
 ## 운영 QA 체크리스트
 
 - 로그인: 카카오, 구글, 네이버 로그인 성공/실패 흐름 확인
@@ -108,7 +123,7 @@ where routine_schema = 'public'
 - 가게 저장: F12로 `stores` 직접 insert가 막히는지 확인
 - 이미지: 기록/프로필 이미지 업로드, 수정, 삭제, 새로고침 후 표시 확인
 - 이미지 보안: 로그아웃 또는 다른 계정에서 signed URL/Storage path 접근이 막히는지 확인
-- 월간 메뉴: 조회, 선택, 생성, 실패 시 횟수 복구 확인
+- 월간 메뉴: 조회, 선택, 추천 메뉴 입력, 콜라주 생성, 공유 창/다운로드, 사진 불러오기 실패 시 횟수가 줄지 않는지 확인
 - CSP: 브라우저 Console에서 카카오맵, 폰트, Supabase signed image, 로그인 redirect 차단 오류가 없는지 확인
 - 모바일 UX: 저장 버튼, 키보드, 하단 탭, safe area, 화면 새로고침 안내 문구 확인
 

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
+  formatMonthlyMenuTitle,
+  formatStoreArea,
   getPreviousMonthWindow,
+  MONTHLY_MENU_MAX_GENERATIONS,
   type MonthlyMenuRecord,
 } from "@/lib/monthly-menu";
 import { checkRateLimit, readJsonBody } from "@/lib/security/http";
 import { createSignedImageUrl } from "@/lib/supabase/storage";
 
-const MAX_GENERATIONS = 2;
 const IS_UNLIMITED_DEV = process.env.NODE_ENV === "development";
 
 interface RecordRow {
@@ -15,7 +17,7 @@ interface RecordRow {
   visited_at: string;
   comment: string;
   image_url: string | null;
-  stores: { name: string } | { name: string }[] | null;
+  stores: { name: string; address: string | null } | { name: string; address: string | null }[] | null;
 }
 
 async function toMonthlyMenuRecords(
@@ -33,6 +35,7 @@ async function toMonthlyMenuRecords(
       comment: row.comment,
       imageUrl,
       storeName: store.name,
+      storeArea: formatStoreArea(store.address),
     }];
   }));
 
@@ -58,10 +61,10 @@ export async function GET(req: NextRequest) {
   }
 
   const month = getPreviousMonthWindow();
-  const [{ data: recordRows, error: recordsError }, { data: usage }] = await Promise.all([
+  const [{ data: recordRows, error: recordsError }, { data: usage }, { data: profile }] = await Promise.all([
     supabase
       .from("records")
-      .select("id, visited_at, comment, image_url, stores(name)")
+      .select("id, visited_at, comment, image_url, stores(name, address)")
       .eq("user_id", user.id)
       .not("image_url", "is", null)
       .neq("image_url", "")
@@ -74,6 +77,11 @@ export async function GET(req: NextRequest) {
       .eq("user_id", user.id)
       .eq("source_month", month.sourceMonth)
       .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("nickname")
+      .eq("id", user.id)
+      .maybeSingle(),
   ]);
 
   if (recordsError) {
@@ -84,13 +92,14 @@ export async function GET(req: NextRequest) {
   const generationCount = usage?.generation_count ?? 0;
   const afterFifth = month.currentDay >= 5;
   const hasEnoughRecords = records.length >= 3;
-  const remainingGenerations = Math.max(MAX_GENERATIONS - generationCount, 0);
+  const remainingGenerations = Math.max(MONTHLY_MENU_MAX_GENERATIONS - generationCount, 0);
   const hasGenerationAccess = IS_UNLIMITED_DEV || remainingGenerations > 0;
 
   return NextResponse.json({
     sourceMonth: month.sourceMonth,
     monthLabel: month.monthLabel,
     title: `${month.monthLabel}의 메뉴판`,
+    collageTitle: formatMonthlyMenuTitle(month.monthLabel, profile?.nickname),
     records,
     generationCount,
     remainingGenerations,
