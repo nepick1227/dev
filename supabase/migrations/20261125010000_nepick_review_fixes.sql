@@ -100,8 +100,10 @@ ALTER TABLE public.nepick_suggestions
   CHECK (public.nepick_clean_text(food_name) <> '');
 
 -- ------------------------------------------------------------
--- 4. 읽기: 게시판 목록이 집계 뷰를 한 번만 읽게 한다 (결과는 같음)
+-- 4. 읽기 함수
 -- ------------------------------------------------------------
+
+-- 게시판 목록: 집계 뷰를 한 번만 읽는다 (결과는 이전과 같음)
 CREATE OR REPLACE FUNCTION public.nepick_list_boards()
 RETURNS TABLE (
   board_id bigint,
@@ -144,6 +146,52 @@ AS $$
   LEFT JOIN public.stores AS store ON store.id = ranked.store_id
   WHERE board.is_active
   ORDER BY board.sort_order, board.id;
+$$;
+
+-- 게시판 안 가게 순위: 숨김으로 무효가 된 추천은 '내 추천'으로 보지 않는다
+CREATE OR REPLACE FUNCTION public.nepick_list_board_stores(p_board_id bigint, p_viewer_id uuid DEFAULT NULL)
+RETURNS TABLE (
+  board_store_id bigint,
+  store_id bigint,
+  name text,
+  category text,
+  subcategory text,
+  address text,
+  road_address text,
+  nepick_index integer,
+  up_count integer,
+  post_count integer,
+  is_my_pick boolean,
+  my_vote smallint
+)
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+  SELECT
+    visible.id,
+    store.id,
+    store.name,
+    store.category,
+    store.subcategory,
+    store.address,
+    store.road_address,
+    visible.nepick_index,
+    visible.up_count,
+    visible.post_count,
+    EXISTS (
+      SELECT 1
+      FROM public.nepick_active_picks AS my_pick
+      WHERE my_pick.board_store_id = visible.id AND my_pick.user_id = p_viewer_id
+    ),
+    COALESCE(my_vote.value, 0::smallint)
+  FROM public.nepick_visible_board_stores AS visible
+  JOIN public.stores AS store ON store.id = visible.store_id
+  LEFT JOIN public.nepick_votes AS my_vote
+    ON my_vote.board_store_id = visible.id AND my_vote.user_id = p_viewer_id
+  WHERE visible.board_id = p_board_id
+  ORDER BY visible.nepick_index DESC, visible.vote_score DESC, visible.created_at, visible.id;
 $$;
 
 -- ------------------------------------------------------------
@@ -325,9 +373,11 @@ BEGIN
     RAISE EXCEPTION 'nepick_store_not_found';
   END IF;
 
-  IF EXISTS (
+  -- 무효가 된 추천은 막지 않는다. 취소(0)는 언제나 할 수 있다
+  -- (무효일 때 눌러 둔 뒤 운영자가 숨김을 풀면 추천과 투표가 함께 남을 수 있다)
+  IF p_value <> 0 AND EXISTS (
     SELECT 1
-    FROM public.nepick_picks AS pick
+    FROM public.nepick_active_picks AS pick
     WHERE pick.board_store_id = p_board_store_id AND pick.user_id = p_user_id
   ) THEN
     RAISE EXCEPTION 'nepick_vote_on_my_pick';
