@@ -79,7 +79,7 @@ export default function BoardStoreCard({ slug, rank, store, previewPosts }: Boar
           type="button"
           onClick={() => setAllPosts(null)}
           aria-expanded="true"
-          className="-mb-1.5 min-h-11 text-left text-[13px] font-bold text-text-secondary"
+          className="-mb-3 -mt-3 min-h-11 text-left text-[13px] font-bold text-text-secondary"
         >
           접기
         </button>
@@ -89,7 +89,7 @@ export default function BoardStoreCard({ slug, rank, store, previewPosts }: Boar
           onClick={() => void expand()}
           disabled={isLoading}
           aria-expanded="false"
-          className="-mb-1.5 min-h-11 text-left text-[13px] font-bold text-text-body disabled:text-disabled-text"
+          className="-mb-3 -mt-3 min-h-11 text-left text-[13px] font-bold text-text-body disabled:text-disabled-text"
         >
           {isLoading ? "불러오는 중…" : `댓글 ${store.post_count}개 모두 보기`}
         </button>

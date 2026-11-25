@@ -44,7 +44,8 @@ GitHub에서 해당 커밋의 배포 상태를 확인합니다(`gh api repos/{ow
 | 확인 | 기대 결과 |
 |------|-----------|
 | `https://nepick.kr/` | 200 |
-| `https://nepick.kr/home`, `/mypick`, `/profile` | 200 (비로그인도 열리는 화면) |
+| `https://nepick.kr/home`, `/nepick`, `/mypick`, `/profile` | 200 (비로그인도 열리는 화면) |
+| `https://nepick.kr/api/nepick/boards` (비로그인) | 200 (네 픽 migration이 운영 DB에 없으면 500) |
 | `https://nepick.kr/auth/login` | 200 |
 | `https://nepick.kr/record` (비로그인) | `/auth/login`으로 리다이렉트 |
 | `https://nepick.kr/profile/edit` (비로그인) | `/auth/login`으로 리다이렉트 |

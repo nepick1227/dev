@@ -5,7 +5,7 @@ import BoardList from "@/features/nepick/board-list";
 
 export default function NepickPage() {
   return (
-    <PageContainer>
+    <PageContainer className="nepick-page">
       <Header title="네 픽" size="large" noBorder />
       <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto bg-surface md:bg-bg">
         <div className="app-content-readable px-5 pb-6 md:px-6">

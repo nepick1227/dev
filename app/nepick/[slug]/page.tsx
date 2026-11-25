@@ -10,7 +10,7 @@ export default async function NepickBoardPage({ params }: NepickBoardPageProps) 
   const { slug } = await params;
 
   return (
-    <PageContainer>
+    <PageContainer className="nepick-page">
       <BoardView key={slug} slug={slug} />
       <BottomNav />
     </PageContainer>

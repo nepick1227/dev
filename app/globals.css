@@ -176,7 +176,8 @@ body {
 
 @media (min-width: 768px) {
   .form-page,
-  .settings-page {
+  .settings-page,
+  .nepick-page {
     background: var(--color-bg);
   }
 
