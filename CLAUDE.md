@@ -101,6 +101,7 @@ npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
 - **보안 헤더 (`next.config.ts`)**: 프로덕션 빌드에서만 CSP 등 보안 헤더를 주입합니다(`isDev`일 때는 미적용). 카카오맵/Supabase/GA 등 새 외부 도메인을 쓰면 이 파일의 CSP allowlist(`script-src`, `img-src`, `connect-src` 등)도 함께 수정해야 하며, 브라우저 Console/Network로 차단 여부를 확인합니다.
 - **API 라우트 (`app/api/`)**: `auth/naver`(OAuth 시작/콜백), `kakao-search`(카카오 장소 검색 프록시), `monthly-menu`(월간 메뉴판 대상 여부·전월 사진 기록 조회), `monthly-menu/generate`(월간 메뉴판 기록 확인 + 생성 횟수 차감, 이미지는 브라우저 canvas에서 생성), `stores/resolve`(카카오 place → `stores` 테이블 upsert), `cron/keepalive`(Vercel Cron이 하루 1회 호출, Supabase 무료 플랜 일시정지 방지). 비밀 API 키(`KAKAO_REST_API_KEY`, `NAVER_CLIENT_SECRET`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)는 이 서버 라우트들에서만 다루고 프론트로 내려보내지 않습니다.
 - **Supabase 스키마/RLS (`supabase/migrations/`)**: DB 스키마와 RLS 정책의 단일 소스입니다. 새 정책은 기존 migration을 수정하지 말고 새 파일을 추가합니다. `docs/security-qa-handoff.md`에 로컬 코드는 통과했지만 운영 DB에 아직 적용 안 됐을 수 있는 migration 목록이 있으니, 보안 관련 작업 전에 먼저 확인합니다.
+- **네 픽 게시판 DB (`nepick_*`)**: 테이블·뷰·함수를 모두 브라우저에서 막아 두었습니다. `app/api` 라우트에서 `auth.getUser()`로 사용자를 확인한 뒤 `service_role`로 `nepick_*` 함수를 호출합니다. `p_user_id`, `p_viewer_id`에 요청 본문의 값을 넘기지 않습니다. 금칙어 검사는 라우트에서 합니다.
 - **데이터/훅 레이어**: `features/*/api.ts`가 Supabase 쿼리를 감싸고(에러는 throw), `hooks/`(`use-kakao-map`, `use-kakao-search`, `use-map-stores`, `use-signed-image-url`, `use-toast`)가 지도·검색·서명 URL·토스트 등 여러 페이지에서 재사용하는 상태를 관리합니다.
 
 ## 디렉토리 구조

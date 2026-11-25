@@ -12,6 +12,8 @@
 ## 핵심 정책
 
 - 공용 가게 정보는 카카오 API로 확인한 참조 데이터입니다.
+- 네 픽(`nepick_*`)의 글, 추천, 투표, 신고, 제안은 브라우저에서 직접 읽거나 쓸 수 없습니다. `app/api` 라우트가 `auth.getUser()`로 확인한 사용자 id만 `service_role` 함수에 넘기고, 금칙어 검사도 라우트에서 합니다.
+- 네 픽 응답에는 닉네임 외의 프로필 정보, 다른 사용자의 id, 비추천 수를 담지 않습니다.
 - 개인 기록은 `records`에만 쌓이며, 한 사용자는 같은 가게에 여러 기록을 남길 수 있습니다.
 - 기록 이미지는 개인 데이터입니다. 기본은 private bucket + signed URL입니다.
 - 탈퇴 계정의 닉네임은 재사용 가능합니다. 활성 계정끼리만 닉네임 중복을 막습니다.
@@ -42,6 +44,7 @@
 - `20260628007000_harden_store_rankings_view.sql`: `store_rankings` view `security_invoker`
 - `20260628008000_harden_select_policies.sql`: select 정책 role 명시
 - `20261118000000_monthly_menu_three_generations.sql`: 월간 메뉴판 한 달 생성 횟수 2회 → 3회 (CHECK 제약과 `claim_monthly_menu_generation` 교체). **이 PR을 운영에 배포하기 전에 적용**해야 3번째 생성이 막히지 않음
+- `20261125000000_nepick_boards.sql`: 네 픽 게시판 테이블 7개, 집계 뷰 2개, 함수 13개. 모두 브라우저 접근 차단, `service_role`만 사용. 게시판 데이터는 들어 있지 않음
 
 ## 운영 DB 확인 SQL
 
@@ -111,6 +114,22 @@ where conrelid = 'public.monthly_menu_usage'::regclass
 select position('generation_count < 3' in pg_get_functiondef('public.claim_monthly_menu_generation(date)'::regprocedure)) > 0
   as is_three_generations;
 -- 기대값: true
+```
+
+```sql
+-- 20261125000000 적용 확인: 네 픽 게시판
+select relname, relrowsecurity
+from pg_class
+where relnamespace = 'public'::regnamespace and relkind = 'r' and relname like 'nepick\_%'
+order by relname;
+-- 기대값: 7줄, relrowsecurity 모두 true
+
+select count(*) as function_count,
+  bool_or(has_function_privilege('anon', oid, 'execute')
+    or has_function_privilege('authenticated', oid, 'execute')) as open_to_browser
+from pg_proc
+where pronamespace = 'public'::regnamespace and proname like 'nepick\_%';
+-- 기대값: 13, false
 ```
 
 ## 운영 QA 체크리스트
