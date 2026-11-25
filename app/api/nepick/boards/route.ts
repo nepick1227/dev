@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
     const [boardsRes, picksRes] = await Promise.all([
       client.rpc("nepick_list_boards"),
       viewerId
-        ? client.from("nepick_picks").select("board_id").eq("user_id", viewerId)
+        // 운영자 숨김으로 무효가 된 추천은 [추천완료]로 보지 않는다
+        ? client.from("nepick_active_picks").select("board_id").eq("user_id", viewerId)
         : Promise.resolve({ data: [] as { board_id: number }[], error: null }),
     ]);
     if (boardsRes.error) throw boardsRes.error;
