@@ -1,0 +1,133 @@
+# develop 대상 PR이 열리면 Claude가 코드 리뷰와 QA를 돌려 PR에 댓글로 남긴다.
+# - 다시 돌리기: PR에 `re-review` 라벨을 붙인다 (붙일 때마다 1회 실행)
+# - draft PR은 건너뛰고, "Ready for review"로 바꿀 때 실행한다
+# - 필요한 저장소 Secret: ANTHROPIC_API_KEY (사람이 등록)
+# - 머지, 승인(Approve), 코드 수정은 하지 않는다. 사람의 휴대폰 확인과 머지는 그대로 사람이 한다.
+name: Claude PR 리뷰·QA
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, labeled]
+    branches: [develop]
+
+concurrency:
+  group: claude-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: >-
+      github.event.pull_request.draft == false &&
+      (github.event.action != 'labeled' || github.event.label.name == 're-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            당신은 네픽 팀의 코드 리뷰어입니다. PR 브랜치가 현재 폴더에 체크아웃되어 있습니다.
+            1. CLAUDE.md를 읽습니다. 특히 "코드 리뷰 기준" 절이 리뷰 기준입니다.
+            2. `gh pr view` 와 `gh pr diff`로 변경 내용을 읽고, PR이 연결한 이슈가 있으면 `gh issue view`로 요구사항을 읽습니다.
+            3. 변경된 코드와 주변 코드를 직접 읽어, 확실한 문제만 찾습니다.
+               - CLAUDE.md "코드 리뷰 기준"의 반드시 지적할 항목
+               - 실제로 재현 가능한 버그(잘못된 동작, 예외 누락, 경쟁 상태, 보안 문제)
+               - 지적하지 않는 것: 스타일·포맷, 파일 길이, 취향 차이인 리팩터링
+               - 확신이 없으면 지적하지 않습니다.
+            4. 코드 줄에 대한 지적은 `mcp__github_inline_comment__create_inline_comment`(confirmed: true)로 남깁니다.
+            5. 마지막에 `gh pr comment`로 요약 댓글 하나를 한국어로 남깁니다.
+               첫 줄은 "## 코드 리뷰 (자동): 문제 없음" 또는 "## 코드 리뷰 (자동): 수정 필요 N건"으로 쓰고,
+               각 문제마다 파일:줄, 무엇이 왜 문제인지, 어떤 상황에서 터지는지를 한두 줄로 씁니다.
+            코드를 수정하거나 커밋하지 않습니다. PR을 승인하거나 머지하지 않습니다. GitHub 댓글로만 결과를 남깁니다.
+          claude_args: |
+            --permission-mode default
+            --max-turns 40
+            --allowedTools "Read,Grep,Glob,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh issue view:*)"
+
+  qa:
+    if: >-
+      github.event.pull_request.draft == false &&
+      (github.event.action != 'labeled' || github.event.label.name == 're-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # lint·build는 Claude가 아니라 이 단계에서 돌리고, 결과만 Claude에게 넘긴다 (Claude에게 npm 실행 권한을 주지 않음)
+      - name: lint·build·audit 실행
+        env:
+          # 빌드에 필요한 공개값 자리표시자. 실제 키는 쓰지 않는다
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_TELEMETRY_DISABLED: "1"
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set +e
+          out=qa-checks.md
+          run_check() {
+            name="$1"; shift
+            "$@" > "/tmp/$name.log" 2>&1
+            code=$?
+            if [ $code -eq 0 ]; then result="통과"; else result="실패 (exit $code)"; fi
+            {
+              echo "## $name: $result"
+              echo '```'
+              tail -n 60 "/tmp/$name.log"
+              echo '```'
+            } >> "$out"
+          }
+          echo "# 자동 확인 결과 (GitHub Action에서 실행)" > "$out"
+          run_check "npm ci" npm ci --no-audit --no-fund
+          run_check "lint" npm run lint
+          run_check "build" npm run build
+          if gh pr diff "$PR_NUMBER" --name-only | grep -qE '^package(-lock)?\.json$'; then
+            run_check "npm audit" npm audit
+          else
+            echo "## npm audit: 실행 안 함 (의존성 변경 없음)" >> "$out"
+          fi
+          exit 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            `.claude/agents/qa.md`를 읽고 그 설명서대로 이 PR을 QA합니다. PR 브랜치가 현재 폴더에 체크아웃되어 있습니다.
+            - "2. 직접 확인할 수 있는 것"의 `npm ci`, `npm run lint`, `npm run build`, `npm audit`는 이미 실행했습니다.
+              결과는 `qa-checks.md`에 있으니 직접 실행하지 말고 이 파일을 읽어 "자동 확인" 칸에 그대로 옮깁니다.
+              빌드는 Supabase 공개값을 자리표시자로 넣고 돌렸으므로, 그 때문에 생긴 실패인지 구분해서 적습니다.
+            - 미리보기 주소는 `gh pr view --comments`의 Vercel 봇 댓글에서 찾습니다. 이 환경에서는 미리보기 화면을 열 수 없으니 "확인하지 못한 것"에 적습니다.
+            - 결과는 qa.md의 "결과 형식" 그대로 `gh pr comment`로 댓글 하나를 남기고, 제목 끝에 "(자동)"을 붙입니다.
+            코드를 수정하거나 커밋하지 않습니다. PR을 승인하거나 머지하지 않습니다.
+          claude_args: |
+            --permission-mode default
+            --max-turns 50
+            --allowedTools "Read,Grep,Glob,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh issue view:*)"
