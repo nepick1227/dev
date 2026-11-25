@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
+import { HomeIcon, TrophyIcon, BookmarkIcon, UserIcon } from "@/components/ui/icons";
 
 interface NavItem {
   href: string;
@@ -16,6 +16,13 @@ const NAV_ITEMS: NavItem[] = [
     label: "홈",
     icon: (active) => (
       <HomeIcon size={22} color={active ? "var(--color-primary)" : "var(--color-text-muted)"} />
+    ),
+  },
+  {
+    href: "/nepick",
+    label: "네 픽",
+    icon: (active) => (
+      <TrophyIcon size={22} color={active ? "var(--color-primary)" : "var(--color-text-muted)"} />
     ),
   },
   {

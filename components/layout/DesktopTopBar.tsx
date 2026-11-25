@@ -46,6 +46,7 @@ export default function DesktopTopBar() {
   }, []);
 
   const homeActive = pathname.startsWith("/home");
+  const nepickActive = pathname.startsWith("/nepick");
   const myPickActive = pathname.startsWith("/mypick");
 
   return (
@@ -59,13 +60,19 @@ export default function DesktopTopBar() {
         <Link
           href="/home"
           onClick={handleHomeNavigation}
-          className={`flex h-full shrink-0 items-center whitespace-nowrap px-4 text-[15px] transition-colors ${homeActive ? "font-[800] text-primary" : "font-semibold text-text-secondary hover:text-text-primary"}`}
+          className={`flex h-full shrink-0 items-center whitespace-nowrap px-2.5 text-[15px] transition-colors lg:px-4 ${homeActive ? "font-[800] text-primary" : "font-semibold text-text-secondary hover:text-text-primary"}`}
         >
           홈
         </Link>
         <Link
+          href="/nepick"
+          className={`flex h-full shrink-0 items-center whitespace-nowrap px-2.5 text-[15px] transition-colors lg:px-4 ${nepickActive ? "font-[800] text-primary" : "font-semibold text-text-secondary hover:text-text-primary"}`}
+        >
+          네 픽
+        </Link>
+        <Link
           href="/mypick"
-          className={`flex h-full shrink-0 items-center whitespace-nowrap px-4 text-[15px] transition-colors ${myPickActive ? "font-[800] text-primary" : "font-semibold text-text-secondary hover:text-text-primary"}`}
+          className={`flex h-full shrink-0 items-center whitespace-nowrap px-2.5 text-[15px] transition-colors lg:px-4 ${myPickActive ? "font-[800] text-primary" : "font-semibold text-text-secondary hover:text-text-primary"}`}
         >
           내 픽
         </Link>

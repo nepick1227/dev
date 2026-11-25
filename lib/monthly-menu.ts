@@ -22,11 +22,6 @@ export function formatMonthlyMenuTitle(monthLabel: string, nickname: string | nu
   return name ? `${name}의 ${monthLabel} 메뉴판` : `${monthLabel} 메뉴판`;
 }
 
-export function formatStoreArea(address: string | null | undefined) {
-  if (!address) return "";
-  return address.trim().split(/\s+/).slice(0, 2).join(" ");
-}
-
 interface MonthWindow {
   sourceMonth: string;
   monthLabel: string;

@@ -54,14 +54,18 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
-  // "/", /auth/*, /api/auth/*, /api/kakao-search 경로는 항상 허용
+  // "/", /auth/*, /api/auth/*, /api/kakao-search, /nepick, /nepick/*, /api/nepick/* 경로는 항상 허용
+  // 네 픽은 비로그인도 볼 수 있고, /api/nepick의 쓰기 라우트는 각자 로그인을 확인해 401을 돌려준다
   // "/"는 서버에서 307로 리다이렉트하지 않고 200으로 응답해야
   // AdSense 소유권 확인 등 외부 크롤러가 <head> 태그를 읽을 수 있음
   if (
     pathname === "/" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/api/kakao-search")
+    pathname.startsWith("/api/kakao-search") ||
+    pathname === "/nepick" ||
+    pathname.startsWith("/nepick/") ||
+    pathname.startsWith("/api/nepick/")
   ) {
     // 이미 로그인된 유저가 /auth/login 접근 시 홈으로
     if (pathname === "/auth/login" && user && !request.nextUrl.searchParams.has("error")) {
