@@ -45,6 +45,7 @@
 - `20260628008000_harden_select_policies.sql`: select 정책 role 명시
 - `20261118000000_monthly_menu_three_generations.sql`: 월간 메뉴판 한 달 생성 횟수 2회 → 3회 (CHECK 제약과 `claim_monthly_menu_generation` 교체). **이 PR을 운영에 배포하기 전에 적용**해야 3번째 생성이 막히지 않음
 - `20261125000000_nepick_boards.sql`: 네 픽 게시판 테이블 7개, 집계 뷰 2개, 함수 13개. 모두 브라우저 접근 차단, `service_role`만 사용. 게시판 데이터는 들어 있지 않음
+- `20261125010000_nepick_review_fixes.sql`: 위 파일의 리뷰 반영(인덱스, 보이지 않는 문자 검사, 숨겨진 추천 다시 하기, 목록 조회 개선). 위 파일 다음에 적용
 
 ## 운영 DB 확인 SQL
 
@@ -129,7 +130,7 @@ select count(*) as function_count,
     or has_function_privilege('authenticated', oid, 'execute')) as open_to_browser
 from pg_proc
 where pronamespace = 'public'::regnamespace and proname like 'nepick\_%';
--- 기대값: 13, false
+-- 기대값: 16, false (20261125010000까지 적용했을 때. 그 전에는 13)
 ```
 
 ## 운영 QA 체크리스트

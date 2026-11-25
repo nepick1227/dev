@@ -169,6 +169,10 @@ export interface NepickPickResult {
   record_created: boolean;
 }
 
+// nepick_begin_write, nepick_insert_post, nepick_clean_text,
+// nepick_board_store_is_writable, nepick_board_store_is_visible은
+// 다른 DB 함수 안에서만 쓰므로 서버에서 직접 부르지 않는다.
+
 /** 네 픽 쓰기 함수가 내는 오류 이름. 서버 라우트에서 안내 문구로 바꾼다 */
 export type NepickErrorCode =
   | "nepick_authentication_required"
