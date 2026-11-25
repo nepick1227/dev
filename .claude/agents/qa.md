@@ -39,6 +39,7 @@ tools: Read, Grep, Glob, Bash
 | `features/record/`, `app/record/` | 같은 가게에 기록 여러 개 저장, 이미지 업로드·수정·삭제 후 새로고침 표시, 5MB 초과와 이미지가 아닌 파일 거부 |
 | `features/home/`, `components/map/`, `hooks/use-kakao-*` | 지도 로드, 검색, 마커, 바텀시트, 비로그인 둘러보기 |
 | `features/profile/`, `app/profile/` | 닉네임 중복 확인, 프로필 이미지, 탈퇴 후 닉네임 재사용 |
+| `features/nepick/`, `app/nepick/`, `app/api/nepick/` | 비로그인 열람, 빈 게시판과 없는 게시판, 응답에 닉네임 외 프로필 정보·다른 사용자 id·비추천 수가 없는지, 서버가 확인한 사용자 id만 DB 함수에 넘기는지 |
 | `features/monthly-menu/`, `app/api/monthly-menu/` | 조회, 선택, 생성, 실패 시 횟수 복구 |
 | `next.config.ts` | 운영 빌드에서 카카오맵, 폰트, Supabase 이미지, 로그인 리다이렉트가 CSP에 막히지 않는지 |
 | `supabase/migrations/` | 기존 파일 수정이 아닌 새 파일인지, RLS 정책 포함 여부, 운영 DB 적용이 필요하다는 안내 |
@@ -53,7 +54,7 @@ tools: Read, Grep, Glob, Bash
 - 의존성이 바뀌었으면 `npm audit`를 실행합니다.
 - 변경된 코드를 읽어 각 요구사항이 실제로 구현됐는지 확인합니다. 근거가 되는 파일과 줄을 적습니다.
 - 비밀키 이름(`SUPABASE_SERVICE_ROLE_KEY`, `NAVER_CLIENT_SECRET`, `KAKAO_REST_API_KEY`, `GEMINI_API_KEY`, `CRON_SECRET`)이 `"use client"` 파일이나 `NEXT_PUBLIC_` 변수에 들어가지 않았는지 검색합니다.
-- 미리보기 주소가 있으면 로그인 없이 열리는 화면(`/`, `/home`, `/mypick`, `/profile`, `/auth/login`, `/auth/terms`, `/auth/error`)을 요청해 응답 상태를 확인합니다. 브라우저 도구가 있으면 390×844 화면으로 열어 캡처합니다.
+- 미리보기 주소가 있으면 로그인 없이 열리는 화면(`/`, `/home`, `/nepick`, `/mypick`, `/profile`, `/auth/login`, `/auth/terms`, `/auth/error`)을 요청해 응답 상태를 확인합니다. 브라우저 도구가 있으면 390×844 화면으로 열어 캡처합니다.
 
 ### 3. 직접 확인할 수 없는 것은 사람에게 넘기기
 

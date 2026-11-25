@@ -118,16 +118,17 @@ UI 작업 전 아래 순서로 판단한다.
 
 - 높이 64px, white surface, 하단 divider
 - 로고는 `/brand/nepick-fork.svg`의 포크 심볼만 사용한다.
-- 메뉴는 `홈`, `내 픽`; 15px, 활성 메뉴는 primary와 weight 800
+- 메뉴는 `홈`, `네 픽`, `내 픽`; 15px, 활성 메뉴는 primary와 weight 800
+- 메뉴 좌우 여백은 768~1023px 10px, 1024px 이상 16px다. 768px에서 홈 검색창과 겹치지 않게 하려는 값이다.
 - 기록 CTA는 `+ 기록하기`
 - 로그인 상태에는 프로필 원형 버튼, 비로그인 상태에는 로그인 버튼을 표시한다.
-- `내 픽`은 줄바꿈하지 않는다.
+- `네 픽`, `내 픽`은 줄바꿈하지 않는다.
 
 ### 모바일 하단 탭
 
 `components/layout/BottomNav.tsx`를 사용한다.
 
-- 홈, 내 픽, 프로필 세 탭
+- 홈, 네 픽, 내 픽, 프로필 네 탭
 - 높이 76px와 safe area
 - 아이콘 22px, 레이블 11px bold
 - 활성 색은 primary, 비활성 색은 text-muted
@@ -268,7 +269,21 @@ UI 작업 전 아래 순서로 판단한다.
 - 메뉴는 수정, 주소 복사, 공유, 삭제를 유지한다. 삭제는 destructive 색으로 분리한다.
 - 월 선택 모달은 z-index 100으로 좌측 패널 접기 버튼과 지도 요소보다 위에 표시한다.
 
-## 11. 프로필과 하위 화면
+## 11. 네 픽
+
+관련 구현은 `features/nepick`의 `board-list`, `board-view`, `board-store-card`다.
+
+- 화면은 게시판 목록(`/nepick`)과 게시판(`/nepick/[slug]`) 두 개뿐이다. 가게별 페이지를 만들지 않고 게시판 한 페이지에서 모든 동작을 한다.
+- 모바일 목록은 white surface, 게시판은 `bg` 위 흰 카드다. 웹은 둘 다 `bg` 위 흰 카드이며 읽기 폭(720px)을 쓴다.
+- 카드는 radius 18px, border, padding 16px다.
+- 순위 1~3은 primary, 이후는 text-tertiary다.
+- 네픽지수 배지는 1 이상이면 primary-soft, 0이면 neutral-soft다.
+- [추천완료] 딱지는 `picker-badge.tsx`만 사용한다.
+- 카드에는 글 2개까지 보이고, 더 있으면 `댓글 N개 모두 보기`로 그 자리에서 펼친다.
+- 비추천 수는 어디에도 표시하지 않는다.
+- 탈퇴한 사람의 닉네임은 `탈퇴한 사용자`로 표시한다.
+
+## 12. 프로필과 하위 화면
 
 - 로그인 프로필은 모바일 white surface, 웹 gray background 위 white card 구조다.
 - 프로필 카드에는 이미지, 닉네임, 소셜 제공자, 한줄소개, 기록 통계, 프로필 편집을 표시한다.
@@ -282,7 +297,7 @@ UI 작업 전 아래 순서로 판단한다.
 - 탈퇴 사유는 기본 border/surface, 선택은 primary border와 primary-soft 계열을 사용한다.
 - 탈퇴는 사유 선택 후 확인 모달과 확인 체크를 거치는 2단계 흐름이다.
 
-## 12. 접근성과 상호작용 점검
+## 13. 접근성과 상호작용 점검
 
 - 아이콘 전용 버튼은 `aria-label`을 제공한다.
 - 현재 탭은 `aria-current="page"`, 토글은 `role="switch"`와 `aria-checked`를 사용한다.
@@ -292,7 +307,7 @@ UI 작업 전 아래 순서로 판단한다.
 - 로딩 중에는 중복 제출을 막되, OAuth 취소나 오류 뒤에는 반드시 다시 활성화한다.
 - 긴 가게명, 주소, 지역명, 작은 높이의 태블릿 화면에서 잘림과 겹침을 확인한다.
 
-## 13. UI 변경 체크리스트
+## 14. UI 변경 체크리스트
 
 UI 변경 PR에서는 아래 항목을 확인한다.
 
@@ -306,7 +321,7 @@ UI 변경 PR에서는 아래 항목을 확인한다.
 - [ ] hover, active, focus-visible, disabled, loading 상태를 확인했다.
 - [ ] UI 결정을 바꿨다면 이 문서와 관련 공통 컴포넌트를 같은 PR에서 갱신했다.
 
-## 14. 코드 참조 지도
+## 15. 코드 참조 지도
 
 | 영역 | 기준 파일 |
 |---|---|
@@ -318,6 +333,7 @@ UI 변경 PR에서는 아래 항목을 확인한다.
 | 지도·시트 | `features/home/MapView.tsx`, `features/home/MapOverlay.tsx`, `components/map/BottomSheet.tsx` |
 | 홈 랭킹·가게 카드 | `features/home/RankingSheet.tsx`, `features/home/StoreCard.tsx`, `features/home/SelectedStoreCard.tsx` |
 | 기록 | `features/record/RecordForm.tsx`, `features/record/RecordEditForm.tsx` |
+| 네 픽 | `features/nepick/board-list.tsx`, `features/nepick/board-view.tsx`, `features/nepick/board-store-card.tsx` |
 | 내 픽 | `features/mypick/ResponsiveMyPickPage.tsx`, `features/mypick/Timeline.tsx`, `features/mypick/RecordCard.tsx` |
 | 프로필 | `features/profile/ProfileView.tsx`, `features/profile/ProfileEditForm.tsx`, `features/profile/PermissionsView.tsx`, `features/profile/WithdrawalView.tsx` |
 | 인증 게이트 | `features/auth/AuthGate.tsx`, `features/auth/LoginPromptHost.tsx`, `app/auth/*` |

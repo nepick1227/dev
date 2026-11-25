@@ -5,24 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { pushGtmEvent } from "@/lib/analytics/gtm";
+import { parseAuthNextPath } from "@/lib/auth-redirect";
 import Spinner from "@/components/ui/Spinner";
 import { MapPinIcon, NepickLogo } from "@/components/ui/icons";
 
 const LAST_PROVIDER_KEY = "nepick_last_provider";
-const ALLOWED_NEXT_PATHS = new Set(["/home", "/mypick", "/profile", "/record"]);
-
-function getSafeNextPath(next: string | null) {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
-
-  try {
-    const url = new URL(next, "https://nepick.local");
-    return ALLOWED_NEXT_PATHS.has(url.pathname)
-      ? `${url.pathname}${url.search}`
-      : null;
-  } catch {
-    return null;
-  }
-}
 
 function getLastProvider(): string | null {
   if (typeof window === "undefined") return null;
@@ -174,7 +161,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
-  const next = getSafeNextPath(searchParams.get("next"));
+  const next = parseAuthNextPath(searchParams.get("next"));
 
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [lastProvider, setLastProviderState] = useState<string | null>(null);

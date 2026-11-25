@@ -8,6 +8,7 @@ const routes = [
   "/auth/terms",
   "/home",
   "/record",
+  "/nepick",
   "/mypick",
   "/profile",
 ];

@@ -27,7 +27,7 @@ tools: Read, Grep, Glob, Bash
 
 `curl`로 확인합니다.
 
-- `https://nepick.kr/`, `/home`, `/mypick`, `/profile`, `/auth/login`이 200인지
+- `https://nepick.kr/`, `/home`, `/nepick`, `/mypick`, `/profile`, `/auth/login`이 200인지
 - `/record`와 `/profile/edit`이 비로그인 상태에서 `/auth/login`으로 리다이렉트되는지 (공개 경로의 기준은 `main`의 `proxy.ts`이며, 이 목록과 다르면 `proxy.ts`를 따르고 목록이 낡았다고 적습니다)
 - `/api/cron/keepalive`가 인증 없이 401인지 (`CRON_SECRET`과 함께 호출하지 않습니다)
 - 보안 헤더(`Content-Security-Policy`, `X-Frame-Options`, `Strict-Transport-Security`)가 있는지

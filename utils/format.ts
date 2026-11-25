@@ -51,3 +51,11 @@ export function formatDateGroupLabel(date: Date | string): string {
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
   return `${y}.${m}.${day} (${weekdays[d.getDay()]})`;
 }
+
+/**
+ * 지번 주소 → 앞 두 마디 (예: "서울 성동구"). 주소가 없으면 빈 문자열
+ */
+export function formatStoreArea(address: string | null | undefined) {
+  if (!address) return "";
+  return address.trim().split(/\s+/).slice(0, 2).join(" ");
+}

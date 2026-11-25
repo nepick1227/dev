@@ -20,6 +20,16 @@ export function PlusIcon({ size = 24, color = "currentColor", className }: IconP
   );
 }
 
+export function TrophyIcon({ size = 24, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M7 4H17V10C17 12.8 14.8 15 12 15C9.2 15 7 12.8 7 10V4Z" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M7 6H4C4 9 5.2 10.7 7.4 11.2M17 6H20C20 9 18.8 10.7 16.6 11.2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 15V20M8 20H16" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function BookmarkIcon({ size = 24, color = "currentColor", className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
