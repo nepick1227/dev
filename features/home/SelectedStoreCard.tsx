@@ -10,7 +10,6 @@ import StoreBadges from "@/features/nepick/store-badges";
 import type { Store } from "@/types/database";
 
 export const CARD_BOTTOM_PX = 20;
-export const CARD_HEIGHT_PX = 202;
 
 interface SelectedStoreCardProps {
   store: Store;
