@@ -6,6 +6,7 @@ import { CloseIcon } from "@/components/ui/icons";
 import { pushGtmEvent } from "@/lib/analytics/gtm";
 import { createClient } from "@/lib/supabase/client";
 import { openLoginPrompt } from "@/features/auth/login-prompt-events";
+import StoreBadges from "@/features/nepick/store-badges";
 import type { Store } from "@/types/database";
 
 export const CARD_BOTTOM_PX = 20;
@@ -88,6 +89,7 @@ export default function SelectedStoreCard({ store, rank, onClose, desktopSidebar
         <p className="mt-1 text-[12.5px] text-text-secondary md:mt-[5px] md:text-[13px]">
           픽 {new Intl.NumberFormat("ko-KR").format(store.pick_count)}개
         </p>
+        <StoreBadges storeId={store.id} />
 
         <div className="mt-[9px] flex items-center gap-2 text-[12.5px] text-text-description md:mt-2.5 md:text-[13px]">
           <span className="min-w-0 flex-1 truncate">{address}</span>

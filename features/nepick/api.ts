@@ -1,4 +1,4 @@
-import type { NepickPostItem } from "@/types/database";
+import type { NepickPostItem, NepickStoreBadge } from "@/types/database";
 import type { NepickBoardDetail, NepickBoardListItem } from "./types";
 
 const DEFAULT_ERROR = "네 픽을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
@@ -38,4 +38,9 @@ export async function fetchNepickStorePosts(slug: string, boardStoreId: number) 
     `/api/nepick/boards/${encodeURIComponent(slug)}/posts?boardStoreId=${boardStoreId}`
   );
   return posts;
+}
+
+export async function fetchNepickStoreBadges(storeId: number) {
+  const { badges } = await requestJson<{ badges: NepickStoreBadge[] }>(`/api/nepick/stores/${storeId}/badges`);
+  return badges;
 }
